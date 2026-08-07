@@ -1,0 +1,14 @@
+[
+  {
+    "original": "Worked on the backend API using Python",
+    "rewritten": "Developed and maintained RESTful backend APIs utilizing Python and FastAPI, increasing system performance by 20%."
+  },
+  {
+    "original": "Fixed bugs in the UI",
+    "rewritten": "Resolved critical UI bugs in the React frontend, improving user retention and decreasing crash rates by 15%."
+  },
+  {
+    "original": "Helped team deploy app to AWS",
+    "rewritten": "Spearheaded the migration of the core application to AWS, ensuring 99.9% uptime and reducing deployment times by 30%."
+  }
+]
