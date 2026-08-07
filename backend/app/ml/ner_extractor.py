@@ -3,6 +3,8 @@ from transformers import pipeline
 from typing import List
 from pydantic import BaseModel
 
+import torch
+
 class Entity(BaseModel):
     entity_group: str
     word: str
@@ -19,7 +21,8 @@ class NERExtractor:
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(model_name)
             self.model = AutoModelForTokenClassification.from_pretrained(model_name)
-            self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer, aggregation_strategy="simple")
+            device = 0 if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else -1)
+            self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer, aggregation_strategy="simple", device=device)
             self.is_ready = True
         except Exception as e:
             print(f"Error loading NER model: {e}")

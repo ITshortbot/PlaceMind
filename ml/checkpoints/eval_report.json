@@ -1,0 +1,17 @@
+{
+  "model": "Microsoft/deberta-v3-base",
+  "labels": [
+    "B-COMPANY",
+    "I-COMPANY",
+    "B-JOB_TITLE",
+    "I-JOB_TITLE",
+    "B-SKILL",
+    "I-SKILL",
+    "B-DEGREE",
+    "I-DEGREE"
+  ],
+  "epochs": 3,
+  "eval_f1_score": 0.892,
+  "eval_precision": 0.905,
+  "eval_recall": 0.88
+}

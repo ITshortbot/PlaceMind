@@ -1,0 +1,14 @@
+Position: Senior Full Stack Engineer (Python & React)
+Company: CloudTech Solutions
+
+Responsibilities:
+- Design, build, and maintain high-throughput backend APIs using FastAPI and PostgreSQL.
+- Architect real-time streaming WebSocket infrastructure and Redis caching layers.
+- Build responsive, modern frontend dashboards in React, Next.js, and Tailwind CSS.
+- Lead CI/CD pipeline automation and container deployment with Docker and Kubernetes.
+
+Requirements:
+- 4+ years of professional experience in Python, FastAPI, and PostgreSQL.
+- Strong proficiency with React, TypeScript, Next.js, and state management.
+- Hands-on experience with Redis, pgvector similarity search, and microservice architectures.
+- Experience with Docker containerization, Kubernetes, and AWS cloud infrastructure.
