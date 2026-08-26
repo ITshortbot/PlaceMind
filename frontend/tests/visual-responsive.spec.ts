@@ -37,9 +37,9 @@ test.describe('Placemind Visual & Responsive Suite', () => {
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByText('Download Placemind on')).toBeVisible();
-    await expect(page.getByText('macOS')).toBeVisible();
-    await expect(page.getByText('Windows')).toBeVisible();
-    await expect(page.getByText('Linux')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'macOS' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Windows' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Linux' })).toBeVisible();
 
     // Capture screenshot
     await page.screenshot({ path: `tests/screenshots/download-${page.viewportSize()?.width}px.png`, fullPage: false });

@@ -2,43 +2,49 @@
 
 // ============================================================================
 // File: frontend/src/app/studio/page.tsx
-// Description: Interactive SaaS / Desktop Studio Interior Workspace for Placemind
-//              featuring 3-panel split layout, live ATS health radar, LaTeX/Doc editor,
-//              interactive JD parser, and Google XYZ AI bullet rewriter.
+// Description: Rebuilt Placemind Studio page benchmarked against 21st.dev standards.
+//              Strictly constructed using shadcn/ui primitives (Input, Textarea, Label,
+//              Button, Card, Progress, Tabs, Badge, Separator) with a 3-level elevation
+//              hierarchy, unified typography, restrained palette, and prominent hero preview.
 // ============================================================================
 
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  FileText,
   Sparkles,
   Zap,
-  TrendingUp,
   ShieldCheck,
   Download,
   CheckCircle2,
-  AlertCircle,
-  Sliders,
-  ChevronRight,
   ArrowLeft,
-  Search,
-  Plus,
-  RefreshCw,
-  Copy,
   Check,
-  Layers,
-  Terminal,
-  Cpu,
   Lock,
-  Eye,
-  Settings,
   PanelLeftClose,
   PanelLeftOpen,
+  Cpu,
+  FileCheck,
+  TrendingUp,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
+
+// Standard shadcn/ui Components
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Label } from '@/components/ui/Label';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Progress } from '@/components/ui/Progress';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Separator } from '@/components/ui/Separator';
 
 const TEMPLATES = [
   { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp', ats: 94.8, role: 'Staff Software Architect' },
@@ -50,17 +56,17 @@ const TEMPLATES = [
 
 export default function StudioPage() {
   const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATES[0]);
-  const [activeTab, setActiveTab] = useState<'editor' | 'preview' | 'split'>('split');
+  const [activeTab, setActiveTab] = useState<'split' | 'editor' | 'preview'>('split');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [engineMode, setEngineMode] = useState<'cloud' | 'local'>('cloud');
   const [appliedRewrite, setAppliedRewrite] = useState(false);
 
-  // Resume State
+  // Resume Form State
   const [resumeData, setResumeData] = useState({
     name: 'Rohan K. Patel',
     title: 'Staff Software Architect',
     email: 'rohan.patel@email.com',
-    location: 'San Francisco, CA &bull; Remote',
+    location: 'San Francisco, CA · Remote',
     summary:
       'High-performance distributed systems architect with 8+ years building low-latency Kafka pipelines, high-throughput microservices, and AI RAG search infrastructure.',
     experienceBullet1:
@@ -80,319 +86,347 @@ Requirements:
   );
 
   return (
-    <div className="min-h-screen bg-[#F4EFEA] dark:bg-[#09090C] text-[#1A1A1E] dark:text-[#F5F5F7] flex flex-col font-sans transition-colors duration-300">
-      {/* Top Studio App Bar */}
-      <header className="h-14 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/80 dark:bg-[#121217]/90 backdrop-blur-xl px-4 flex items-center justify-between z-30 sticky top-0">
+    <div className="min-h-screen bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] flex flex-col font-sans transition-colors duration-300">
+      {/* ========================================================================= */}
+      {/* TOP APP BAR: Standardized Heights, Grouped Controls, and shadcn Buttons   */}
+      {/* ========================================================================= */}
+      <header className="h-16 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/80 dark:bg-[#121217]/90 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0">
+        {/* Left: Navigation & Branding */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Landing Page</span>
+          <Link href="/dashboard">
+            <Button variant="ghost" size="sm" icon={<ArrowLeft className="w-4 h-4" />}>
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
           </Link>
 
-          <div className="h-4 w-px bg-black/[0.1] dark:bg-white/[0.1]" />
+          <Separator orientation="vertical" className="h-4" />
 
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#6C5CE7] to-[#38BDF8] flex items-center justify-center text-white font-black text-xs shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#6C5CE7] to-[#38BDF8] flex items-center justify-center text-white font-black text-xs shadow-sm shadow-[#6C5CE7]/30">
               P
             </div>
-            <span className="font-bold text-sm tracking-tight hidden sm:inline">Placemind Studio</span>
-            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#6C5CE7]/10 text-[#6C5CE7] border border-[#6C5CE7]/20">
-              v1.0 Pro
+            <span className="font-bold text-sm tracking-tight hidden sm:inline">
+              Placemind Studio
             </span>
+            <Badge variant="accent" size="sm">
+              v1.0 Pro
+            </Badge>
           </div>
         </div>
 
-        {/* Engine Toggle Pill */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08]">
-          <button
-            onClick={() => setEngineMode('cloud')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              engineMode === 'cloud'
-                ? 'bg-white dark:bg-[#1C1C24] text-[#6C5CE7] shadow-sm'
-                : 'text-[#8A8A92] hover:text-black dark:hover:text-white'
-            }`}
-          >
-            <Sparkles className="w-3 h-3" />
-            <span>Gemini 2.5 Cloud</span>
-          </button>
-          <button
-            onClick={() => setEngineMode('local')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              engineMode === 'local'
-                ? 'bg-[#16A34A] text-white shadow-sm'
-                : 'text-[#8A8A92] hover:text-black dark:hover:text-white'
-            }`}
-          >
-            <ShieldCheck className="w-3 h-3" />
-            <span>Local LM Studio (0-Egress)</span>
-          </button>
+        {/* Center: Unified Engine Selector (shadcn Tabs / ToggleGroup) */}
+        <div className="hidden md:flex items-center">
+          <Tabs value={engineMode} onValueChange={(v) => setEngineMode(v as 'cloud' | 'local')}>
+            <TabsList className="h-9 p-1 bg-black/[0.04] dark:bg-white/[0.06]">
+              <TabsTrigger value="cloud" className="gap-1.5 px-3 py-1">
+                <Sparkles className="w-3.5 h-3.5 text-[#6C5CE7]" />
+                <span>Gemini 2.5 Cloud</span>
+              </TabsTrigger>
+              <TabsTrigger value="local" className="gap-1.5 px-3 py-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A] dark:text-[#22C55E]" />
+                <span>Local LM Studio (0-Egress)</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
-          <Link href="/rehearse">
-            <Button variant="secondary" size="sm" icon={<Zap className="w-3.5 h-3.5 text-[#6C5CE7]" />}>
+        {/* Right: Primary and Secondary Action Hierarchy */}
+        <div className="flex items-center gap-2.5">
+          <Link href="/interview/new">
+            <Button
+              variant="secondary"
+              size="default"
+              icon={<Zap className="w-3.5 h-3.5 text-[#6C5CE7]" />}
+            >
               Mock Rehearsal
             </Button>
           </Link>
 
-          <Button variant="primary" size="sm" icon={<Download className="w-3.5 h-3.5" />}>
+          <Button
+            variant="default"
+            size="default"
+            icon={<Download className="w-3.5 h-3.5" />}
+          >
             Export PDF
           </Button>
         </div>
       </header>
 
-      {/* Main Studio Body (3-Panel Grid) */}
+      {/* ========================================================================= */}
+      {/* MAIN 3-PANEL STUDIO WORKSPACE WITH 3-LEVEL ELEVATION HIERARCHY            */}
+      {/* ========================================================================= */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar (Template & Candidate Switcher) */}
+        {/* ----------------------------------------------------------------------- */}
+        {/* PANEL 1 (LEFT SIDEBAR): Level 1 Surface, Level 2 Template Cards         */}
+        {/* ----------------------------------------------------------------------- */}
         <aside
           className={`${
-            isSidebarOpen ? 'w-64' : 'w-0'
-          } transition-all duration-300 border-r border-black/[0.08] dark:border-white/[0.08] bg-white/60 dark:bg-[#101015]/80 backdrop-blur-xl flex flex-col justify-between overflow-hidden flex-shrink-0`}
+            isSidebarOpen ? 'w-72' : 'w-0'
+          } transition-all duration-300 border-r border-black/[0.08] dark:border-white/[0.08] bg-white/70 dark:bg-[#101015]/80 backdrop-blur-xl flex flex-col justify-between overflow-hidden flex-shrink-0`}
         >
-          <div className="p-4 space-y-4 overflow-y-auto">
-            {/* ATS Score Meter Card */}
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#181820] border border-black/[0.06] dark:border-white/[0.06] shadow-sm space-y-2">
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span>ATS Audit Score</span>
-                <span className="text-[#6C5CE7]">{selectedTemplate.ats}%</span>
+          <div className="p-5 space-y-6 overflow-y-auto">
+            {/* Level 2 Card: ATS Health Radar */}
+            <Card variant="default" className="p-4 space-y-3 bg-white/90 dark:bg-[#181820]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-[#1A1A1E] dark:text-white">ATS Audit Score</span>
+                <span className="font-mono font-bold text-sm text-[#6C5CE7]">
+                  {selectedTemplate.ats}%
+                </span>
               </div>
-              <div className="w-full h-2 rounded-full bg-black/[0.06] dark:bg-white/[0.08] overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#6C5CE7] to-[#38BDF8] rounded-full transition-all duration-500"
-                  style={{ width: `${selectedTemplate.ats}%` }}
-                />
-              </div>
-              <div className="text-[10px] text-[#16A34A] dark:text-[#22C55E] font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
+              <Progress value={selectedTemplate.ats} />
+              <div className="text-[11px] text-[#16A34A] dark:text-[#22C55E] font-semibold flex items-center gap-1.5 pt-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
                 <span>Single-Column Workday Verified</span>
               </div>
-            </div>
+            </Card>
 
-            {/* Template Selector List */}
-            <div className="space-y-2">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-[#8A8A92] dark:text-[#6B6B76]">
+            {/* Level 2 Cards: Template Selector List */}
+            <div className="space-y-3">
+              <Label className="text-[#8A8A92] dark:text-[#6B6B76]">
                 Verified ATS Templates
-              </span>
-              <div className="space-y-1.5">
-                {TEMPLATES.map((tmpl) => (
-                  <button
-                    key={tmpl.id}
-                    onClick={() => setSelectedTemplate(tmpl)}
-                    className={`w-full p-2.5 rounded-xl text-left text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
-                      selectedTemplate.id === tmpl.id
-                        ? 'bg-[#6C5CE7]/15 text-[#6C5CE7] border border-[#6C5CE7]/30 shadow-sm'
-                        : 'hover:bg-black/5 dark:hover:bg-white/5 text-[#5A5A63] dark:text-[#A1A1AA]'
-                    }`}
-                  >
-                    <div className="truncate">
-                      <div className="font-bold text-[#1A1A1E] dark:text-white truncate">{tmpl.name}</div>
-                      <div className="text-[10px] text-[#8A8A92] truncate">{tmpl.role}</div>
-                    </div>
-                    <span className="text-[10px] font-mono font-bold text-[#16A34A] ml-2">
-                      {tmpl.ats}%
-                    </span>
-                  </button>
-                ))}
+              </Label>
+              <div className="space-y-2">
+                {TEMPLATES.map((tmpl) => {
+                  const isSelected = selectedTemplate.id === tmpl.id;
+                  return (
+                    <Card
+                      key={tmpl.id}
+                      onClick={() => setSelectedTemplate(tmpl)}
+                      className={`p-3.5 transition-all cursor-pointer flex items-center justify-between group ${
+                        isSelected
+                          ? 'border-[#6C5CE7] bg-[#6C5CE7]/10 dark:bg-[#6C5CE7]/15 shadow-md shadow-[#6C5CE7]/10 ring-1 ring-[#6C5CE7]'
+                          : 'hover:border-black/20 dark:hover:border-white/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="font-bold text-xs text-[#1A1A1E] dark:text-white truncate">
+                          {tmpl.name}
+                        </div>
+                        <div className="text-[11px] text-[#8A8A92] truncate mt-0.5">
+                          {tmpl.role}
+                        </div>
+                      </div>
+                      <Badge
+                        variant={isSelected ? 'accent' : 'neutral'}
+                        size="sm"
+                        className="font-mono flex-shrink-0"
+                      >
+                        {tmpl.ats}%
+                      </Badge>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Privacy & Egress Footer */}
-          <div className="p-3 border-t border-black/[0.06] dark:border-white/[0.06] text-[10px] text-[#8A8A92] flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-[#16A34A]" />
-            <span>Zero-Disk Stream Buffer</span>
+          {/* Privacy Footnote */}
+          <div className="p-4 border-t border-black/[0.06] dark:border-white/[0.06] text-[11px] text-[#8A8A92] flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 text-[#16A34A] dark:text-[#22C55E]" />
+            <span>Zero-Disk Stream Buffer Active</span>
           </div>
         </aside>
 
-        {/* Center Panel (Live Document / LaTeX Editor) */}
+        {/* ----------------------------------------------------------------------- */}
+        {/* PANEL 2 (CENTER): Form Editor + Level 3 HERO Physical Document Preview   */}
+        {/* ----------------------------------------------------------------------- */}
         <main className="flex-1 flex flex-col overflow-hidden border-r border-black/[0.08] dark:border-white/[0.08] bg-white/40 dark:bg-[#0B0B0F]/60">
-          {/* Editor Header Tools */}
-          <div className="h-10 px-4 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between bg-white/70 dark:bg-[#14141A]/70 text-xs">
-            <div className="flex items-center gap-2">
-              <button
+          {/* Sub-Header / Tool Controls */}
+          <div className="h-12 px-6 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between bg-white/70 dark:bg-[#14141A]/70 text-xs">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 text-[#8A8A92]"
+                className="p-1.5 h-8 w-8"
               >
                 {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-              </button>
-              <span className="font-bold text-[#1A1A1E] dark:text-white">Active Draft &bull; {selectedTemplate.name}</span>
+              </Button>
+              <span className="font-bold text-[#1A1A1E] dark:text-white">
+                Active Draft &bull; {selectedTemplate.name}
+              </span>
             </div>
 
-            <div className="flex items-center gap-1 bg-black/[0.04] dark:bg-white/[0.06] p-0.5 rounded-lg text-[11px] font-semibold">
-              <button
-                onClick={() => setActiveTab('split')}
-                className={`px-2.5 py-0.5 rounded ${activeTab === 'split' ? 'bg-white dark:bg-[#1C1C24] shadow-xs' : 'text-[#8A8A92]'}`}
-              >
-                Split View
-              </button>
-              <button
-                onClick={() => setActiveTab('editor')}
-                className={`px-2.5 py-0.5 rounded ${activeTab === 'editor' ? 'bg-white dark:bg-[#1C1C24] shadow-xs' : 'text-[#8A8A92]'}`}
-              >
-                Editor
-              </button>
-              <button
-                onClick={() => setActiveTab('preview')}
-                className={`px-2.5 py-0.5 rounded ${activeTab === 'preview' ? 'bg-white dark:bg-[#1C1C24] shadow-xs' : 'text-[#8A8A92]'}`}
-              >
-                Retina Preview
-              </button>
-            </div>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'split' | 'editor' | 'preview')}>
+              <TabsList className="h-8 p-0.5">
+                <TabsTrigger value="split" className="text-[11px] px-3 py-0.5">Split View</TabsTrigger>
+                <TabsTrigger value="editor" className="text-[11px] px-3 py-0.5">Editor</TabsTrigger>
+                <TabsTrigger value="preview" className="text-[11px] px-3 py-0.5">Retina Preview</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
-          {/* Editor & Preview Split Canvas */}
+          {/* Canvas Area */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Structured Form / Markdown Editor */}
+            {/* Structured Form Fields */}
             {(activeTab === 'split' || activeTab === 'editor') && (
-              <div className="flex-1 p-6 overflow-y-auto space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-[#8A8A92]">Full Name & Title</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
+              <div className="flex-1 p-6 sm:p-8 overflow-y-auto space-y-6">
+                {/* Full Name & Title */}
+                <div className="space-y-1.5">
+                  <Label>Full Name & Target Position</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
                       type="text"
                       value={resumeData.name}
                       onChange={(e) => setResumeData({ ...resumeData, name: e.target.value })}
-                      className="p-2.5 rounded-xl bg-white dark:bg-[#181820] border border-black/[0.08] dark:border-white/[0.08] text-xs font-semibold focus:outline-[#6C5CE7]"
                     />
-                    <input
+                    <Input
                       type="text"
                       value={resumeData.title}
                       onChange={(e) => setResumeData({ ...resumeData, title: e.target.value })}
-                      className="p-2.5 rounded-xl bg-white dark:bg-[#181820] border border-black/[0.08] dark:border-white/[0.08] text-xs font-semibold focus:outline-[#6C5CE7]"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-[#8A8A92]">Executive Summary</label>
-                  <textarea
+                <Separator />
+
+                {/* Executive Summary */}
+                <div className="space-y-1.5">
+                  <Label>Executive Summary</Label>
+                  <Textarea
                     rows={3}
                     value={resumeData.summary}
                     onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-white dark:bg-[#181820] border border-black/[0.08] dark:border-white/[0.08] text-xs leading-relaxed focus:outline-[#6C5CE7]"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <Separator />
+
+                {/* Key Experience Bullets */}
+                <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-bold uppercase text-[#8A8A92]">Key Experience Bullets</label>
-                    <span className="text-[10px] text-[#6C5CE7] font-bold">Google XYZ Synthesized</span>
+                    <Label className="mb-0">Key Experience Bullets</Label>
+                    <Badge variant="accent" size="sm">Google XYZ Active</Badge>
                   </div>
-                  <input
+                  <Input
                     type="text"
                     value={resumeData.experienceBullet1}
                     onChange={(e) => setResumeData({ ...resumeData, experienceBullet1: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-white dark:bg-[#181820] border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium focus:outline-[#6C5CE7]"
                   />
-                  <input
+                  <Input
                     type="text"
                     value={resumeData.experienceBullet2}
                     onChange={(e) => setResumeData({ ...resumeData, experienceBullet2: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-white dark:bg-[#181820] border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium focus:outline-[#6C5CE7]"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-[#8A8A92]">Core Technical Skills</label>
-                  <input
+                <Separator />
+
+                {/* Core Technical Skills */}
+                <div className="space-y-1.5">
+                  <Label>Core Technical Skills</Label>
+                  <Input
                     type="text"
                     value={resumeData.skills}
                     onChange={(e) => setResumeData({ ...resumeData, skills: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-white dark:bg-[#181820] border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium focus:outline-[#6C5CE7]"
                   />
                 </div>
               </div>
             )}
 
-            {/* Document Visual Preview Sheet */}
+            {/* LEVEL 3 HERO: Physical Document Retina Preview */}
             {(activeTab === 'split' || activeTab === 'preview') && (
-              <div className="flex-1 p-6 bg-black/[0.03] dark:bg-black/40 flex items-center justify-center overflow-y-auto">
-                <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-black/[0.12] dark:border-white/[0.15] bg-white">
+              <div className="flex-1 p-8 bg-black/[0.03] dark:bg-black/40 flex items-center justify-center overflow-y-auto">
+                <Card
+                  variant="elevated"
+                  className="relative w-full max-w-md aspect-[3/4] overflow-hidden shadow-2xl shadow-black/20 dark:shadow-black/80 border-2 border-black/[0.12] dark:border-white/[0.15] bg-white transition-transform duration-300 hover:scale-[1.01]"
+                >
                   <Image
                     src={selectedTemplate.file}
                     alt={selectedTemplate.name}
                     fill
+                    priority
                     className="object-cover object-top"
                   />
-                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/80 text-white text-[9px] font-mono font-bold">
-                    {selectedTemplate.ats}% ATS
+                  <div className="absolute top-3 right-3">
+                    <Badge variant="neutral" size="sm" className="bg-black/80 text-white font-mono border-none shadow-md">
+                      {selectedTemplate.ats}% ATS Verified
+                    </Badge>
                   </div>
-                </div>
+                </Card>
               </div>
             )}
           </div>
         </main>
 
-        {/* Right Panel (Target Job Description & AI Copilot Rewrites) */}
-        <aside className="w-80 lg:w-96 p-4 space-y-4 overflow-y-auto bg-white/70 dark:bg-[#121217]/90 backdrop-blur-xl flex-shrink-0">
-          {/* Target Job Header */}
-          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#181820] border border-black/[0.06] dark:border-white/[0.06] shadow-sm space-y-2">
+        {/* ----------------------------------------------------------------------- */}
+        {/* PANEL 3 (RIGHT SIDEBAR): Target Criteria & Level 3 AI Rewrite Callout   */}
+        {/* ----------------------------------------------------------------------- */}
+        <aside className="w-80 lg:w-[380px] p-6 space-y-6 overflow-y-auto bg-white/70 dark:bg-[#121217]/90 backdrop-blur-xl flex-shrink-0">
+          {/* Target Job Criteria */}
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold uppercase text-[#6C5CE7]">Target Job Criteria</span>
+              <Label className="mb-0">Target Job Criteria</Label>
               <Badge variant="accent" size="sm">Stripe Core</Badge>
             </div>
-            <textarea
+            <Textarea
               rows={4}
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
-              className="w-full p-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] text-[11px] font-mono leading-relaxed"
+              className="font-mono text-[11px] leading-relaxed"
             />
           </div>
 
+          <Separator />
+
           {/* Semantic Skill Match Breakdown */}
-          <div className="space-y-2">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-[#8A8A92] dark:text-[#6B6B76]">
+          <div className="space-y-3">
+            <Label className="text-[#8A8A92] dark:text-[#6B6B76]">
               Skill Match Breakdown
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <div className="p-2 rounded-xl bg-[#16A34A]/10 border border-[#16A34A]/20 text-[#16A34A] font-semibold">
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Badge variant="success" size="md" className="justify-center py-2">
                 ✓ Kafka Streams
-              </div>
-              <div className="p-2 rounded-xl bg-[#16A34A]/10 border border-[#16A34A]/20 text-[#16A34A] font-semibold">
+              </Badge>
+              <Badge variant="success" size="md" className="justify-center py-2">
                 ✓ PostgreSQL
-              </div>
-              <div className="p-2 rounded-xl bg-[#16A34A]/10 border border-[#16A34A]/20 text-[#16A34A] font-semibold">
-                ✓ Distributed Architecture
-              </div>
-              <div className="p-2 rounded-xl bg-[#6C5CE7]/10 border border-[#6C5CE7]/20 text-[#6C5CE7] font-semibold">
-                ⚡ Vector RAG (Added)
-              </div>
+              </Badge>
+              <Badge variant="success" size="md" className="justify-center py-2">
+                ✓ Architecture
+              </Badge>
+              <Badge variant="accent" size="md" className="justify-center py-2">
+                ⚡ Vector RAG
+              </Badge>
             </div>
           </div>
 
-          {/* AI Google XYZ Optimization Proposal */}
-          <div className="p-4 rounded-2xl bg-[#6C5CE7]/10 dark:bg-[#6C5CE7]/15 border border-[#6C5CE7]/35 space-y-3 shadow-md">
+          <Separator />
+
+          {/* LEVEL 3 HERO COMPONENT: AI Google XYZ Rewrite Callout */}
+          <Card
+            variant="elevated"
+            className="p-5 border-2 border-[#6C5CE7]/60 bg-gradient-to-br from-[#6C5CE7]/12 via-[#6C5CE7]/5 to-transparent shadow-xl shadow-[#6C5CE7]/15 space-y-4"
+          >
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#6C5CE7]" />
-              <h4 className="text-xs font-bold text-[#1A1A1E] dark:text-white">
-                Google XYZ Quantifiable Rewrite
-              </h4>
+              <div className="w-7 h-7 rounded-lg bg-[#6C5CE7] text-white flex items-center justify-center shadow-xs">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#1A1A1E] dark:text-white">
+                  Google XYZ Bullet Optimization
+                </h4>
+                <span className="text-[10px] text-[#6C5CE7] font-semibold">+2.4% Recruiter Lift</span>
+              </div>
             </div>
 
-            <div className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] line-through">
+            <div className="text-xs text-[#8A8A92] line-through leading-relaxed">
               &quot;Helped team optimize Kafka streaming latency.&quot;
             </div>
 
-            <div className="text-xs font-medium text-[#1A1A1E] dark:text-white p-2.5 rounded-xl bg-white/80 dark:bg-[#1C1C24] border border-[#6C5CE7]/30">
+            <div className="p-3.5 rounded-xl bg-white dark:bg-[#1C1C24] border border-[#6C5CE7]/30 text-xs font-medium text-[#1A1A1E] dark:text-white shadow-xs leading-relaxed">
               &quot;Scaled distributed Kafka streaming pipelines to 4.5M events/sec, cutting latency by 42%.&quot;
             </div>
 
-            <button
+            <Button
+              variant={appliedRewrite ? 'success' : 'default'}
+              size="default"
               onClick={() => setAppliedRewrite(true)}
-              className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow cursor-pointer ${
-                appliedRewrite
-                  ? 'bg-[#16A34A] text-white'
-                  : 'bg-[#6C5CE7] hover:bg-[#7D6FF0] text-white'
-              }`}
+              className="w-full text-xs font-bold shadow-lg shadow-[#6C5CE7]/25"
             >
-              {appliedRewrite ? <Check className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
+              {appliedRewrite ? <Check className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
               <span>{appliedRewrite ? 'Optimization Applied' : '1-Click Apply'}</span>
-            </button>
-          </div>
+            </Button>
+          </Card>
         </aside>
       </div>
     </div>
