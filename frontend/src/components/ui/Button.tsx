@@ -14,19 +14,21 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[#6C5CE7] text-white hover:bg-[#5b4cdb] shadow-md shadow-[#6C5CE7]/25",
+          "bg-[#FACC15] text-[#0A0A0C] font-extrabold hover:bg-[#FFE033] shadow-lg shadow-[#FACC15]/20 active:scale-[0.98] border border-[#FACC15]/40",
         primary:
-          "bg-[#6C5CE7] text-white hover:bg-[#5b4cdb] shadow-md shadow-[#6C5CE7]/25",
+          "bg-[#FACC15] text-[#0A0A0C] font-extrabold hover:bg-[#FFE033] shadow-lg shadow-[#FACC15]/20 active:scale-[0.98] border border-[#FACC15]/40",
         secondary:
-          "bg-black/[0.04] dark:bg-white/[0.06] text-[#1A1A1E] dark:text-[#F5F5F7] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] border border-black/[0.06] dark:border-white/[0.08]",
+          "bg-white/70 dark:bg-white/[0.08] backdrop-blur-xl text-[#0A0A0C] dark:text-[#F8F9FA] hover:bg-white/90 dark:hover:bg-white/[0.14] border border-black/[0.08] dark:border-white/[0.12] shadow-xs",
         outline:
-          "border border-black/[0.12] dark:border-white/[0.12] bg-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#1A1A1E] dark:text-[#F5F5F7]",
+          "border border-black/[0.14] dark:border-white/[0.15] bg-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#0A0A0C] dark:text-[#F8F9FA]",
         ghost:
-          "hover:bg-black/[0.05] dark:hover:bg-white/[0.06] text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7]",
+          "hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[#4A4A52] dark:text-[#A1A1AA] hover:text-[#0A0A0C] dark:hover:text-[#F8F9FA]",
         destructive:
           "bg-[#EF4444] text-white hover:bg-[#DC2626] shadow-sm",
         success:
           "bg-[#16A34A] text-white hover:bg-[#15803d] shadow-sm",
+        frosted:
+          "bg-black/60 dark:bg-black/70 backdrop-blur-2xl text-white hover:bg-black/80 border border-white/20 shadow-xl",
       },
       size: {
         default: "h-9 px-4 py-2",

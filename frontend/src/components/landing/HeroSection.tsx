@@ -7,6 +7,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -89,15 +90,16 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-              <Button
-                variant="primary"
-                size="lg"
-                icon={<ArrowRight className="w-4 h-4" />}
-                onClick={onTryFree}
-                className="w-full sm:w-auto text-sm px-9 py-4 shadow-xl"
-              >
-                Try it Free
-              </Button>
+              <Link href="/onboarding" className="w-full sm:w-auto">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                  className="w-full text-sm px-9 py-4 shadow-xl"
+                >
+                  Try it Free
+                </Button>
+              </Link>
 
               <Button
                 variant="secondary"

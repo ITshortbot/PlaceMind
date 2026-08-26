@@ -2,8 +2,8 @@
 
 // ============================================================================
 // File: frontend/src/components/app/Sidebar.tsx
-// Description: Collapsible SaaS Sidebar (250px -> 68px) with active route highlights,
-//              user profile, theme toggle, and local engine status indicator.
+// Description: Collapsible SaaS Sidebar (250px -> 68px) with exact 8 flat tabs:
+//              Dashboard · Template · Resume · ATS · Interview · Report · History · Settings
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
@@ -12,8 +12,11 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import {
   LayoutDashboard,
+  LayoutGrid,
   FileText,
+  FileCheck2,
   Mic,
+  BarChart3,
   History,
   Settings,
   ChevronLeft,
@@ -22,8 +25,6 @@ import {
   ShieldCheck,
   Moon,
   Sun,
-  LogOut,
-  UploadCloud,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,9 +34,12 @@ interface SidebarProps {
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'My Resumes', href: '/resumes/upload', icon: FileText, altHref: '/resumes' },
-  { name: 'Interview Practice', href: '/interview/new', icon: Mic, altHref: '/interview' },
-  { name: 'History & Archive', href: '/history', icon: History },
+  { name: 'Template', href: '/template', icon: LayoutGrid },
+  { name: 'Resume', href: '/resume', icon: FileText },
+  { name: 'ATS', href: '/ats', icon: FileCheck2 },
+  { name: 'Interview', href: '/interview', icon: Mic },
+  { name: 'Report', href: '/report', icon: BarChart3 },
+  { name: 'History', href: '/history', icon: History },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -51,7 +55,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   return (
     <aside
       className={`hidden md:flex flex-col justify-between border-r border-black/[0.08] dark:border-white/[0.08] bg-white/80 dark:bg-[#121217]/90 backdrop-blur-xl transition-all duration-300 z-30 h-screen sticky top-0 flex-shrink-0 ${
-        isCollapsed ? 'w-[68px]' : 'w-[250px]'
+        isCollapsed ? 'w-[68px]' : 'w-[240px]'
       }`}
     >
       {/* Top Brand Header */}
@@ -77,13 +81,11 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           </button>
         </div>
 
-        {/* Primary Navigation List */}
-        <nav className="p-3 space-y-1.5">
+        {/* 8 Primary Flat Navigation Tabs */}
+        <nav className="p-3 space-y-1">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              pathname === item.href ||
-              (item.altHref && pathname.startsWith(item.altHref));
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
 
             return (
               <Link
@@ -108,32 +110,32 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
       </div>
 
       {/* Bottom Profile & Hardware Engine Info */}
-      <div className="p-3 border-t border-black/[0.06] dark:border-white/[0.06] space-y-3">
+      <div className="p-3 border-t border-black/[0.06] dark:border-white/[0.06] space-y-2.5">
         {/* Local Privacy Engine Status Badge */}
         {!isCollapsed ? (
           <div className="p-2.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between text-[11px]">
             <div className="flex items-center gap-2 truncate">
               <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A] flex-shrink-0" />
-              <span className="font-semibold truncate">Local Engine Active</span>
+              <span className="font-semibold truncate">Local Privacy Active</span>
             </div>
             <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
           </div>
         ) : (
-          <div className="flex justify-center" title="Local Engine Active: 0-Egress">
+          <div className="flex justify-center" title="Local Privacy Active: 0-Egress">
             <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
           </div>
         )}
 
-        {/* User Profile / Controls */}
+        {/* User Profile / Theme Switcher */}
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-[#6C5CE7] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-xs">
+            <div className="w-7 h-7 rounded-full bg-[#6C5CE7] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0 shadow-xs">
               RP
             </div>
             {!isCollapsed && (
               <div className="min-w-0">
                 <div className="text-xs font-bold text-[#1A1A1E] dark:text-white truncate">Rohan Patel</div>
-                <div className="text-[10px] text-[#8A8A92] truncate">Pro Workspace</div>
+                <div className="text-[10px] text-[#8A8A92] truncate">Stripe Staff Track</div>
               </div>
             )}
           </div>

@@ -39,9 +39,9 @@ export function Badge({
     info:
       'bg-[#38BDF8]/15 border-[#38BDF8]/35 text-[#0369A1] dark:text-[#38BDF8]',
     accent:
-      'bg-[#6C5CE7]/15 border-[#6C5CE7]/35 text-[#5B46D6] dark:text-[#7D6FF0]',
+      'bg-[#FACC15]/20 border-[#FACC15]/50 text-[#854D0E] dark:text-[#FACC15] font-bold',
     neutral:
-      'bg-black/[0.05] dark:bg-[#1C1C21] border-black/[0.08] dark:border-white/[0.08] text-[#5A5A63] dark:text-[#A1A1AA]',
+      'bg-black/[0.04] dark:bg-white/[0.06] border-black/[0.08] dark:border-white/[0.1] text-[#4A4A52] dark:text-[#D4D4D8]',
   };
 
   return (

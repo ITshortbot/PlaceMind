@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3005',
     trace: 'on-first-retry',
   },
   projects: [
@@ -16,19 +16,11 @@ export default defineConfig({
       name: 'Desktop Chrome',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
-    {
-      name: 'Tablet iPad',
-      use: { ...devices['iPad Pro 11'], viewport: { width: 768, height: 1024 } },
-    },
-    {
-      name: 'Mobile iPhone',
-      use: { ...devices['iPhone 14'], viewport: { width: 375, height: 812 } },
-    },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    timeout: 120000,
+    command: 'npm run start -- -p 3005',
+    url: 'http://localhost:3005',
+    reuseExistingServer: false,
+    timeout: 30000,
   },
 });

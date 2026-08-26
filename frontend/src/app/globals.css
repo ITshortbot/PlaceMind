@@ -4,29 +4,29 @@
 
 @layer base {
   :root {
-    --bg-base: #F7EFE8;
-    --bg-surface: rgba(255, 255, 255, 0.65);
-    --bg-surface-raised: rgba(255, 255, 255, 0.85);
-    --border-subtle: rgba(20, 20, 23, 0.08);
-    --border-strong: rgba(20, 20, 23, 0.16);
-    --text-primary: #1A1A1E;
-    --text-secondary: #5A5A63;
-    --text-tertiary: #8A8A92;
-    --accent: #6C5CE7;
-    --accent-hover: #7D6FF0;
+    --bg-base: #F8F9FA;
+    --bg-surface: rgba(255, 255, 255, 0.85);
+    --bg-surface-raised: rgba(255, 255, 255, 0.95);
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.16);
+    --text-primary: #0A0A0C;
+    --text-secondary: #4A4A52;
+    --text-tertiary: #7A7A85;
+    --accent: #FACC15;
+    --accent-hover: #EAB308;
   }
 
   .dark {
-    --bg-base: #0A0A0C;
-    --bg-surface: rgba(20, 20, 23, 0.72);
-    --bg-surface-raised: rgba(28, 28, 33, 0.85);
+    --bg-base: #08080A;
+    --bg-surface: rgba(18, 18, 22, 0.80);
+    --bg-surface-raised: rgba(24, 24, 30, 0.92);
     --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.18);
-    --text-primary: #F5F5F7;
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text-primary: #F8F9FA;
     --text-secondary: #A1A1AA;
-    --text-tertiary: #6B6B76;
-    --accent: #6C5CE7;
-    --accent-hover: #7D6FF0;
+    --text-tertiary: #6E6E78;
+    --accent: #FACC15;
+    --accent-hover: #EAB308;
   }
 
   html {
@@ -42,35 +42,51 @@
 
   /* Custom Sleek Scrollbar */
   ::-webkit-scrollbar {
-    width: 7px;
+    width: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(108, 92, 231, 0.3);
+    background: rgba(250, 204, 21, 0.3);
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #6C5CE7;
+    background: #FACC15;
   }
 }
 
 @layer utilities {
+  .glass-frosted-dark {
+    background: rgba(10, 10, 14, 0.82);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+  }
+
+  .glass-frosted-yellow {
+    background: rgba(250, 204, 21, 0.12);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(250, 204, 21, 0.35);
+    box-shadow: 0 10px 30px -10px rgba(250, 204, 21, 0.25);
+  }
+
   .glass-surface {
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(108, 92, 231, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04);
   }
 
   .dark .glass-surface {
-    background: rgba(20, 20, 24, 0.75);
+    background: rgba(14, 14, 18, 0.82);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
   }
 
   .glass-card {
@@ -79,6 +95,64 @@
     -webkit-backdrop-filter: blur(20px) saturate(190%);
     border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.08);
+  }
+
+  @keyframes aura-spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-aura-spin {
+    animation: aura-spin 7s linear infinite;
+  }
+
+  @keyframes float-slow-1 {
+    0%, 100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+      transform: translate(35px, -45px) scale(1.1);
+    }
+    66% {
+      transform: translate(-30px, 25px) scale(0.95);
+    }
+  }
+
+  @keyframes float-slow-2 {
+    0%, 100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+      transform: translate(-45px, 40px) scale(1.08);
+    }
+    66% {
+      transform: translate(35px, -30px) scale(0.92);
+    }
+  }
+
+  @keyframes float-slow-3 {
+    0%, 100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    50% {
+      transform: translate(25px, 35px) scale(1.05);
+    }
+  }
+
+  .animate-mesh-1 {
+    animation: float-slow-1 18s ease-in-out infinite;
+  }
+
+  .animate-mesh-2 {
+    animation: float-slow-2 24s ease-in-out infinite;
+  }
+
+  .animate-mesh-3 {
+    animation: float-slow-3 20s ease-in-out infinite;
   }
 
   .dark .glass-card {

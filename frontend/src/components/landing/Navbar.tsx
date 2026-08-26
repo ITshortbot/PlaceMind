@@ -65,19 +65,19 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
         {/* Center Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6 text-sm text-[#5A5A63] dark:text-[#A1A1AA] p-1.5 px-6 rounded-full bg-white/40 dark:bg-[#1C1C21]/50 border border-white/60 dark:border-white/10 backdrop-blur-xl shadow-sm">
           <Link
-            href="/studio"
+            href="/dashboard"
             className="hover:text-[#6C5CE7] dark:hover:text-[#8F82FF] transition-colors font-bold flex items-center gap-1.5 hover:scale-105 text-[#1A1A1E] dark:text-white"
           >
             <Layers className="w-3.5 h-3.5 text-[#6C5CE7]" />
-            <span>Studio</span>
+            <span>Dashboard</span>
           </Link>
-          <a
-            href="/#templates"
+          <Link
+            href="/template"
             className="hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7] transition-colors font-medium flex items-center gap-1 hover:scale-105"
           >
             <span>Templates</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-[#6C5CE7]/15 text-[#6C5CE7] text-[10px] font-mono font-bold">18</span>
-          </a>
+            <span className="px-1.5 py-0.2 rounded-full bg-[#6C5CE7]/15 text-[#6C5CE7] text-[10px] font-mono font-bold">10</span>
+          </Link>
           <a
             href="/#how-it-works"
             className="hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7] transition-colors font-medium hover:scale-105"
@@ -96,12 +96,6 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
             className="hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7] transition-colors font-medium hover:scale-105"
           >
             Pricing
-          </a>
-          <a
-            href="/#faq"
-            className="hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7] transition-colors font-medium hover:scale-105"
-          >
-            FAQ
           </a>
         </nav>
 
@@ -135,15 +129,15 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
             <span>Watch Demo</span>
           </button>
 
-          {/* Open Studio / Try Free CTA */}
-          <Link href="/studio">
+          {/* Open Onboarding / Try Free CTA */}
+          <Link href="/onboarding">
             <Button
               variant="primary"
               size="md"
               icon={<ArrowRight className="w-4 h-4" />}
               className="px-6 py-2.5 text-xs font-bold"
             >
-              Open Studio
+              Try it Free
             </Button>
           </Link>
         </div>
