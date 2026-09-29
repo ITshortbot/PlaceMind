@@ -35,6 +35,7 @@ class ATSGapReportResponse(BaseModel):
     overall_score: float = Field(..., description="Composite ATS Score [0-100]")
     semantic_score: float = Field(..., description="Dense Vector Alignment Score [0-100]")
     keyword_score: float = Field(..., description="Lexical Keyword Match Score [0-100]")
+    structure_score: float = Field(default=0.0, description="Resume Layout Structure Score [0-100]")
     status_summary: Literal["High Match", "Moderate Match", "Needs Optimization"]
     gap_matrix: List[RequirementGapItem]
     missing_keywords: List[str]

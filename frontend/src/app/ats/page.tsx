@@ -173,10 +173,10 @@ export default function AtsAutoGeneratePage() {
             </div>
 
             {/* Sub-scores */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-bold">
-                  <span>Semantic Coverage (70%)</span>
+                  <span>Semantic Coverage (50%)</span>
                   <span className="text-[#FACC15]">{report.semantic_score.toFixed(1)}%</span>
                 </div>
                 <Progress value={report.semantic_score} />
@@ -187,6 +187,13 @@ export default function AtsAutoGeneratePage() {
                   <span className="text-[#FACC15]">{report.keyword_score.toFixed(1)}%</span>
                 </div>
                 <Progress value={report.keyword_score} />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold">
+                  <span>Resume Structure (20%)</span>
+                  <span className="text-[#FACC15]">{report.structure_score.toFixed(1)}%</span>
+                </div>
+                <Progress value={report.structure_score} />
               </div>
             </div>
           </Card>

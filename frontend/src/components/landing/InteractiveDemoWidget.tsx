@@ -105,6 +105,7 @@ export function InteractiveDemoWidget() {
         overall_score: selectedRoleKey === 'ai_engineer' ? 84.5 : 88.0,
         semantic_score: selectedRoleKey === 'ai_engineer' ? 87.0 : 91.0,
         keyword_score: selectedRoleKey === 'ai_engineer' ? 78.5 : 81.0,
+        structure_score: selectedRoleKey === 'ai_engineer' ? 90.0 : 92.0,
         status_summary: 'High Match',
         gap_matrix: [
           {

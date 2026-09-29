@@ -5,7 +5,8 @@
 
 import uuid
 from typing import Literal
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.scoring import ATSGapReportResponse, ParsedSectionDTO
 from app.services.pdf_parser import PDFResumeParser
@@ -13,6 +14,8 @@ from app.services.embeddings import embedding_engine
 from app.services.ai_router import HybridLLMRouter, RoutingMode
 from app.services.ats_scorer import ATSScoringEngine
 from app.services.r2_storage import r2_storage
+from app.database.session import get_db
+from app.database.models import ATSMatchScore, JobDescription, JobRequirement, Resume, ResumeSection, User
 
 router = APIRouter(prefix="/resume", tags=["Resume & ATS Scoring"])
 
@@ -31,6 +34,7 @@ async def score_resume_pdf(
     job_title: str = Form(..., description="Target Job Title (e.g. Senior Frontend Engineer)"),
     job_description_raw: str = Form(..., description="Raw text of the target Job Description"),
     routing_mode: Literal["cloud", "local"] = Form("cloud", description="'cloud' (Gemini) or 'local' (LM Studio)"),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Complete Pipeline Execution:
@@ -39,7 +43,8 @@ async def score_resume_pdf(
     3. Storage: (Optional) Uploads binary blob to Cloudflare R2 if cloud credentials exist.
     4. Extraction of JD Requirements: Uses LLM or deterministic regex to extract atomic expectations.
     5. Vector Matching: Computes 384-d Cosine Similarity Matrix using BAAI/bge-small-en-v1.5.
-    6. Gap Synthesis: Synthesizes structured JSON report and returns to Next.js client.
+    6. Persistence: Saves the parsed resume, job description, embeddings, and report.
+    7. Gap Synthesis: Synthesizes structured JSON report and returns to Next.js client.
     """
     if not file.filename.lower().endswith(".pdf") and file.content_type != "application/pdf":
         raise HTTPException(
@@ -94,7 +99,73 @@ async def score_resume_pdf(
             job_requirements=requirements,
             mode=selected_mode,
             pdf_r2_url=r2_url,
+            extracted_email=parse_result.extracted_email,
+            extracted_phone=parse_result.extracted_phone,
+            page_count=parse_result.page_count,
         )
+
+        try:
+            anon_email = f"anonymous-{uuid.uuid4()}@placemind.local"
+            db_user = User(email=anon_email, full_name="Anonymous", is_local_only=(routing_mode == "local"))
+            db.add(db_user)
+            await db.flush()
+
+            db_resume = Resume(
+                user_id=db_user.id,
+                file_name=file.filename,
+                r2_storage_key=r2_url,
+                raw_text=parse_result.full_text,
+                parsed_metadata={
+                    "email": parse_result.extracted_email,
+                    "phone": parse_result.extracted_phone,
+                    "page_count": parse_result.page_count,
+                },
+            )
+            db.add(db_resume)
+            await db.flush()
+
+            section_texts = [f"[{section.section_type.upper()}] {section.content}" for section in parsed_dtos]
+            section_vectors = embedding_engine.embed_documents(section_texts)
+            for index, section in enumerate(parse_result.sections):
+                db.add(ResumeSection(
+                    resume_id=db_resume.id,
+                    section_type=section.section_type,
+                    content=section.content,
+                    embedding=section_vectors[index],
+                ))
+
+            db_jd = JobDescription(user_id=db_user.id, title=job_title, raw_text=job_description_raw)
+            db.add(db_jd)
+            await db.flush()
+
+            requirement_vectors = embedding_engine.embed_documents(requirements)
+            for index, requirement in enumerate(requirements):
+                db.add(JobRequirement(
+                    job_id=db_jd.id,
+                    requirement_text=requirement,
+                    embedding=requirement_vectors[index],
+                ))
+
+            db.add(ATSMatchScore(
+                resume_id=db_resume.id,
+                job_id=db_jd.id,
+                overall_score=report.overall_score,
+                semantic_score=report.semantic_score,
+                keyword_score=report.keyword_score,
+                routing_mode=routing_mode,
+                gap_report={
+                    "gap_matrix": [item.model_dump() for item in report.gap_matrix],
+                    "missing_keywords": report.missing_keywords,
+                    "actionable_bullets": report.actionable_bullet_points,
+                    "structure_score": report.structure_score,
+                },
+                processing_time_ms=report.processing_metadata.latency_ms,
+            ))
+            await db.commit()
+        except Exception as db_error:
+            await db.rollback()
+            import logging
+            logging.getLogger("placemind.scoring").warning("DB persistence skipped: %s", db_error)
 
         return report
 

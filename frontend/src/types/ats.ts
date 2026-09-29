@@ -32,6 +32,7 @@ export interface ATSGapReport {
   overall_score: number;
   semantic_score: number;
   keyword_score: number;
+  structure_score: number;
   status_summary: 'High Match' | 'Moderate Match' | 'Needs Optimization';
   gap_matrix: RequirementGapItem[];
   missing_keywords: string[];
