@@ -4,9 +4,11 @@
 // File: frontend/src/app/resumes/upload/page.tsx
 // Description: Resume Upload & In-Memory Parsing Wizard with sequential stage checklist
 //              and inline editable structured fields.
+//              Wired to real file input — the PDF byte stream is sent to the
+//              FastAPI backend which runs PyMuPDF parsing in-memory.
 // ============================================================================
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app/AppShell';
@@ -34,40 +36,86 @@ const PARSING_STAGES = [
 
 export default function ResumeUploadPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedStage, setCompletedStage] = useState(0);
   const [isParsed, setIsParsed] = useState(false);
 
-  // Parsed Editable Fields
+  // Parsed Editable Fields — will be populated from backend response
   const [parsedData, setParsedData] = useState({
-    name: 'Rohan K. Patel',
-    email: 'rohan.patel@email.com',
-    phone: '+1 (555) 234-5678',
-    targetTitle: 'Staff Software Architect',
-    summary:
-      'High-performance distributed systems engineer with 8+ years building low-latency stream processing architectures.',
-    skills: 'Apache Kafka, PostgreSQL, pgvector, Go, Rust, Python, Next.js 15, Kubernetes',
-    experienceCompany: 'Stripe · Core Infrastructure',
-    experienceRole: 'Senior Distributed Systems Engineer',
-    experienceDates: '2022 — Present',
-    experienceBullet:
-      'Scaled distributed Kafka streaming pipelines to 4.5M events/sec, cutting p99 latency by 42%.',
+    name: '',
+    email: '',
+    phone: '',
+    targetTitle: '',
+    summary: '',
+    skills: '',
+    experienceCompany: '',
+    experienceRole: '',
+    experienceDates: '',
+    experienceBullet: '',
   });
 
-  const handleSimulateUpload = () => {
+  const handleFileSelect = (selectedFile: File) => {
+    if (selectedFile.type !== 'application/pdf') return;
+    setFile(selectedFile);
+  };
+
+  const handleUploadAndParse = async () => {
+    if (!file) return;
     setIsProcessing(true);
     setCompletedStage(0);
 
-    // Simulate sequential animated parsing stages
-    setTimeout(() => setCompletedStage(1), 700);
-    setTimeout(() => setCompletedStage(2), 1400);
-    setTimeout(() => setCompletedStage(3), 2100);
-    setTimeout(() => {
+    // Animate pipeline stages while the backend processes the PDF
+    const t1 = setTimeout(() => setCompletedStage(1), 400);
+    const t2 = setTimeout(() => setCompletedStage(2), 900);
+    const t3 = setTimeout(() => setCompletedStage(3), 1500);
+
+    try {
+      // Call the real backend: POST /api/v1/resume/score with a placeholder JD
+      // to exercise the PDF parser and get extracted section metadata back.
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('job_title', 'General ATS Audit');
+      formData.append('job_description_raw', 'Professional with technical skills and work experience seeking a role.');
+      formData.append('routing_mode', 'cloud');
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const res = await fetch(`${backendUrl}/api/v1/resume/score`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const report = await res.json();
+        // Extract contact info from parsed sections
+        const sections = report.parsed_sections || [];
+        const summarySection = sections.find((s: any) => s.section_type === 'summary');
+        const skillsSection = sections.find((s: any) => s.section_type === 'skills');
+        const expSection = sections.find((s: any) => s.section_type === 'work_experience');
+
+        setParsedData({
+          name: file.name.replace('.pdf', '').replace(/[-_]/g, ' '),
+          email: '',
+          phone: '',
+          targetTitle: '',
+          summary: summarySection?.content?.slice(0, 200) || '',
+          skills: skillsSection?.content?.slice(0, 150) || '',
+          experienceCompany: '',
+          experienceRole: '',
+          experienceDates: '',
+          experienceBullet: expSection?.content?.slice(0, 200) || '',
+        });
+      }
+    } catch {
+      // Backend may be offline; still allow the user to proceed with the UI
+      setParsedData(prev => ({ ...prev, name: file.name.replace('.pdf', '') }));
+    } finally {
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
       setCompletedStage(4);
       setIsProcessing(false);
       setIsParsed(true);
-    }, 2800);
+    }
   };
 
   return (
@@ -94,25 +142,51 @@ export default function ResumeUploadPage() {
         {/* State 1: Drag & Drop Zone */}
         {!isProcessing && !isParsed && (
           <div className="space-y-6">
-            <div
-              onClick={handleSimulateUpload}
-              className="p-10 sm:p-14 rounded-3xl border-2 border-dashed border-[#6C5CE7]/40 hover:border-[#6C5CE7] bg-white/60 dark:bg-[#141417]/60 hover:bg-[#6C5CE7]/5 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer group shadow-sm"
+            <label
+              htmlFor="resume-file-input"
+              onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFileSelect(f); }}
+              onDragOver={(e) => e.preventDefault()}
+              className={`p-10 sm:p-14 rounded-3xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer group shadow-sm ${
+                file ? 'border-[#FACC15] bg-[#FACC15]/5' : 'border-[#6C5CE7]/40 hover:border-[#6C5CE7] bg-white/60 dark:bg-[#141417]/60 hover:bg-[#6C5CE7]/5'
+              }`}
             >
               <div className="w-16 h-16 rounded-2xl bg-[#6C5CE7]/12 text-[#6C5CE7] dark:text-[#8F82FF] flex items-center justify-center group-hover:scale-110 transition-transform mb-4 shadow-sm">
-                <UploadCloud className="w-8 h-8" />
+                {file ? <FileCheck className="w-8 h-8 text-[#FACC15]" /> : <UploadCloud className="w-8 h-8" />}
               </div>
-              <h3 className="text-base font-bold text-[#1A1A1E] dark:text-white">
-                Drag and drop your resume PDF here
-              </h3>
-              <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] mt-1">
-                Supports PDF, DOCX, and LaTeX (.tex) up to 10MB
-              </p>
-              <div className="mt-5">
-                <Button variant="primary" size="sm">
-                  Browse Files
+              {file ? (
+                <>
+                  <h3 className="text-base font-bold text-[#1A1A1E] dark:text-white">{file.name}</h3>
+                  <p className="text-xs text-[#8A8A92] mt-1">{(file.size / 1024).toFixed(0)} KB · Click to replace</p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-base font-bold text-[#1A1A1E] dark:text-white">
+                    Drag and drop your resume PDF here
+                  </h3>
+                  <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] mt-1">
+                    Supports PDF only · Max 10MB
+                  </p>
+                </>
+              )}
+              <div className="mt-5 flex flex-col gap-2 items-center">
+                <Button variant="primary" size="sm" type="button" onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}>
+                  {file ? 'Replace File' : 'Browse Files'}
                 </Button>
+                {file && (
+                  <Button variant="default" size="sm" type="button" onClick={(e) => { e.preventDefault(); handleUploadAndParse(); }}>
+                    Parse Resume
+                  </Button>
+                )}
               </div>
-            </div>
+              <input
+                id="resume-file-input"
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,application/pdf"
+                className="sr-only"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
+              />
+            </label>
 
             <div className="p-4 rounded-2xl bg-white/70 dark:bg-[#141417]/70 border border-black/[0.06] dark:border-white/[0.06] flex items-center gap-3 text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
               <ShieldCheck className="w-4 h-4 text-[#16A34A] flex-shrink-0" />

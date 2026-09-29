@@ -6,7 +6,7 @@
 import os
 from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, model_validator
 
 class Settings(BaseSettings):
     """
@@ -62,5 +62,20 @@ class Settings(BaseSettings):
     R2_SECRET_ACCESS_KEY: str = ""
     R2_BUCKET_NAME: str = "placemind-resumes"
     R2_PUBLIC_URL_PREFIX: str = "https://cdn.placemind.app"
+
+    @model_validator(mode="after")
+    def _validate_production_secrets(self) -> "Settings":
+        """
+        Fail fast at startup if required secrets are missing in non-development environments.
+        This prevents silent failures where the server starts but immediately returns 500s
+        on every AI request because credentials are not set.
+        """
+        if self.ENVIRONMENT in ("staging", "production"):
+            if not self.GEMINI_API_KEY:
+                raise ValueError(
+                    "GEMINI_API_KEY must be set in staging/production environments. "
+                    "Set it in your .env file or as a container environment variable."
+                )
+        return self
 
 settings = Settings()

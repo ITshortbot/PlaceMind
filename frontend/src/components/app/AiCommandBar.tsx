@@ -11,7 +11,7 @@
 //              - Right quick actions: Pencil direct rewrite & yellow send trigger.
 // ============================================================================
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Star,
@@ -39,6 +39,15 @@ export function AiCommandBar({
   const [isFocused, setIsFocused] = useState(false);
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  // Respect OS accessibility preference — skip GPU-intensive aura animation
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const h = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,15 +76,22 @@ export function AiCommandBar({
   return (
     <div className="sticky bottom-3 sm:bottom-4 inset-x-0 px-4 sm:px-8 z-30 pointer-events-none select-none">
       <div className="max-w-4xl mx-auto pointer-events-auto relative">
-        {/* Slow Rotating Yellow Aura Beam (Non-Intrusive, Ambient Floating Light) */}
-        <div className="absolute -inset-0.5 rounded-full overflow-hidden pointer-events-none opacity-60 dark:opacity-75 blur-xs">
-          <div
-            className="w-[200%] h-[200%] absolute -top-1/2 -left-1/2 animate-aura-spin"
-            style={{
-              background: 'conic-gradient(from 0deg, transparent 0deg, rgba(250, 204, 21, 0.0) 120deg, rgba(250, 204, 21, 0.5) 200deg, rgba(250, 204, 21, 0.8) 240deg, transparent 300deg)',
-            }}
-          />
-        </div>
+        {/* Rotating Yellow Aura Beam — unmounted in reduced-motion mode */}
+        {!reducedMotion && (
+          <div className="absolute -inset-0.5 rounded-full overflow-hidden pointer-events-none opacity-60 dark:opacity-75 blur-xs">
+            <div
+              className="w-[200%] h-[200%] absolute -top-1/2 -left-1/2 animate-aura-spin"
+              style={{
+                background:
+                  'conic-gradient(from 0deg, transparent 0deg, rgba(250, 204, 21, 0.0) 120deg, rgba(250, 204, 21, 0.5) 200deg, rgba(250, 204, 21, 0.8) 240deg, transparent 300deg)',
+              }}
+            />
+          </div>
+        )}
+        {/* Static ring fallback for reduced-motion / accessibility */}
+        {reducedMotion && (
+          <div className="absolute -inset-0.5 rounded-full border border-[#FACC15]/30 pointer-events-none" />
+        )}
 
         {/* Outer Floating Frosted Pill Capsule */}
         <motion.form

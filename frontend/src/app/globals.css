@@ -59,16 +59,18 @@
 @layer utilities {
   .glass-frosted-dark {
     background: rgba(10, 10, 14, 0.82);
-    backdrop-filter: blur(28px) saturate(200%);
-    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    /* blur capped at 20px: higher values cause disproportionate GPU overdraw on
+       mobile GPUs without meaningfully improving frosted appearance */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
   }
 
   .glass-frosted-yellow {
     background: rgba(250, 204, 21, 0.12);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
     border: 1px solid rgba(250, 204, 21, 0.35);
     box-shadow: 0 10px 30px -10px rgba(250, 204, 21, 0.25);
   }
@@ -106,8 +108,10 @@
     }
   }
 
+  /* Aura spin for AiCommandBar — elevated to compositor layer */
   .animate-aura-spin {
     animation: aura-spin 7s linear infinite;
+    will-change: transform;
   }
 
   @keyframes float-slow-1 {
@@ -143,16 +147,30 @@
     }
   }
 
+  /* ─── GPU-Composited Mesh Animations ──────────────────────────────────────
+   * All mesh animation classes use `will-change: transform` to elevate each
+   * orb to its own GPU compositor layer. This prevents the GPU from
+   * re-rasterizing surrounding content on every animation frame.
+   *
+   * `contain: layout style paint` further isolates each orb so that layout
+   * changes inside it never propagate outward (paint containment).
+   * ───────────────────────────────────────────────────────────────────────── */
   .animate-mesh-1 {
     animation: float-slow-1 18s ease-in-out infinite;
+    will-change: transform;
+    contain: layout style paint;
   }
 
   .animate-mesh-2 {
     animation: float-slow-2 24s ease-in-out infinite;
+    will-change: transform;
+    contain: layout style paint;
   }
 
   .animate-mesh-3 {
     animation: float-slow-3 20s ease-in-out infinite;
+    will-change: transform;
+    contain: layout style paint;
   }
 
   .dark .glass-card {
@@ -477,22 +495,32 @@
 
 .animate-blob-1 {
   animation: blobDrift1 16s ease-in-out infinite;
+  will-change: transform;
+  contain: layout style paint;
 }
 
 .animate-blob-2 {
   animation: blobDrift2 20s ease-in-out infinite;
+  will-change: transform;
+  contain: layout style paint;
 }
 
 .animate-blob-3 {
   animation: blobDrift3 24s ease-in-out infinite;
+  will-change: transform;
+  contain: layout style paint;
 }
 
 .animate-blob-4 {
   animation: blobDrift4 18s ease-in-out infinite;
+  will-change: transform;
+  contain: layout style paint;
 }
 
 .animate-blob-5 {
   animation: blobDrift5 22s ease-in-out infinite;
+  will-change: transform;
+  contain: layout style paint;
 }
 
 @media (prefers-reduced-motion: reduce) {

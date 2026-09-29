@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  # ─── Placemind FastAPI Backend ─────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: placemind-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=development
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s   # Extra time for ONNX model warm-up on first start
+
+  # ─── Optional: Local PostgreSQL + pgvector ──────────────────────────────
+  # Uncomment if you want a local DB instead of Neon Serverless PostgreSQL.
+  # db:
+  #   image: ankane/pgvector:v0.7.2
+  #   container_name: placemind-db
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: placemind
+  #   volumes:
+  #     - pg_data:/var/lib/postgresql/data
+  #     - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+
+# volumes:
+#   pg_data:
