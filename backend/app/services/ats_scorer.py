@@ -91,9 +91,6 @@ class ATSScoringEngine:
         job_requirements: List[str],
         mode: RoutingMode = RoutingMode.CLOUD,
         pdf_r2_url: str = None,
-        extracted_email: str = "",
-        extracted_phone: str = "",
-        page_count: int = 1,
     ) -> ATSGapReportResponse:
         """
         Full computational scoring execution.
@@ -152,33 +149,9 @@ class ATSScoringEngine:
         missing_kw = list(domain_req_words - resume_words)[:8]
         
         keyword_score = (len(overlap) / max(len(domain_req_words), 1)) * 100.0
-
-        # Step 3.5: Compute Structure Score (20% weight)
-        structure_score = 0.0
-        section_types = {sec.section_type for sec in parsed_sections}
         
-        # 1. Experience & Education Check (+40%)
-        if "work_experience" in section_types and "education" in section_types:
-            structure_score += 40.0
-        elif "work_experience" in section_types or "education" in section_types:
-            structure_score += 20.0
-            
-        # 2. Skills Section Check (+20%)
-        if "skills" in section_types:
-            structure_score += 20.0
-            
-        # 3. Contact Details Check (+20%)
-        if extracted_email or extracted_phone:
-            structure_score += 20.0
-            
-        # 4. Standard Page Count Constraint (+20%)
-        if 1 <= page_count <= 2:
-            structure_score += 20.0
-        elif page_count > 0:
-            structure_score += 10.0
-        
-        # Weighted aggregate score: 50% Dense Vectors + 30% Lexical Coverage + 20% Structure Score
-        overall_score = round(min(100.0, max(0.0, (0.50 * semantic_score) + (0.30 * keyword_score) + (0.20 * structure_score))), 1)
+        # Weighted aggregate score: 70% Dense Vectors + 30% Lexical Coverage
+        overall_score = round(min(100.0, max(0.0, (0.70 * semantic_score) + (0.30 * keyword_score))), 1)
 
         # Step 4: AI Synthesis for Actionable Rewrites
         system_prompt = (
@@ -251,7 +224,6 @@ class ATSScoringEngine:
             overall_score=overall_score,
             semantic_score=round(semantic_score, 1),
             keyword_score=round(keyword_score, 1),
-            structure_score=round(structure_score, 1),
             status_summary=status_summary,
             gap_matrix=final_matrix,
             missing_keywords=missing_kw,
