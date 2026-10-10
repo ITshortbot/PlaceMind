@@ -169,7 +169,7 @@ export default function DownloadPage() {
               </p>
             </div>
             <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-[#16A34A]/10 text-[#16A34A]">
-              ✓ Complete Privacy Guarantee
+              ✓ Zero Data Egress (Local Mode)
             </span>
           </div>
 

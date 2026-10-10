@@ -111,7 +111,7 @@ export function ProductShowcase() {
                 </span>
               </div>
               <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] mt-1 leading-relaxed">
-                Structured to pass single-column Workday & Greenhouse parsers.
+                Single-column layout designed for clean, parse-friendly structure.
               </p>
             </div>
           </div>

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test:color": "node --experimental-strip-types --test tests/color-engine.test.ts",
-    "test:snapshot": "npx -y tsx --test tests/templates-snapshot.test.ts"
+    "test:snapshot": "npx -y tsx --test tests/templates-snapshot.test.ts",
+    "test": "npm run test:color && npm run test:snapshot"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.3.3",

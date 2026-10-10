@@ -35,10 +35,10 @@ import {
 } from 'lucide-react';
 
 const TEMPLATES = [
-  { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp', ats: 94.8 },
-  { id: 3, name: 'AI & Systems Pro', file: '/assets/Resume/rem3.webp', ats: 98.2 },
-  { id: 4, name: 'Full-Stack Modern', file: '/assets/Resume/rem4.webp', ats: 97.2 },
-  { id: 7, name: 'LaTeX Single-Column', file: '/assets/Resume/rem7.webp', ats: 95.6 },
+  { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp' },
+  { id: 3, name: 'AI & Systems Pro', file: '/assets/Resume/rem3.webp' },
+  { id: 4, name: 'Full-Stack Modern', file: '/assets/Resume/rem4.webp' },
+  { id: 7, name: 'LaTeX Single-Column', file: '/assets/Resume/rem7.webp' },
 ];
 
 export default function ResumePage() {
@@ -69,7 +69,7 @@ export default function ResumePage() {
         actionButton={
           <div className="flex items-center gap-2">
             <Badge variant="accent" size="sm" className="font-mono bg-[#FACC15] text-[#0A0A0C] border-none font-bold">
-              {selectedTemplate.ats}% ATS Score
+              Parse-Friendly Format
             </Badge>
             <Button variant="default" size="sm" icon={<Download className="w-3.5 h-3.5 text-[#0A0A0C]" />}>
               Export PDF
@@ -174,7 +174,7 @@ export default function ResumePage() {
             />
             <div className="absolute top-3 right-3">
               <Badge variant="neutral" size="sm" className="bg-black/85 text-white font-mono border-none shadow-md">
-                {selectedTemplate.ats}% ATS Verified
+                Single-column, parse-friendly layout
               </Badge>
             </div>
           </Card>
@@ -199,7 +199,7 @@ export default function ResumePage() {
                 >
                   <div className="font-bold text-[11px] truncate">{tmpl.name}</div>
                   <span className="text-[10px] font-mono text-[#16A34A] font-bold">
-                    {tmpl.ats}%
+                    Parse-friendly
                   </span>
                 </div>
               ))}

@@ -102,7 +102,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             Color & Accessibility Engine
           </h3>
           <p className="text-xs text-slate-400">
-            OKLCH spectrum with guaranteed WCAG 4.5:1 contrast
+            OKLCH spectrum with verified WCAG 4.5:1 contrast
           </p>
         </div>
         <div

@@ -91,8 +91,8 @@ export default function InterviewSetupPage() {
               onChange={(e) => setResumeId(e.target.value)}
               className="w-full p-3 rounded-xl bg-black/[0.02] dark:bg-black/30 border border-black/[0.08] dark:border-white/[0.08] text-xs font-semibold focus:outline-[#6C5CE7]"
             >
-              <option value="stripe-staff">Rohan_Patel_Staff_Architect_2026.pdf (94.8% ATS Match)</option>
-              <option value="ai-lead">Rohan_AI_Systems_Specialist.pdf (98.2% ATS Match)</option>
+              <option value="stripe-staff">Rohan_Patel_Staff_Architect_2026.pdf (Target: Staff Architect)</option>
+              <option value="ai-lead">Rohan_AI_Systems_Specialist.pdf (Target: AI Systems)</option>
             </select>
           </div>
 

@@ -34,9 +34,9 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 const TEMPLATES_PREVIEW = [
-  { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp', ats: 94.8, bestFor: 'Workday / Stripe' },
-  { id: 3, name: 'AI & Systems Pro', file: '/assets/Resume/rem3.webp', ats: 98.2, bestFor: 'Greenhouse / OpenAI' },
-  { id: 4, name: 'Full-Stack Modern', file: '/assets/Resume/rem4.webp', ats: 97.2, bestFor: 'Lever / Vercel' },
+  { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp', bestFor: 'Clean Single-Column' },
+  { id: 3, name: 'AI & Systems Pro', file: '/assets/Resume/rem3.webp', bestFor: 'Technical Depth' },
+  { id: 4, name: 'Full-Stack Modern', file: '/assets/Resume/rem4.webp', bestFor: 'Modern Hierarchy' },
 ];
 
 export default function OnboardingPage() {
@@ -327,7 +327,7 @@ export default function OnboardingPage() {
                   Choose Starting Template
                 </h1>
                 <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-                  Pick your favorite or let AI choose based on {formData.targetCompany}&apos;s ATS parser.
+                  Pick your favorite or let AI choose a clean, parse-friendly format.
                 </p>
               </div>
 
@@ -344,10 +344,10 @@ export default function OnboardingPage() {
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2 text-xs font-bold text-[#1A1A1E] dark:text-white">
                       <Wand2 className="w-4 h-4 text-[#16A34A]" />
-                      <span>Auto-Select According to Company ATS (Recommended)</span>
+                      <span>Auto-Select Parse-Friendly Layout (Recommended)</span>
                     </div>
                     <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA]">
-                      Automatically sets single-column Workday/Greenhouse verified layout.
+                      Automatically sets single-column, parse-friendly layout.
                     </p>
                   </div>
                   <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] flex-shrink-0" />
@@ -374,7 +374,7 @@ export default function OnboardingPage() {
                         </div>
                         <div className="text-[10px] font-bold truncate">{tmpl.name}</div>
                         <span className="text-[9px] font-mono text-[#16A34A] font-bold block">
-                          {tmpl.ats}% ATS
+                          Parse-friendly
                         </span>
                       </div>
                     ))}

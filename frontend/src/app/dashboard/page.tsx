@@ -37,7 +37,7 @@ const RECENT_RESUMES = [
     id: 'ai-lead',
     name: 'Rohan_AI_Systems_Specialist.pdf',
     date: 'Aug 24, 2026',
-    atsScore: 98.2,
+    atsScore: 88.0,
     targetRole: 'Senior AI Engineer · OpenAI',
     file: '/assets/Resume/rem3.webp',
   },

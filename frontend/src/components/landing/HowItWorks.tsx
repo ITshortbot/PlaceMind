@@ -237,7 +237,7 @@ export function HowItWorks() {
                     <div className="p-3 rounded-xl bg-white/85 dark:bg-[#0A0A0C] border border-black/[0.08] dark:border-white/[0.08] hover:border-[#6C5CE7]/40 transition-colors">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-[#6C5CE7] uppercase font-mono font-semibold">Chunk 01 &bull; Experience</span>
-                        <span className="text-[10px] text-[#16A34A] dark:text-[#22C55E] font-mono font-bold">100% Parsed</span>
+                        <span className="text-[10px] text-[#16A34A] dark:text-[#22C55E] font-mono font-bold">Parsed</span>
                       </div>
                       <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7] mt-0.5">
                         Senior AI Systems Architect (Apex Labs)

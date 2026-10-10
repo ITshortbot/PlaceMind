@@ -70,7 +70,7 @@ export default function ResumeAnalyzePage() {
   const id = params.id as string;
   const [jobDescription, setJobDescription] = useState(
     `Staff Software Engineer · Stripe Core Infrastructure
-We are looking for an experienced distributed systems engineer to lead high-throughput event processing pipelines, optimize PostgreSQL databases, and guarantee 99.99% multi-region uptime.`
+We are looking for an experienced distributed systems engineer to lead high-throughput event processing pipelines, optimize PostgreSQL databases, and maintain 99.99% multi-region uptime.`
   );
 
   return (
@@ -97,7 +97,7 @@ We are looking for an experienced distributed systems engineer to lead high-thro
           <div className="lg:col-span-5 p-5 rounded-3xl bg-white/80 dark:bg-[#141417]/90 border border-black/[0.08] dark:border-white/[0.08] shadow-sm space-y-3">
             <div className="flex justify-between items-center pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
               <span className="text-[10px] font-bold uppercase text-[#6C5CE7]">Active Resume</span>
-              <span className="text-[10px] font-mono text-[#16A34A] font-bold">100% Parsable</span>
+              <span className="text-[10px] font-mono text-[#16A34A] font-bold">Parse-Friendly</span>
             </div>
             <h3 className="text-sm font-bold text-[#1A1A1E] dark:text-white">
               Rohan K. Patel &bull; Staff Software Architect

@@ -151,7 +151,7 @@ export function ProblemFraming() {
 
             <div className="mt-8 pt-6 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-xs text-[#8A8A92] dark:text-[#6B6B76]">
               <span>Resolution: Contextual Skill Matching</span>
-              <span className="text-[#6C5CE7] font-semibold">100% Parsable Formats &rarr;</span>
+              <span className="text-[#6C5CE7] font-semibold">Parse-Friendly Formats &rarr;</span>
             </div>
           </motion.div>
 

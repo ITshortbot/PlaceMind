@@ -124,7 +124,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
               </div>
               <div className="flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-[#0284C7] dark:text-[#38BDF8]" />
-                <span className="font-medium">ATS Parser Guaranteed</span>
+                <span className="font-medium">Parse-Friendly Structure</span>
               </div>
             </div>
           </motion.div>

@@ -135,12 +135,12 @@ export function FeatureCarousel() {
       icon: Download,
       title: 'Instant ATS PDF Export',
       tag: 'Standard LaTeX',
-      desc: 'Generate clean, single-column, ATS-parseable PDF resumes structured to ensure 100% parsability across Workday, Greenhouse, and Lever.',
+      desc: 'Generate clean, single-column, ATS-parseable PDF resumes with a parse-friendly structure and readiness checks you can see.',
       meta: {
         stage: 'EXPORT',
         input: 'Synthesized Resume Model',
         engine: 'Single-Column LaTeX Engine',
-        latency: '100% Parsable',
+        latency: 'Parse-Friendly',
       },
     },
     {

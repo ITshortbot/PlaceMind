@@ -39,11 +39,11 @@ import { Progress } from '@/components/ui/Progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 
 const TEMPLATES = [
-  { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp', ats: 94.8, role: 'Staff Software Architect' },
-  { id: 3, name: 'AI & Systems Pro', file: '/assets/Resume/rem3.webp', ats: 98.2, role: 'Senior AI Systems Engineer' },
-  { id: 4, name: 'Full-Stack Modern', file: '/assets/Resume/rem4.webp', ats: 97.2, role: 'Lead Full-Stack Engineer' },
-  { id: 7, name: 'LaTeX Single-Column', file: '/assets/Resume/rem7.webp', ats: 95.6, role: 'Principal Backend Specialist' },
-  { id: 11, name: 'Executive Clean', file: '/assets/Resume/rem11.webp', ats: 96.4, role: 'Engineering Director' },
+  { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp', role: 'Staff Software Architect' },
+  { id: 3, name: 'AI & Systems Pro', file: '/assets/Resume/rem3.webp', role: 'Senior AI Systems Engineer' },
+  { id: 4, name: 'Full-Stack Modern', file: '/assets/Resume/rem4.webp', role: 'Lead Full-Stack Engineer' },
+  { id: 7, name: 'LaTeX Single-Column', file: '/assets/Resume/rem7.webp', role: 'Principal Backend Specialist' },
+  { id: 11, name: 'Executive Clean', file: '/assets/Resume/rem11.webp', role: 'Engineering Director' },
 ];
 
 export default function StudioPage() {
@@ -144,23 +144,22 @@ Requirements:
             <Card className="p-5 border border-black/10 dark:border-white/12 bg-white/90 dark:bg-[#121217]/90 backdrop-blur-xl shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-black uppercase tracking-wider text-[#4A4A52] dark:text-[#A1A1AA]">
-                  ATS Audit Score
+                  ATS Readiness Format
                 </span>
-                <span className="text-base font-black text-[#FACC15]">
-                  {selectedTemplate.ats}%
+                <span className="text-xs font-mono font-bold text-[#16A34A] dark:text-[#22C55E]">
+                  Parse-Friendly
                 </span>
               </div>
-              <Progress value={selectedTemplate.ats} className="h-2 bg-black/10 dark:bg-white/10" />
               <div className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-[#16A34A] dark:text-[#22C55E]">
                 <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>Single-Column Workday Verified</span>
+                <span>Single-column layout</span>
               </div>
             </Card>
 
             {/* Template Selector */}
             <div className="space-y-2">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#4A4A52] dark:text-[#A1A1AA] px-1">
-                Verified ATS Templates
+                Parse-friendly templates
               </h3>
               <div className="space-y-2">
                 {TEMPLATES.map((tmpl) => (
@@ -182,7 +181,7 @@ Requirements:
                       </p>
                     </div>
                     <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-[#16A34A]/15 text-[#16A34A] dark:text-[#22C55E] flex-shrink-0">
-                      {tmpl.ats}%
+                      Parse-friendly
                     </span>
                   </div>
                 ))}

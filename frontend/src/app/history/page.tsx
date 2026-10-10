@@ -39,7 +39,7 @@ const RESUME_FILES = [
     name: 'Rohan_AI_Systems_Specialist.pdf',
     target: 'OpenAI · Senior AI Engineer',
     date: 'Aug 24, 2026',
-    atsScore: 98.2,
+    atsScore: 88.0,
     file: '/assets/Resume/rem3.webp',
   },
 ];

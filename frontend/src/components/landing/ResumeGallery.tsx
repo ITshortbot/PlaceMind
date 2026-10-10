@@ -32,7 +32,6 @@ interface ResumeTemplate {
   name: string;
   category: 'Software Engineering' | 'AI & ML' | 'Full-Stack' | 'Leadership' | 'Data Science' | 'Systems & DevOps';
   role: string;
-  atsScore: number;
   tags: string[];
 }
 
@@ -43,8 +42,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Standard ATS Minimalist',
     category: 'Software Engineering',
     role: 'Senior Software Engineer',
-    atsScore: 98,
-    tags: ['Single-Column', 'LaTeX Styled', 'Workday Optimized'],
+    tags: ['Single-Column', 'LaTeX Styled', 'Parse-Friendly'],
   },
   {
     id: 3,
@@ -52,8 +50,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'AI & Systems Architect',
     category: 'AI & ML',
     role: 'Staff AI Systems Architect',
-    atsScore: 99,
-    tags: ['Google XYZ Bullets', 'pgvector & RAG', '100% Parsable'],
+    tags: ['Google XYZ Bullets', 'pgvector & RAG', 'Parse-Friendly'],
   },
   {
     id: 4,
@@ -61,7 +58,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Modern Full-Stack Pro',
     category: 'Full-Stack',
     role: 'Full-Stack TypeScript Engineer',
-    atsScore: 97,
     tags: ['Next.js 15', 'FastAPI', 'High Contrast'],
   },
   {
@@ -70,8 +66,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Executive Technical Lead',
     category: 'Leadership',
     role: 'VP of Engineering / Tech Lead',
-    atsScore: 95,
-    tags: ['Metrics Heavy', 'Executive', 'Greenhouse Verified'],
+    tags: ['Metrics Heavy', 'Executive', 'Linear Hierarchy'],
   },
   {
     id: 5,
@@ -79,7 +74,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Distributed Cloud & DevOps',
     category: 'Systems & DevOps',
     role: 'Cloud Infrastructure Engineer',
-    atsScore: 96,
     tags: ['Kubernetes', 'AWS/GCP', 'Clean Hierarchy'],
   },
   {
@@ -88,7 +82,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Data & Machine Learning Specialist',
     category: 'Data Science',
     role: 'Senior Data Scientist',
-    atsScore: 98,
     tags: ['PyTorch', 'Vector Embeddings', 'Quantitative'],
   },
   {
@@ -97,7 +90,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Algorithmic Backend Specialist',
     category: 'Software Engineering',
     role: 'Backend Core Engineer',
-    atsScore: 97,
     tags: ['Rust / Go', 'Microservices', 'Clean LaTeX'],
   },
   {
@@ -106,8 +98,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Product-Focused Frontend Lead',
     category: 'Full-Stack',
     role: 'Lead Frontend Developer',
-    atsScore: 94,
-    tags: ['UI/UX Systems', 'React / Tailwind', 'Lever Parsable'],
+    tags: ['UI/UX Systems', 'React / Tailwind', 'Parse-Friendly'],
   },
   {
     id: 9,
@@ -115,7 +106,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Deep Learning Researcher',
     category: 'AI & ML',
     role: 'AI Research Scientist',
-    atsScore: 99,
     tags: ['Publications', 'Transformer Architectures', 'BGE Embeddings'],
   },
   {
@@ -124,7 +114,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Enterprise Platform Engineer',
     category: 'Systems & DevOps',
     role: 'Principal Platform Engineer',
-    atsScore: 96,
     tags: ['Terraform', 'Kafka Streams', 'High Scalability'],
   },
   {
@@ -133,7 +122,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Engineering Director / VP',
     category: 'Leadership',
     role: 'Director of Engineering',
-    atsScore: 95,
     tags: ['Team Scaling', 'Budget / OKR', 'Executive'],
   },
   {
@@ -142,7 +130,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Quant & Big Data Architect',
     category: 'Data Science',
     role: 'Quantitative ML Engineer',
-    atsScore: 98,
     tags: ['HFT / Real-Time', 'Low Latency', 'pgvector'],
   },
   {
@@ -151,7 +138,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Full-Stack Mobile & Web',
     category: 'Full-Stack',
     role: 'Mobile & Web Architect',
-    atsScore: 95,
     tags: ['React Native', 'Node.js', 'Cross-Platform'],
   },
   {
@@ -160,7 +146,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'High-Throughput Systems Lead',
     category: 'Software Engineering',
     role: 'Distributed Systems Engineer',
-    atsScore: 97,
     tags: ['eBPF / Kernel', 'Zero Egress', 'Tauri / C++'],
   },
   {
@@ -169,7 +154,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Applied LLM Applications Lead',
     category: 'AI & ML',
     role: 'GenAI Applications Engineer',
-    atsScore: 99,
     tags: ['Gemini 2.5', 'Ollama / LM Studio', 'Multi-Agent'],
   },
   {
@@ -178,7 +162,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Security & Zero-Trust Engineer',
     category: 'Systems & DevOps',
     role: 'Security Infrastructure Engineer',
-    atsScore: 96,
     tags: ['Zero Egress', 'SOC2 / GDPR', 'Hardened'],
   },
   {
@@ -187,7 +170,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Senior Full-Stack Generalist',
     category: 'Full-Stack',
     role: 'Senior Full-Stack Engineer',
-    atsScore: 97,
     tags: ['PostgreSQL', 'FastAPI', 'Next.js 15'],
   },
   {
@@ -196,7 +178,6 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     name: 'Principal Analytics Architect',
     category: 'Data Science',
     role: 'Principal Analytics Engineer',
-    atsScore: 96,
     tags: ['Snowflake / dbt', 'Bipartite Matching', 'Executive'],
   },
 ];
@@ -231,19 +212,19 @@ export function ResumeGallery() {
         <div className="text-center max-w-3xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 dark:bg-[#1C1C21]/90 border border-black/[0.08] dark:border-[#2A2A30] text-[11px] font-mono uppercase tracking-[0.2em] text-[#6C5CE7] dark:text-[#7D6FF0] mb-4 shadow-sm backdrop-blur-md">
             <span className="w-2 h-0.5 rounded-full bg-[#6C5CE7]" />
-            <span>AUTHENTIC ATS TEMPLATE GALLERY &bull; 18 VERIFIED LAYOUTS</span>
+            <span>RESUME TEMPLATE GALLERY</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-tight text-[#1A1A1E] dark:text-[#F5F5F7]">
             <span className="font-light">Battle-tested templates</span>{' '}
             <span className="font-extrabold bg-gradient-to-r from-[#6C5CE7] via-[#8F82FF] to-[#38BDF8] bg-clip-text text-transparent">
-              guaranteed
+              designed
             </span>{' '}
-            <span className="font-medium">to pass screening</span>
+            <span className="font-medium">for parsers to read</span>
           </h2>
 
           <p className="text-base sm:text-lg text-[#5A5A63] dark:text-[#A1A1AA] mt-4 leading-relaxed">
-            Clean single-column technical resume architectures engineered for 100% parsability across Workday, Greenhouse, and Lever.
+            Clean single-column resume layouts designed to be easy for parsers to read.
           </p>
         </div>
 
@@ -307,14 +288,14 @@ export function ResumeGallery() {
                       </button>
 
                       <span className="px-2.5 py-1 rounded-lg bg-[#22C55E]/90 text-white text-[10px] font-mono font-bold">
-                        {template.atsScore}% ATS PASS
+                        Parse-Friendly
                       </span>
                     </div>
 
-                    {/* Top-Right Score Pill */}
+                    {/* Top-Right Badge */}
                     <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full bg-white/90 dark:bg-[#141417]/95 border border-black/[0.08] dark:border-white/[0.08] shadow-md backdrop-blur-md flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#16A34A] dark:text-[#22C55E]">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{template.atsScore}% Match</span>
+                      <span>Parse-Friendly</span>
                     </div>
                   </div>
 
@@ -438,7 +419,7 @@ export function ResumeGallery() {
                         {activePreview.category}
                       </Badge>
                       <span className="text-xs font-mono text-[#16A34A] dark:text-[#22C55E] font-bold">
-                        ✓ {activePreview.atsScore}% ATS Verified
+                        ✓ Single-Column Layout
                       </span>
                     </div>
 
@@ -452,10 +433,6 @@ export function ResumeGallery() {
                     </div>
 
                     <div className="p-4 rounded-2xl bg-black/[0.03] dark:bg-[#0A0A0C] border border-black/[0.06] dark:border-white/[0.06] space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-[#5A5A63] dark:text-[#A1A1AA]">ATS Parser Compatibility:</span>
-                        <strong className="text-[#16A34A] dark:text-[#22C55E]">100% (Workday, Greenhouse, Lever)</strong>
-                      </div>
                       <div className="flex justify-between">
                         <span className="text-[#5A5A63] dark:text-[#A1A1AA]">Layout Structure:</span>
                         <strong className="text-[#1A1A1E] dark:text-[#F5F5F7]">Single-Column Linear Hierarchy</strong>

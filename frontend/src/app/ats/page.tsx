@@ -77,7 +77,7 @@ export default function AtsAutoGeneratePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [jobTitle, setJobTitle] = useState('Staff Software Engineer · Stripe Core Infrastructure');
   const [jdText, setJdText] = useState(
-    `We are looking for a Staff Engineer to lead high-throughput event processing (Kafka), optimize PostgreSQL & vector search pipelines, and guarantee 99.99% multi-region uptime.`
+    `We are looking for a Staff Engineer to lead high-throughput event processing (Kafka), optimize PostgreSQL & vector search pipelines, and maintain 99.99% multi-region uptime.`
   );
   const [aiMode, setAiMode] = useState<'cloud' | 'local'>(AIServiceClient.getPreferredAIMode());
 
