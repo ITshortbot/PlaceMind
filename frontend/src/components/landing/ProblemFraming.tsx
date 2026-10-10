@@ -63,7 +63,7 @@ export function ProblemFraming() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-tight text-[#1A1A1E] dark:text-[#F5F5F7]">
-            <span className="font-light">Why great candidates get</span>{' '}
+            <span className="font-light">Why great candidates get over</span>{' '}
             <span className="font-extrabold bg-gradient-to-r from-[#6C5CE7] via-[#8F82FF] to-[#38BDF8] bg-clip-text text-transparent">
               overlooked
             </span>
@@ -127,11 +127,24 @@ export function ProblemFraming() {
               <div className="mt-6 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2.5 text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
                   <span className="w-2 h-2 rounded-full bg-[#F04438]" />
-                  <span>Unoptimized Application: <strong className="text-[#B91C1C] dark:text-[#F04438]">Likely Filtered</strong></span>
+                  <span>
+                    Unoptimized Application:{" "}
+                    <strong className="inline md:block text-[#B91C1C] dark:text-[#F04438]">
+                      Likely Filtered
+                    </strong>
+                  </span>
+
+
                 </div>
                 <div className="flex items-center gap-2.5 text-xs text-[#1A1A1E] dark:text-[#F5F5F7] font-medium">
                   <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
-                  <span>Placemind Tailored Resume: <strong className="text-[#16A34A] dark:text-[#22C55E]">95%+ Screening Pass</strong></span>
+                  <span>
+                    Placemind Tailored Resume:{" "}
+                    <strong className="inline md:block text-[#16A34A] dark:text-[#22C55E]">
+                      95%+ Screening Pass
+                    </strong>
+                  </span>
+
                 </div>
               </div>
             </div>

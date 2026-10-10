@@ -28,7 +28,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
         </ThemeProvider>
-        
+
         {/* SVG Gooey Liquid Fusion Filter Definition */}
         <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
           <defs>

@@ -131,7 +131,7 @@ export default function LiveInterviewSessionPage() {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+              className={`font-transcript flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
             >
               <div
                 className={`p-4 sm:p-5 rounded-3xl max-w-[85%] text-xs leading-relaxed ${

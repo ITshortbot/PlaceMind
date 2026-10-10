@@ -174,7 +174,7 @@ export function FloatingNavBar() {
               {resolvedTheme === 'dark' ? (
                 <Sun className="w-3 h-3 text-[#FACC15]" />
               ) : (
-                <Moon className="w-3 h-3 text-white" />
+                <Moon className="w-3 h-3 text-black" />
               )}
             </button>
           </div>

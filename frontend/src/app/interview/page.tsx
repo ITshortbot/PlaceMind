@@ -191,7 +191,7 @@ export default function InterviewTab() {
             {messages.map((m) => (
               <div
                 key={m.id}
-                className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
+                className={`font-transcript flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
                   className={`p-4 rounded-2xl max-w-[85%] text-xs leading-relaxed ${
