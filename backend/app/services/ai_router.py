@@ -32,6 +32,7 @@ logger = logging.getLogger("placemind.ai_router")
 class RoutingMode(str, Enum):
     CLOUD = "cloud"    # Google Gemini 2.5 Flash via Cloud API
     LOCAL = "local"    # Local LM Studio Server (OpenAI-compatible)
+    OSS = "oss"        # OSS OpenAI-compatible endpoint (e.g. Ollama)
 
 class LLMResponse(BaseModel):
     content: str
@@ -51,14 +52,25 @@ class HybridLLMRouter:
         cloud_model: Optional[str] = None,
         local_model: Optional[str] = None,
         lm_studio_base: Optional[str] = None,
+        llm_model: Optional[str] = None,
+        llm_base_url: Optional[str] = None,
+        llm_api_key: Optional[str] = None,
+        llm_timeout_s: Optional[int] = None,
+        llm_max_tokens: Optional[int] = None,
     ):
         self.cloud_model = cloud_model or settings.CLOUD_MODEL_NAME
         self.local_model = local_model or settings.LOCAL_MODEL_NAME
         self.lm_studio_base = lm_studio_base or settings.LM_STUDIO_API_BASE
+        self.llm_model = llm_model or settings.LLM_MODEL
+        self.llm_base_url = llm_base_url or settings.LLM_BASE_URL
+        self.llm_api_key = llm_api_key or settings.LLM_API_KEY
+        self.llm_timeout_s = llm_timeout_s if llm_timeout_s is not None else settings.LLM_TIMEOUT_S
+        self.llm_max_tokens = llm_max_tokens if llm_max_tokens is not None else settings.LLM_MAX_TOKENS
         
         # Ensure LiteLLM drops incompatible vendor-specific parameters cleanly
         litellm.drop_params = True
         litellm.telemetry = False
+        litellm.suppress_debug_info = True
 
     async def check_local_health(self) -> bool:
         """
@@ -135,12 +147,82 @@ class HybridLLMRouter:
                     return res
                 raise local_err
 
+        # Handle OSS Routing (OpenAI-compatible, e.g. Ollama)
+        if mode == RoutingMode.OSS:
+            return await self._execute_oss(
+                messages=messages,
+                temperature=temperature,
+                response_format=response_format,
+                start_time=start_time,
+            )
+
         # Handle CLOUD Routing (Gemini)
         return await self._execute_cloud(
             messages=messages,
             temperature=temperature,
             response_format=response_format,
             start_time=start_time,
+        )
+
+    async def _execute_oss(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float,
+        response_format: Optional[Dict[str, Any]],
+        start_time: float,
+    ) -> LLMResponse:
+        """
+        Executes completion via OSS OpenAI-compatible endpoint using LiteLLM.
+        Injects 'Reasoning: low' into the system message.
+        Does not log prompts or outputs.
+        """
+        # Ensure system message contains 'Reasoning: low' without mutating input
+        oss_messages = [dict(m) for m in messages]
+        system_msg = next((m for m in oss_messages if m.get("role") == "system"), None)
+        if system_msg:
+            content = system_msg.get("content", "")
+            if "Reasoning: low" not in content:
+                system_msg["content"] = f"{content}\nReasoning: low".strip()
+        else:
+            oss_messages.insert(0, {"role": "system", "content": "Reasoning: low"})
+
+        model_name = f"openai/{self.llm_model}"
+        kwargs: Dict[str, Any] = {
+            "model": model_name,
+            "messages": oss_messages,
+            "temperature": temperature,
+            "api_base": self.llm_base_url,
+            "api_key": self.llm_api_key,
+            "timeout": self.llm_timeout_s,
+            "max_tokens": self.llm_max_tokens,
+        }
+        if response_format:
+            kwargs["response_format"] = response_format
+
+        response = await litellm.acompletion(**kwargs)
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+
+        usage = {}
+        if hasattr(response, "usage") and response.usage:
+            usage = {
+                "prompt_tokens": getattr(response.usage, "prompt_tokens", 0),
+                "completion_tokens": getattr(response.usage, "completion_tokens", 0),
+                "total_tokens": getattr(response.usage, "total_tokens", 0),
+            }
+
+        content = ""
+        if hasattr(response, "choices") and response.choices:
+            choice = response.choices[0]
+            if hasattr(choice, "message") and hasattr(choice.message, "content"):
+                content = choice.message.content or ""
+
+        return LLMResponse(
+            content=content,
+            model_used=model_name,
+            routing_mode=RoutingMode.OSS,
+            latency_ms=round(elapsed_ms, 2),
+            token_usage=usage,
+            is_fallback=False,
         )
 
     async def _execute_cloud(

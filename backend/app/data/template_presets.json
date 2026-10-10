@@ -1,0 +1,193 @@
+{
+  "Classic": {
+    "style": {
+      "layout": "single_column",
+      "font": "Times",
+      "size_pt": 11.0,
+      "density": "normal",
+      "header_style": "left",
+      "section_order": ["summary", "experience", "education", "skills", "projects"],
+      "mood": "corporate",
+      "hue": 220
+    },
+    "content": {
+      "headline": "Senior Software Engineer",
+      "summary": "Results-oriented software engineer with [X] years of experience designing and scaling distributed systems.",
+      "skills": ["Python", "Go", "Distributed Systems", "PostgreSQL", "Docker", "Kubernetes", "Redis", "CI/CD"],
+      "experience": [
+        {
+          "role": "Lead Software Engineer",
+          "company": "[Enterprise Corp]",
+          "bullets": [
+            "Architected scalable microservices processing [X] million daily transactions with [X]% uptime.",
+            "Decreased P99 latency by [X]% by introducing Redis caching and optimized connection pooling.",
+            "Mentored [X] engineers and established automated code review workflows."
+          ]
+        },
+        {
+          "role": "Software Engineer",
+          "company": "[Tech Solutions]",
+          "bullets": [
+            "Developed REST and gRPC endpoints supporting [X]k concurrent active clients.",
+            "Refactored legacy database queries, reducing average execution time from [X]s to [X]ms."
+          ]
+        }
+      ],
+      "projects": [
+        {
+          "name": "Distributed Task Scheduler",
+          "description": "High-throughput task queue built in Go with Raft consensus.",
+          "bullets": [
+            "Implemented leader election and fault-tolerant replication across [X] nodes.",
+            "Benchmarked throughput reaching [X]k tasks per second under load."
+          ]
+        }
+      ],
+      "education": [
+        {
+          "degree": "B.S. in Computer Science",
+          "institution": "[Top University]",
+          "year": "[20XX]",
+          "details": "Dean's Honor List, Focus on Distributed Systems"
+        }
+      ]
+    }
+  },
+  "Modern": {
+    "style": {
+      "layout": "sidebar_header",
+      "font": "Arial",
+      "size_pt": 10.5,
+      "density": "normal",
+      "header_style": "banner",
+      "section_order": ["summary", "skills", "experience", "projects", "education"],
+      "mood": "tech",
+      "hue": 195
+    },
+    "content": {
+      "headline": "Full-Stack AI Solutions Engineer",
+      "summary": "Versatile full-stack engineer specializing in LLM integrations, modern TypeScript applications, and cloud architecture.",
+      "skills": ["TypeScript", "Next.js", "Python", "FastAPI", "OpenAI / LiteLLM", "Tailwind CSS", "PostgreSQL", "AWS"],
+      "experience": [
+        {
+          "role": "Senior Full-Stack Engineer",
+          "company": "[AI Startup]",
+          "bullets": [
+            "Built interactive generative AI platform used by [X]k monthly active users.",
+            "Engineered low-latency streaming completions reducing time-to-first-token by [X]%.",
+            "Designed reactive user interfaces with real-time WebSocket state management."
+          ]
+        }
+      ],
+      "projects": [
+        {
+          "name": "Neural Workspace",
+          "description": "Modern AI workspace with vector search and dynamic model routing.",
+          "bullets": [
+            "Integrated hybrid cloud and local model inference with automated fallback.",
+            "Deployed to AWS ECS with zero-downtime rolling deployments."
+          ]
+        }
+      ],
+      "education": [
+        {
+          "degree": "B.S. in Software Engineering",
+          "institution": "[State University]",
+          "year": "[20XX]"
+        }
+      ]
+    }
+  },
+  "Compact": {
+    "style": {
+      "layout": "single_column",
+      "font": "Calibri",
+      "size_pt": 10.0,
+      "density": "compact",
+      "header_style": "left",
+      "section_order": ["skills", "experience", "projects", "education", "summary"],
+      "mood": "minimal",
+      "hue": 240
+    },
+    "content": {
+      "headline": "DevOps & Cloud Infrastructure Specialist",
+      "summary": "Concise, results-driven infrastructure engineer with deep expertise in cloud platforms and container automation.",
+      "skills": ["Kubernetes", "Terraform", "AWS", "GCP", "Linux", "Prometheus", "Grafana", "Helm"],
+      "experience": [
+        {
+          "role": "DevOps Engineer",
+          "company": "[Cloud Systems]",
+          "bullets": [
+            "Automated infrastructure for [X] production clusters via Terraform.",
+            "Reduced AWS monthly spend by [X]% through automated resource right-sizing."
+          ]
+        }
+      ],
+      "projects": [
+        {
+          "name": "Multi-Cluster GitOps Pipeline",
+          "description": "Continuous delivery pipeline syncing Kubernetes state from Git.",
+          "bullets": [
+            "Reduced deployment lead time from [X] hours to [X] minutes."
+          ]
+        }
+      ],
+      "education": [
+        {
+          "degree": "B.S. in Information Technology",
+          "institution": "[Tech Institute]",
+          "year": "[20XX]"
+        }
+      ]
+    }
+  },
+  "Academic": {
+    "style": {
+      "layout": "single_column",
+      "font": "Georgia",
+      "size_pt": 11.0,
+      "density": "airy",
+      "header_style": "centered",
+      "section_order": ["education", "projects", "skills", "experience", "summary"],
+      "mood": "creative",
+      "hue": 270
+    },
+    "content": {
+      "headline": "Postdoctoral Researcher & AI Scientist",
+      "summary": "Researcher focused on representation learning, NLP foundation models, and verifiable reasoning in multi-agent environments.",
+      "skills": ["PyTorch", "JAX", "NLP", "Statistical Modeling", "Python", "LaTeX", "C++", "CUDA"],
+      "experience": [
+        {
+          "role": "Research Fellow",
+          "company": "[National AI Institute]",
+          "bullets": [
+            "Conducted empirical research on parameter-efficient fine-tuning for LLMs.",
+            "Presented findings at top-tier international conferences ([X] papers published)."
+          ]
+        }
+      ],
+      "projects": [
+        {
+          "name": "Sparse Attention Mechanisms",
+          "description": "Novel attention formulation reducing quadratic memory complexity to sub-quadratic.",
+          "bullets": [
+            "Achieved [X]% training speedup on 100M-parameter benchmark tasks."
+          ]
+        }
+      ],
+      "education": [
+        {
+          "degree": "Ph.D. in Computer Science",
+          "institution": "[Research University]",
+          "year": "[20XX]",
+          "details": "Dissertation: Efficient Foundations for Scalable AI"
+        },
+        {
+          "degree": "B.S. in Mathematics",
+          "institution": "[University of Science]",
+          "year": "[20XX]"
+        }
+      ]
+    }
+  }
+}

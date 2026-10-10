@@ -295,11 +295,13 @@ class PDFResumeParser:
         sections: List[ParsedSection] = []
         current_section_type = "summary"
         current_lines: List[str] = []
+        matched_any_header = False
 
         for line_text, font_size in linearized_lines:
             detected_type = cls._is_section_header(line_text, font_size, baseline_font_size)
 
             if detected_type:
+                matched_any_header = True
                 # Flush the previous buffer
                 if current_lines:
                     content = "\n".join(current_lines).strip()
@@ -328,8 +330,8 @@ class PDFResumeParser:
                     )
                 )
 
-        # Fallback: if nothing matched, treat entire text as generic experience
-        if not sections:
+        # Fallback: if no headers matched, treat entire text as generic experience
+        if not matched_any_header:
             full_content = "\n".join(t for t, _ in linearized_lines).strip()
             if full_content:
                 logger.warning(
@@ -337,12 +339,12 @@ class PDFResumeParser:
                     "'work_experience'. Consider whether this is a multi-column or "
                     "non-standard resume format."
                 )
-                sections.append(
+                return [
                     ParsedSection(
                         section_type="work_experience",
                         content=full_content,
                         line_count=len(linearized_lines),
                     )
-                )
+                ]
 
         return sections

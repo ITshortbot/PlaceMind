@@ -26,10 +26,6 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field(default="development", description="development | staging | production")
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "tauri://localhost",
-        "https://*.placemind.app",
-        "https://placemind.vercel.app"
     ]
 
     # Database Configuration (Neon PostgreSQL)
@@ -50,6 +46,28 @@ class Settings(BaseSettings):
     LOCAL_MODEL_NAME: str = Field(
         default="openai/local-model",
         description="LiteLLM model tag targeting local LM Studio"
+    )
+
+    # OSS / Local Model Provider (OpenAI-compatible, e.g. Ollama)
+    LLM_BASE_URL: str = Field(
+        default="http://localhost:11434/v1",
+        description="Base URL for OSS OpenAI-compatible endpoint"
+    )
+    LLM_API_KEY: str = Field(
+        default="ollama",
+        description="API key for OSS OpenAI-compatible endpoint"
+    )
+    LLM_MODEL: str = Field(
+        default="gpt-oss:20b",
+        description="Model name for OSS endpoint"
+    )
+    LLM_TIMEOUT_S: int = Field(
+        default=60,
+        description="Request timeout in seconds for OSS endpoint"
+    )
+    LLM_MAX_TOKENS: int = Field(
+        default=1500,
+        description="Max tokens for OSS endpoint completion"
     )
 
     # Vector Embedding Model

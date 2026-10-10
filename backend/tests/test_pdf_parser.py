@@ -56,9 +56,7 @@ def test_resume_segmentation_standard_headers():
     Senior Full-Stack AI Engineer with 6 years building distributed microservices and LLM agents.
 
     Technical Skills
-    Languages: Python, TypeScript, SQL, Rust
-    Frameworks: FastAPI, Next.js 15, PyTorch, LangChain
-    Databases: PostgreSQL, pgvector, Redis
+    Python, TypeScript, SQL, Rust, FastAPI, Next.js 15, PyTorch, LangChain, PostgreSQL, pgvector, Redis
 
     Work Experience
     Lead AI Architect at Apex Labs (2022 - Present)
@@ -93,11 +91,11 @@ def test_segmentation_nonstandard_header_font_heuristic():
     When a short line (≤6 words) has font size ≥1.25× baseline, it should
     be identified as an 'other' section header even if not in alias map.
     """
-    # Simulate a resume with a non-standard 'Achievements' heading that
+    # Simulate a resume with a non-standard 'Initiatives' heading that
     # uses a large font (e.g. 14pt vs 10pt baseline)
     lines = [
         ("Jane Doe, Staff Engineer", 10.0),
-        ("Achievements", 14.0),     # non-standard but large font → 'other'
+        ("Initiatives", 14.0),       # non-standard but large font → 'other'
         ("Won AWS re:Invent hackathon 2023", 10.0),
         ("Education", 14.0),        # standard header
         ("B.S. Computer Science", 10.0),

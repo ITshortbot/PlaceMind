@@ -78,11 +78,18 @@ Output Bullet: "Engineered high-throughput cloud database index handling 250M qu
 
 In `backend/.env`:
 ```env
-# Cloud Engine
+# Cloud Engine (Gemini)
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 
-# Local Privacy Engine (LM Studio / Ollama)
+# Local OSS Privacy Engine (Ollama / OpenAI-compatible endpoint)
+LLM_BASE_URL=http://localhost:11434/v1
+LLM_API_KEY=ollama
+LLM_MODEL=gpt-oss:20b
+LLM_TIMEOUT_S=60
+LLM_MAX_TOKENS=1500
+
+# Legacy LM Studio Compatibility
 USE_LOCAL_LLM=false
 LOCAL_LLM_URL=http://localhost:1234/v1
 LOCAL_LLM_MODEL=meta-llama-3-8b-instruct
@@ -93,19 +100,55 @@ EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 
 ---
 
-## 5. Local Setup & Testing
+## 5. Local Setup & Pulling the Model
 
+### Step 1: Pull the Local OSS Model
 ```bash
-# Navigate to backend
+# Pull the recommended local 20B OSS model via Ollama
+ollama pull gpt-oss:20b
+
+# Ensure Ollama server is running locally on port 11434
+ollama serve
+```
+
+### Step 2: Verify Local Model Connectivity
+```bash
+# Ping the model via Placemind AI Router
+python scripts/ping_llm.py
+```
+
+### Step 3: Run Demo Hardening Check
+```bash
+# Execute 5 sample prompts x 3 iterations to test schema pass rate and latency
+python scripts/demo_check.py
+```
+
+---
+
+## 6. Running the Demo Full Stack
+
+### Terminal 1: Backend API
+```bash
 cd backend
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# Run FastAPI server with auto-reload
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+*Note:* The backend automatically performs a non-blocking warm-up call on startup to preload the model into memory.
+
+### Terminal 2: Frontend Studio
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open **http://localhost:3000/template** to access the Prompt-to-Template Studio and ATS Readiness Auditor.
+
+---
+
+## 7. Privacy & Security Guarantee
+> **Privacy Note:** Nothing leaves the laptop in local mode.
+> 
+> - All resume content, prompts, and extracted text are processed 100% locally on your machine via Ollama/LM Studio and the embedded ONNX vector engine (`BAAI/bge-small-en-v1.5`).
+> - Zero telemetry, zero external logging, and zero data egress are enforced across all local routing paths.
+

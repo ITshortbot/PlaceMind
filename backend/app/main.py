@@ -39,6 +39,20 @@ async def lifespan(app: FastAPI):
     from app.services.embeddings import embedding_engine
     _ = embedding_engine.embed_query("Placemind cold start probe")
     logger.info("Embedding engine warmed up successfully.")
+
+    # Warm up local OSS LLM model endpoint (safe and non-blocking if offline)
+    try:
+        from app.services.ai_router import HybridLLMRouter, RoutingMode
+        router = HybridLLMRouter()
+        _ = await router.complete(
+            messages=[{"role": "user", "content": "ping"}],
+            mode=RoutingMode.OSS,
+            temperature=0.0,
+        )
+        logger.info("Local OSS LLM model warmed up successfully.")
+    except Exception as exc:
+        logger.info("Local OSS LLM warm-up skipped (model offline or unavailable): %s", exc)
+
     from app.database.session import engine
     from app.database.models import Base
     await initialize_database(engine, Base.metadata)
