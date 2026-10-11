@@ -10,6 +10,7 @@
 // ============================================================================
 
 import React, { useState } from 'react';
+import { loadProfile, saveProfile } from '@/lib/templates/profile';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -46,14 +47,14 @@ export default function OnboardingPage() {
   // Form State
   const [formData, setFormData] = useState({
     authMethod: 'linkedin',
-    email: 'rohan.patel@email.com',
+    email: '',
     password: '',
-    name: 'Rohan K. Patel',
-    phone: '+1 (555) 349-2049',
-    university: 'Stanford University',
-    specialization: 'Computer Science & Distributed Systems',
-    targetRole: 'Staff Software Architect',
-    targetCompany: 'Stripe Core Infrastructure',
+    name: '',
+    phone: '',
+    university: '',
+    specialization: '',
+    targetRole: '',
+    targetCompany: '',
     selectedTemplateId: 1,
     autoSelectTemplate: true,
   });
@@ -62,7 +63,25 @@ export default function OnboardingPage() {
     if (currentStep < 4) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      router.push('/dashboard');
+      // Save what the user typed so /template starts from their details, then
+      // send them to the editor (not the dashboard) to build their first resume.
+      const prev = loadProfile();
+      saveProfile({
+        ...prev,
+        name: formData.name.trim() || prev.name,
+        email: formData.email.trim() || prev.email,
+        phone: formData.phone.trim() || prev.phone,
+      });
+      const params = new URLSearchParams();
+      if (formData.targetRole.trim()) {
+        params.set(
+          'prompt',
+          `clean ATS-friendly resume for a ${formData.targetRole.trim()}${
+            formData.specialization.trim() ? ` (${formData.specialization.trim()})` : ''
+          }`.slice(0, 500)
+        );
+      }
+      router.push(`/template${params.toString() ? `?${params.toString()}` : ''}`);
     }
   };
 
@@ -210,6 +229,7 @@ export default function OnboardingPage() {
                   <Input
                     type="text"
                     value={formData.name}
+                    placeholder="Your full name"
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
@@ -219,6 +239,7 @@ export default function OnboardingPage() {
                   <Input
                     type="text"
                     value={formData.phone}
+                    placeholder="+91 98765 43210"
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
@@ -228,6 +249,7 @@ export default function OnboardingPage() {
                   <Input
                     type="text"
                     value={formData.university}
+                    placeholder="Your university"
                     onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                   />
                 </div>
@@ -237,6 +259,7 @@ export default function OnboardingPage() {
                   <Input
                     type="text"
                     value={formData.specialization}
+                    placeholder="Your major or specialization"
                     onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                   />
                 </div>

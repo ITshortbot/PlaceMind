@@ -15,7 +15,7 @@ import {
   FONT_STACKS,
   resolveTemplateFamily,
 } from '../../lib/templates/registry.ts';
-import { ResumeContent, SectionNameType, StyleSpec } from '../../types/templates.ts';
+import { ResumeContent, ResumeProfile, SectionNameType, StyleSpec } from '../../types/templates.ts';
 
 export interface ResumePreviewProps {
   style: StyleSpec;
@@ -24,6 +24,7 @@ export interface ResumePreviewProps {
   className?: string;
   onPrint?: () => void;
   showExportButton?: boolean;
+  profile?: ResumeProfile;
 }
 
 export const ResumePreview: React.FC<ResumePreviewProps> = ({
@@ -33,6 +34,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
   className = '',
   onPrint,
   showExportButton = true,
+  profile,
 }) => {
   const family = resolveTemplateFamily(style.header_style, style.section_order);
   const density = DENSITY_TOKENS[style.density] || DENSITY_TOKENS.normal;
@@ -262,6 +264,13 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
 
   const isBannerHeader = style.header_style === 'banner' || family.headerBand;
   const isCenteredHeader = style.header_style === 'centered';
+  const displayName = profile?.name?.trim() || 'Your Name';
+  const contactLine = profile
+    ? [profile.email, profile.phone, profile.location, ...(profile.links || [])]
+        .map((x) => (x || '').trim())
+        .filter(Boolean)
+        .join('  |  ')
+    : '';
 
   return (
     <div className={`relative flex flex-col items-center ${className}`}>
@@ -302,34 +311,45 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
         {/* ─── Header: Banner Style (Modern) ─── */}
         {isBannerHeader ? (
           <div
-            className="p-8 text-white select-text"
+            className="p-8 text-white select-text flex items-center gap-4"
             style={{ backgroundColor: palette.accent }}
           >
-            <h1 className="text-2xl font-bold tracking-tight select-text text-white">
-              Candidate Resume
-            </h1>
-            <p className="text-sm font-medium mt-1 opacity-90 select-text text-white/95">
-              {content.headline}
-            </p>
+            {profile?.photo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.photo} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-white/70" />
+            )}
+            <div className={isCenteredHeader ? 'flex-1 text-center' : 'flex-1'}>
+              <h1 className="text-2xl font-bold tracking-tight select-text text-white">
+                {displayName}
+              </h1>
+              <p className="text-sm font-medium mt-1 opacity-90 select-text text-white/95">
+                {content.headline}
+              </p>
+              {contactLine && (
+                <p className="text-[11px] mt-1 opacity-90 select-text text-white/90">{contactLine}</p>
+              )}
+            </div>
           </div>
         ) : (
-          /* ─── Header: Classic / Minimal / Centered (No Images, Pure Text) ─── */
           <div
-            className={`p-8 pb-4 select-text ${isCenteredHeader ? 'text-center' : 'text-left'}`}
+            className={`p-8 pb-4 select-text flex items-center gap-4 ${isCenteredHeader ? 'flex-col text-center' : 'text-left'}`}
             style={{ borderBottom: `2px solid ${palette.rule}` }}
           >
-            <h1
-              className="text-2xl font-bold tracking-tight select-text"
-              style={{ color: palette.ink }}
-            >
-              Candidate Resume
-            </h1>
-            <p
-              className="text-sm font-medium mt-1 select-text"
-              style={{ color: palette.accent }}
-            >
-              {content.headline}
-            </p>
+            {profile?.photo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.photo} alt="" className="w-16 h-16 rounded-full object-cover" style={{ border: `2px solid ${palette.rule}` }} />
+            )}
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold tracking-tight select-text" style={{ color: palette.ink }}>
+                {displayName}
+              </h1>
+              <p className="text-sm font-medium mt-1 select-text" style={{ color: palette.accent }}>
+                {content.headline}
+              </p>
+              {contactLine && (
+                <p className="text-[11px] mt-1 select-text" style={{ color: palette.muted }}>{contactLine}</p>
+              )}
+            </div>
           </div>
         )}
 

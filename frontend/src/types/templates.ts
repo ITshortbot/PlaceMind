@@ -62,3 +62,14 @@ export interface GenerateResponse {
   latency_ms: number;
   source: 'model' | 'fallback';
 }
+
+// Personal details live on the client only. The backend schema (extra="forbid")
+// does not accept them, so they are kept out of GenerateResponse on purpose.
+export interface ResumeProfile {
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  links: string[];
+  photo?: string | null; // small data URL, resized client-side
+}

@@ -16,6 +16,8 @@ import { AppShell } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { ColorPicker } from '@/components/color/ColorPicker';
 import { ResumePreview } from '@/components/templates/ResumePreview';
+import { ResumeEditor } from '@/components/templates/ResumeEditor';
+import { EMPTY_PROFILE, loadDraft, loadProfile, saveDraft, saveProfile } from '@/lib/templates/profile';
 import { AtsReadinessPanel, type ScoreDocResponse } from '@/components/ats/AtsReadinessPanel';
 import { buildPalette, type Mood, type Palette } from '@/lib/color/engine';
 import { TEMPLATE_FAMILIES } from '@/lib/templates/registry';
@@ -23,6 +25,8 @@ import {
   GenerateRequest,
   GenerateResponse,
   ResumeContent,
+  ResumeProfile,
+  SectionNameType,
   StyleSpec,
 } from '@/types/templates';
 import {
@@ -162,6 +166,44 @@ export default function TemplatePage() {
   const [currentResponse, setCurrentResponse] = useState<GenerateResponse>(
     DEMO_PRESETS.default_sample
   );
+
+  // Personal details (client-only) + edit tracking
+  const [profile, setProfile] = useState<ResumeProfile>(EMPTY_PROFILE);
+  const [dirty, setDirty] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setProfile(loadProfile());
+    const draft = loadDraft();
+    if (draft) {
+      setCurrentResponse(draft);
+      setDirty(true);
+    }
+    try {
+      const q = new URLSearchParams(window.location.search).get('prompt');
+      if (q) setPrompt(q.slice(0, 500));
+    } catch {
+      /* ignore */
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist edits (after hydration so we never overwrite a saved draft with the sample)
+  useEffect(() => {
+    if (hydrated) saveProfile(profile);
+  }, [profile, hydrated]);
+  useEffect(() => {
+    if (hydrated && dirty) saveDraft(currentResponse);
+  }, [currentResponse, dirty, hydrated]);
+
+  const handleContentChange = (content: ResumeContent) => {
+    setDirty(true);
+    setCurrentResponse((prev) => ({ ...prev, content }));
+  };
+  const handleSectionOrderChange = (order: SectionNameType[]) => {
+    setDirty(true);
+    setCurrentResponse((prev) => ({ ...prev, style: { ...prev.style, section_order: order } }));
+  };
 
   // Brand hex for custom color
   const [brandHex, setBrandHex] = useState('');
@@ -388,6 +430,13 @@ export default function TemplatePage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
+    if (
+      dirty &&
+      typeof window !== 'undefined' &&
+      !window.confirm('Generating will replace the resume content you edited. Continue?')
+    ) {
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -400,6 +449,7 @@ export default function TemplatePage() {
         : DEMO_PRESETS.default_sample;
 
       setCurrentResponse(selectedDemo);
+      setDirty(false);
       setBrandHex('');
       saveToHistory(selectedDemo, prompt);
       setLoading(false);
@@ -438,6 +488,7 @@ export default function TemplatePage() {
 
       const data: GenerateResponse = await res.json();
       setCurrentResponse(data);
+      setDirty(false);
       saveToHistory(data, prompt);
       runAtsScore(data);
     } catch (err: unknown) {
@@ -450,6 +501,7 @@ export default function TemplatePage() {
 
   const handleRestoreFromHistory = (item: { response: GenerateResponse; prompt: string }) => {
     setCurrentResponse(item.response);
+    setDirty(true);
     setPrompt(item.prompt);
   };
 
@@ -665,7 +717,7 @@ export default function TemplatePage() {
         {/* ─── Dual Workspace: ColorPicker + Live ResumePreview ─── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Interactive ColorPicker (4 cols) */}
-          <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-8 no-print">
+          <div className="lg:col-span-4 space-y-6 no-print">
             <ColorPicker
               mood={currentResponse.style.mood}
               hue={currentResponse.style.hue ?? undefined}
@@ -685,6 +737,15 @@ export default function TemplatePage() {
               onBrandHexChange={(newHex: string) => {
                 setBrandHex(newHex);
               }}
+            />
+
+            <ResumeEditor
+              content={currentResponse.content}
+              profile={profile}
+              sectionOrder={currentResponse.style.section_order}
+              onContentChange={handleContentChange}
+              onProfileChange={setProfile}
+              onSectionOrderChange={handleSectionOrderChange}
             />
 
             {/* Template Specs Quick Overview */}
@@ -727,6 +788,7 @@ export default function TemplatePage() {
               style={currentResponse.style}
               content={currentResponse.content}
               palette={palette}
+              profile={profile}
               className="w-full"
             />
 

@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { FloatingNavBar } from '@/components/app/FloatingNavBar';
 import { AiCommandBar } from '@/components/app/AiCommandBar';
 import { DynamicBackground } from '@/components/ui/DynamicBackground';
@@ -49,6 +49,14 @@ export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellP
           (route) => pathname === route || pathname.startsWith(route + '/')
         );
 
+  const router = useRouter();
+
+  const handleCommandExecute = (command: string) => {
+    const trimmed = command.trim();
+    if (!trimmed) return;
+    router.push(`/template?prompt=${encodeURIComponent(trimmed.slice(0, 500))}`);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#08080A] text-[#0A0A0C] dark:text-[#F8F9FA] flex flex-col md:flex-row antialiased font-sans transition-colors duration-300 selection:bg-[#FACC15] selection:text-black relative">
       {/* Ambient Moving Dynamic Mesh Background */}
@@ -62,7 +70,7 @@ export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellP
         {children}
 
         {/* Persistent Bottom AI Command Bar */}
-        {isWorkingTab && <AiCommandBar />}
+        {isWorkingTab && <AiCommandBar onExecute={handleCommandExecute} />}
       </div>
 
       {/* Mobile Bottom Tab Bar */}
