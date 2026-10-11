@@ -32,6 +32,7 @@ import {
 import {
   AlertCircle,
   Clock,
+  FileText,
   History,
   Info,
   RotateCcw,
@@ -172,6 +173,9 @@ export default function TemplatePage() {
   const [dirty, setDirty] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  const [editorTab, setEditorTab] = useState<'content' | 'style' | 'ats'>('content');
+  const [showPromptGenerator, setShowPromptGenerator] = useState(false);
+
   useEffect(() => {
     setProfile(loadProfile());
     const draft = loadDraft();
@@ -181,7 +185,10 @@ export default function TemplatePage() {
     }
     try {
       const q = new URLSearchParams(window.location.search).get('prompt');
-      if (q) setPrompt(q.slice(0, 500));
+      if (q) {
+        setPrompt(q.slice(0, 500));
+        setShowPromptGenerator(true);
+      }
     } catch {
       /* ignore */
     }
@@ -515,176 +522,189 @@ export default function TemplatePage() {
         ]}
       />
 
-      <main className="p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
-        {/* ─── Top Header & Demo Mode Toggle ─── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+      <main className="p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-4">
+        {/* ─── Top Header & Controls Bar ─── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.08] dark:border-white/[0.08] pb-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A1A1E] dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-[#0A0A0C] dark:text-white tracking-tight">
               Prompt-to-Template Generator
             </h1>
-            <p className="text-xs sm:text-sm text-[#5A5A63] dark:text-[#A1A1AA] mt-1">
+            <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
               Synthesize ATS-compliant single-column layouts, tailored resume content, and WCAG 4.5:1 color palettes.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowPromptGenerator(!showPromptGenerator)}
+              className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+                showPromptGenerator
+                  ? 'bg-[#FACC15] text-[#0A0A0C] border-[#FACC15] shadow-sm'
+                  : 'bg-black/[0.04] dark:bg-white/[0.06] text-[#0A0A0C] dark:text-white border-black/[0.08] dark:border-white/[0.1] hover:border-[#FACC15]'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{showPromptGenerator ? 'Close AI Prompt' : '✨ AI Prompt Generator'}</span>
+            </button>
+
             <label
               htmlFor="demo-mode-toggle"
-              className="flex items-center gap-2 cursor-pointer bg-slate-900/60 border border-white/10 px-3.5 py-1.5 rounded-full backdrop-blur-md"
+              className="flex items-center gap-2 cursor-pointer bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1] px-3 py-1.5 rounded-xl"
             >
-              <span className="text-xs font-medium text-slate-300">Demo Mode</span>
+              <span className="text-xs font-bold text-[#0A0A0C] dark:text-[#F8F9FA]">Demo Mode</span>
               <input
                 id="demo-mode-toggle"
                 type="checkbox"
                 checked={isDemoMode}
                 onChange={(e) => setIsDemoMode(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                className="w-3.5 h-3.5 rounded text-[#FACC15] focus:ring-[#FACC15] cursor-pointer accent-[#FACC15]"
               />
             </label>
             {isDemoMode && (
-              <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                Offline Mode Active
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-xl border border-emerald-500/20">
+                Offline Mode
               </span>
             )}
           </div>
         </div>
 
-        {/* ─── Prompt Input Section ─── */}
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-xl p-5 sm:p-6 shadow-xl space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-              <label htmlFor="prompt-input" className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                <span>Describe Your Resume & Style</span>
-              </label>
-              <span className="text-[11px] font-mono text-slate-400">
-                {prompt.length} / 500 chars
-              </span>
+        {/* ─── Collapsible AI Prompt Input Section ─── */}
+        {showPromptGenerator && (
+          <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#121217] p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-[#0A0A0C] dark:text-white">
+                <label htmlFor="prompt-input" className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#FACC15]" />
+                  <span>Describe Your Target Role & Style</span>
+                </label>
+                <span className="text-[10px] font-mono text-[#8A8A92]">
+                  {prompt.length} / 500 chars
+                </span>
+              </div>
+              <textarea
+                id="prompt-input"
+                rows={2}
+                maxLength={500}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="e.g. clean dark-teal resume for a fresher data analyst, projects first"
+                className="w-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.1] dark:border-white/[0.12] rounded-xl p-3 text-xs text-[#0A0A0C] dark:text-[#F8F9FA] placeholder-[#8A8A92] focus:outline-none focus:ring-2 focus:ring-[#FACC15] focus:border-[#FACC15] resize-none transition-all"
+              />
             </div>
-            <textarea
-              id="prompt-input"
-              rows={3}
-              maxLength={500}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g. clean dark-teal resume for a fresher data analyst, projects first"
-              className="w-full bg-slate-800/80 border border-white/10 rounded-xl p-3.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none transition-all"
-            />
-          </div>
 
-          {/* Example Prompt Chips */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-medium text-slate-400">Quick Prompts:</span>
-            <div className="flex flex-wrap gap-2">
+            {/* Quick Prompt Chips */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[#8A8A92] uppercase mr-1">Quick:</span>
               {EXAMPLE_PROMPTS.map((ex, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => setPrompt(ex)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-white/5 transition-all text-left"
+                  className="text-[11px] px-2.5 py-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] hover:bg-[#FACC15] hover:text-[#0A0A0C] text-[#5A5A63] dark:text-[#A1A1AA] border border-black/[0.06] dark:border-white/[0.08] transition-all text-left font-medium cursor-pointer"
                 >
                   {ex}
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Optional Job Description Accordion */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowJdInput(!showJdInput)}
-              className="text-xs font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1"
-            >
-              <span>{showJdInput ? '− Hide Job Description' : '+ Add Target Job Description (Optional)'}</span>
-            </button>
+            {/* Optional Job Description Accordion */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowJdInput(!showJdInput)}
+                className="text-xs font-bold text-[#854D0E] dark:text-[#FACC15] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>{showJdInput ? '− Hide Job Description' : '+ Add Target Job Description (Optional)'}</span>
+              </button>
 
-            {showJdInput && (
-              <div className="mt-3 space-y-1">
-                <div className="flex justify-between text-[11px] text-slate-400">
-                  <span>Paste target job requirements for role-tailored bullets:</span>
-                  <span className="font-mono">{jdText.length} / 4000 chars</span>
-                </div>
-                <textarea
-                  rows={4}
-                  maxLength={4000}
-                  value={jdText}
-                  onChange={(e) => setJdText(e.target.value)}
-                  placeholder="Paste Job Description here..."
-                  className="w-full bg-slate-800/80 border border-white/10 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Generate Button & Progress State */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-2">
-              {loading && (
-                <div className="flex items-center gap-2 text-xs text-blue-400 animate-pulse font-medium">
-                  <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                  <span>Synthesizing custom layout & accessible palette via local model...</span>
+              {showJdInput && (
+                <div className="mt-2 space-y-1">
+                  <div className="flex justify-between text-[10px] text-[#8A8A92]">
+                    <span>Paste target job requirements for role-tailored bullets:</span>
+                    <span className="font-mono">{jdText.length} / 4000 chars</span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    maxLength={4000}
+                    value={jdText}
+                    onChange={(e) => setJdText(e.target.value)}
+                    placeholder="Paste Job Description here..."
+                    className="w-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.1] dark:border-white/[0.12] rounded-xl p-2.5 text-xs text-[#0A0A0C] dark:text-[#F8F9FA] placeholder-[#8A8A92] focus:outline-none focus:ring-2 focus:ring-[#FACC15] focus:border-[#FACC15] resize-none"
+                  />
                 </div>
               )}
             </div>
 
-            <button
-              type="button"
-              id="generate-template-btn"
-              disabled={loading || !prompt.trim()}
-              onClick={handleGenerate}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg transition-all ${
-                loading || !prompt.trim()
-                  ? 'bg-slate-700 cursor-not-allowed opacity-60'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25 active:scale-95'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>{loading ? 'Synthesizing...' : 'Generate Resume'}</span>
-            </button>
+            {/* Generate Button & Progress State */}
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-2">
+                {loading && (
+                  <div className="flex items-center gap-2 text-xs text-[#854D0E] dark:text-[#FACC15] animate-pulse font-bold">
+                    <div className="w-3.5 h-3.5 border-2 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
+                    <span>Synthesizing custom layout via model...</span>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                id="generate-template-btn"
+                disabled={loading || !prompt.trim()}
+                onClick={handleGenerate}
+                className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-extrabold text-[#0A0A0C] shadow-sm transition-all cursor-pointer ${
+                  loading || !prompt.trim()
+                    ? 'bg-black/20 dark:bg-white/20 text-[#8A8A92] cursor-not-allowed opacity-60'
+                    : 'bg-[#FACC15] hover:bg-[#FFE033] shadow-[#FACC15]/20 active:scale-95'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{loading ? 'Synthesizing...' : 'Generate Resume'}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ─── Error Alert Banner ─── */}
         {error && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 text-rose-300 text-xs shadow-lg">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-rose-600 dark:text-rose-400 text-xs shadow-xs">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <span className="font-semibold block text-rose-200">Generation Notice</span>
+              <span className="font-bold block">Generation Notice</span>
               <span>{error}</span>
             </div>
             <button
               type="button"
               onClick={handleGenerate}
-              className="text-xs font-bold underline hover:text-white"
+              className="text-xs font-bold underline hover:opacity-80 cursor-pointer"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* ─── Status & Fallback Indicator Badge ─── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+        {/* ─── Compact Status & History Bar ─── */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-black/[0.06] dark:border-white/[0.06] pb-2">
           <div className="flex items-center gap-2">
             {currentResponse.source === 'fallback' ? (
               <span
                 id="fallback-badge"
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold"
+                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 font-bold text-[11px]"
                 title="Local model output was preserved via verified fallback preset"
               >
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>Preset Fallback (100% Parsable Schema)</span>
+                <Zap className="w-3 h-3 text-amber-500" />
+                <span>Preset Fallback</span>
               </span>
             ) : (
               <span
                 id="model-badge"
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold"
+                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-bold text-[11px]"
               >
                 <span>✨ Model Synthesized</span>
               </span>
             )}
 
-            <span className="text-slate-400 font-mono text-[11px] flex items-center gap-1">
+            <span className="text-[#8A8A92] font-mono text-[10px] flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {currentResponse.latency_ms}ms
             </span>
@@ -692,18 +712,18 @@ export default function TemplatePage() {
 
           {/* Last 5 History Selector */}
           {history.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400 flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[#8A8A92] flex items-center gap-1">
                 <History className="w-3 h-3" />
-                <span>Recent Generations:</span>
+                <span>Recent:</span>
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 {history.map((h, idx) => (
                   <button
                     key={h.id}
                     type="button"
                     onClick={() => handleRestoreFromHistory(h)}
-                    className="text-[11px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/5 transition-all truncate max-w-[120px]"
+                    className="text-[10px] px-2 py-0.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] hover:bg-[#FACC15] hover:text-[#0A0A0C] text-[#5A5A63] dark:text-[#A1A1AA] border border-black/[0.06] dark:border-white/[0.08] transition-all truncate max-w-[100px] cursor-pointer"
                     title={h.prompt}
                   >
                     #{idx + 1} {h.response.content.headline.split(' ')[0]}
@@ -714,76 +734,133 @@ export default function TemplatePage() {
           )}
         </div>
 
-        {/* ─── Dual Workspace: ColorPicker + Live ResumePreview ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Interactive ColorPicker (4 cols) */}
-          <div className="lg:col-span-4 space-y-6 no-print">
-            <ColorPicker
-              mood={currentResponse.style.mood}
-              hue={currentResponse.style.hue ?? undefined}
-              brandHex={brandHex}
-              onMoodChange={(newMood: Mood) => {
-                setCurrentResponse((prev) => ({
-                  ...prev,
-                  style: { ...prev.style, mood: newMood },
-                }));
-              }}
-              onHueChange={(newHue: number) => {
-                setCurrentResponse((prev) => ({
-                  ...prev,
-                  style: { ...prev.style, hue: newHue },
-                }));
-              }}
-              onBrandHexChange={(newHex: string) => {
-                setBrandHex(newHex);
-              }}
-            />
+        {/* ─── Streamlined 2-Column One-Screen Workspace ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: 3 Tabs (Content, Style, ATS) (5 cols) */}
+          <div className="lg:col-span-5 space-y-3 no-print">
+            {/* 3-Tab Pill Switcher */}
+            <div className="flex p-1 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1]">
+              <button
+                type="button"
+                onClick={() => setEditorTab('content')}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  editorTab === 'content'
+                    ? 'bg-[#FACC15] text-[#0A0A0C] shadow-xs'
+                    : 'text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#0A0A0C] dark:hover:text-white'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Content</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorTab('style')}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  editorTab === 'style'
+                    ? 'bg-[#FACC15] text-[#0A0A0C] shadow-xs'
+                    : 'text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#0A0A0C] dark:hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Style & Palette</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorTab('ats')}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  editorTab === 'ats'
+                    ? 'bg-[#FACC15] text-[#0A0A0C] shadow-xs'
+                    : 'text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#0A0A0C] dark:hover:text-white'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>ATS Audit</span>
+              </button>
+            </div>
 
-            <ResumeEditor
-              content={currentResponse.content}
-              profile={profile}
-              sectionOrder={currentResponse.style.section_order}
-              onContentChange={handleContentChange}
-              onProfileChange={setProfile}
-              onSectionOrderChange={handleSectionOrderChange}
-            />
+            {/* Scrollable Panel Viewport */}
+            <div className="max-h-[calc(100vh-210px)] overflow-y-auto pr-1 space-y-3">
+              {editorTab === 'content' && (
+                <ResumeEditor
+                  content={currentResponse.content}
+                  profile={profile}
+                  sectionOrder={currentResponse.style.section_order}
+                  onContentChange={handleContentChange}
+                  onProfileChange={setProfile}
+                  onSectionOrderChange={handleSectionOrderChange}
+                />
+              )}
 
-            {/* Template Specs Quick Overview */}
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-xl p-4 shadow-xl space-y-3 text-xs">
-              <span className="font-semibold text-slate-300 block uppercase tracking-wider text-[11px]">
-                Active Architecture Spec
-              </span>
-              <div className="grid grid-cols-2 gap-2 text-slate-300">
-                <div className="bg-slate-800/60 p-2 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-400 block">Layout</span>
-                  <span className="font-semibold capitalize">
-                    {currentResponse.style.layout.replace('_', ' ')}
-                  </span>
+              {editorTab === 'style' && (
+                <div className="space-y-3">
+                  <ColorPicker
+                    mood={currentResponse.style.mood}
+                    hue={currentResponse.style.hue ?? undefined}
+                    brandHex={brandHex}
+                    onMoodChange={(newMood: Mood) => {
+                      setCurrentResponse((prev) => ({
+                        ...prev,
+                        style: { ...prev.style, mood: newMood },
+                      }));
+                    }}
+                    onHueChange={(newHue: number) => {
+                      setCurrentResponse((prev) => ({
+                        ...prev,
+                        style: { ...prev.style, hue: newHue },
+                      }));
+                    }}
+                    onBrandHexChange={(newHex: string) => {
+                      setBrandHex(newHex);
+                    }}
+                  />
+
+                  {/* Template Specs Quick Overview */}
+                  <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#121217] p-4 shadow-xs space-y-2.5 text-xs">
+                    <span className="font-bold text-[#0A0A0C] dark:text-white block uppercase tracking-wider text-[11px]">
+                      Active Architecture Spec
+                    </span>
+                    <div className="grid grid-cols-2 gap-2 text-[#0A0A0C] dark:text-[#F8F9FA]">
+                      <div className="bg-black/[0.03] dark:bg-white/[0.05] p-2 rounded-xl border border-black/[0.06] dark:border-white/[0.08]">
+                        <span className="text-[10px] text-[#8A8A92] block font-bold uppercase">Layout</span>
+                        <span className="font-bold capitalize">
+                          {currentResponse.style.layout.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="bg-black/[0.03] dark:bg-white/[0.05] p-2 rounded-xl border border-black/[0.06] dark:border-white/[0.08]">
+                        <span className="text-[10px] text-[#8A8A92] block font-bold uppercase">Typography</span>
+                        <span className="font-bold">
+                          {currentResponse.style.font} ({currentResponse.style.size_pt}pt)
+                        </span>
+                      </div>
+                      <div className="bg-black/[0.03] dark:bg-white/[0.05] p-2 rounded-xl border border-black/[0.06] dark:border-white/[0.08]">
+                        <span className="text-[10px] text-[#8A8A92] block font-bold uppercase">Density</span>
+                        <span className="font-bold capitalize">
+                          {currentResponse.style.density}
+                        </span>
+                      </div>
+                      <div className="bg-black/[0.03] dark:bg-white/[0.05] p-2 rounded-xl border border-black/[0.06] dark:border-white/[0.08]">
+                        <span className="text-[10px] text-[#8A8A92] block font-bold uppercase">Header Style</span>
+                        <span className="font-bold capitalize">
+                          {currentResponse.style.header_style}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-slate-800/60 p-2 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-400 block">Typography</span>
-                  <span className="font-semibold">
-                    {currentResponse.style.font} ({currentResponse.style.size_pt}pt)
-                  </span>
-                </div>
-                <div className="bg-slate-800/60 p-2 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-400 block">Density</span>
-                  <span className="font-semibold capitalize">
-                    {currentResponse.style.density}
-                  </span>
-                </div>
-                <div className="bg-slate-800/60 p-2 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-400 block">Header Style</span>
-                  <span className="font-semibold capitalize">
-                    {currentResponse.style.header_style}
-                  </span>
-                </div>
-              </div>
+              )}
+
+              {editorTab === 'ats' && (
+                <AtsReadinessPanel
+                  report={atsReport}
+                  loading={atsLoading}
+                  onRefresh={() => runAtsScore()}
+                />
+              )}
             </div>
           </div>
 
-          {/* Right Column: Live Printable ResumePreview + ATS Readiness Report (8 cols) */}
-          <div className="lg:col-span-8 flex flex-col items-center space-y-8">
+          {/* Right Column: Sticky Live Printable ResumePreview (7 cols) */}
+          <div className="lg:col-span-7 flex flex-col items-center lg:sticky lg:top-4 max-h-[calc(100vh-140px)] overflow-y-auto">
             <ResumePreview
               style={currentResponse.style}
               content={currentResponse.content}
@@ -791,14 +868,6 @@ export default function TemplatePage() {
               profile={profile}
               className="w-full"
             />
-
-            <div className="w-full max-w-[210mm] no-print">
-              <AtsReadinessPanel
-                report={atsReport}
-                loading={atsLoading}
-                onRefresh={() => runAtsScore()}
-              />
-            </div>
           </div>
         </div>
       </main>
