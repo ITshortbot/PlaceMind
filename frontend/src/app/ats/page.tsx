@@ -76,7 +76,7 @@ function MatchBadge({ status }: { status: RequirementGapItem['match_status'] }) 
 export default function AtsAutoGeneratePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [jobTitle, setJobTitle] = useState('Staff Software Engineer · Stripe Core Infrastructure');
+  const [jobTitle, setJobTitle] = useState('');
   const [jdText, setJdText] = useState('');
   const [aiMode, setAiMode] = useState<'cloud' | 'local'>(AIServiceClient.getPreferredAIMode());
 

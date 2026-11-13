@@ -113,6 +113,7 @@ test.describe('Placemind App Flow Suite (Onboarding + Core Tabs)', () => {
     await expect(page.getByRole('button', { name: 'Gemini Cloud' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Local LM Studio' })).toBeVisible();
     // No fabricated job posting prefill - inputs start empty.
+    await expect(page.getByPlaceholder('e.g. Senior Frontend Engineer at Stripe')).toHaveValue('');
     await expect(page.getByPlaceholder('Paste job posting text here...')).toHaveValue('');
   });
 

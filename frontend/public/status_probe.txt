@@ -1,0 +1,8 @@
+-rw-rw-rw- 1 codespace codespace 6762 Nov 13 09:57 public/pwout5.txt
+PWEXIT=1
+PASSES=36 passed
+FAILS=
+ƒ  (Dynamic)  server-rendered on demand
+
+320012b Tests: disambiguate STAR Structure locator, replace nonexistent getByDisplayValue
+fc77a57 Honesty: drop fabricated profile/JD prefills, sanitize 422 errors; tests: real JD scan, session answer flow, engine tab

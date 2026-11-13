@@ -1,0 +1,28 @@
+          |                                                    ^
+      199 |     await expect(page.getByText('Action Ownership')).toBeVisible();
+      200 |   });
+      201 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:198:52
+
+    Error Context: test-results/internal-app-Placemind-Int-849f2-nswers-and-scores-after-one-Desktop-Chrome/error-context.md
+
+  2) [Desktop Chrome] › tests/internal-app.spec.ts:218:7 › Placemind Internal App & SaaS Navigation Suite › Settings renders AI engine controls and no fabricated profile 
+
+    TypeError: page.getByDisplayValue is not a function
+
+      223 |     ).toBeVisible();
+      224 |     // Profile fields start empty - no invented persona.
+    > 225 |     await expect(page.getByDisplayValue(/Rohan|Stanford/)).toHaveCount(0);
+          |                       ^
+      226 |     // AI engine controls live under their own tab.
+      227 |     await page.getByRole('button', { name: 'AI Engine (Gemini vs LM Studio)' }).click();
+      228 |     await expect(page.getByText('Always Use Local LM Studio / Ollama (0-Egress)')).toBeVisible();
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:225:23
+
+    Error Context: test-results/internal-app-Placemind-Int-aa19a-s-and-no-fabricated-profile-Desktop-Chrome/error-context.md
+
+  2 failed
+    [Desktop Chrome] › tests/internal-app.spec.ts:190:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report is honest with no answers and scores after one 
+    [Desktop Chrome] › tests/internal-app.spec.ts:218:7 › Placemind Internal App & SaaS Navigation Suite › Settings renders AI engine controls and no fabricated profile 
+  34 passed (1.5m)
+PW_EXIT_1

@@ -1,3 +1,87 @@
-AFTER_FILL_BUTTONS=["","","Save Draft","Export PDF","ClassicTimes 11pt","ModernArial 11pt","CompactCalibri 10pt","AcademicGeorgia 11pt","","","","","","",""]
-CLASSIC_COUNT=1
-DEBUG2_DONE
+
+Running 36 tests using 1 worker
+
+  ✓   1 [Desktop Chrome] › tests/hover-test.spec.ts:4:7 › Hover Extension Test › Hovering an item extends frosted yellow box (3.2s)
+  ✓   2 [Desktop Chrome] › tests/internal-app.spec.ts:81:7 › Placemind Internal App & SaaS Navigation Suite › Landing Page (Untouched) renders flawlessly (1.4s)
+  ✓   3 [Desktop Chrome] › tests/internal-app.spec.ts:88:7 › Placemind Internal App & SaaS Navigation Suite › Dashboard loads greeting, quick action cards and real workspace stats (1.6s)
+  ✓   4 [Desktop Chrome] › tests/internal-app.spec.ts:103:7 › Placemind Internal App & SaaS Navigation Suite › Resume Upload Wizard supports in-memory parsing checklist (1.5s)
+  ✓   5 [Desktop Chrome] › tests/internal-app.spec.ts:110:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis scores a saved resume against a pasted job description (2.2s)
+  ✓   6 [Desktop Chrome] › tests/internal-app.spec.ts:127:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis shows an honest error for an unknown resume (2.7s)
+  ✓   7 [Desktop Chrome] › tests/internal-app.spec.ts:133:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor loads a saved resume and survives reload (5.6s)
+  ✓   8 [Desktop Chrome] › tests/internal-app.spec.ts:144:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor shows an honest error for an unknown resume (2.1s)
+  ✓   9 [Desktop Chrome] › tests/internal-app.spec.ts:150:7 › Placemind Internal App & SaaS Navigation Suite › Interview Setup starts a real practice session (2.3s)
+  ✓  10 [Desktop Chrome] › tests/internal-app.spec.ts:164:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview session loads conversational answer UI and accepts an answer (993ms)
+  ✓  11 [Desktop Chrome] › tests/internal-app.spec.ts:184:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview shows an honest error for an unknown session (949ms)
+  ✘  12 [Desktop Chrome] › tests/internal-app.spec.ts:190:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report is honest with no answers and scores after one (821ms)
+  ✓  13 [Desktop Chrome] › tests/internal-app.spec.ts:202:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report shows an honest error for an unknown session (1.3s)
+  ✓  14 [Desktop Chrome] › tests/internal-app.spec.ts:208:7 › Placemind Internal App & SaaS Navigation Suite › History archive lists the real seeded record (1.5s)
+  ✘  15 [Desktop Chrome] › tests/internal-app.spec.ts:218:7 › Placemind Internal App & SaaS Navigation Suite › Settings renders AI engine controls and no fabricated profile (1.5s)
+  ✓  16 [Desktop Chrome] › tests/prompt-to-template.spec.ts:13:7 › Prompt-to-Template Studio Screen › Renders prompt studio with live preview, color picker, and example chips (633ms)
+  ✓  17 [Desktop Chrome] › tests/prompt-to-template.spec.ts:36:7 › Prompt-to-Template Studio Screen › Generates template via mocked API and updates live preview (1.3s)
+  ✓  18 [Desktop Chrome] › tests/prompt-to-template.spec.ts:89:7 › Prompt-to-Template Studio Screen › Displays preset fallback badge when source="fallback" (1.7s)
+  ✓  19 [Desktop Chrome] › tests/prompt-to-template.spec.ts:135:7 › Prompt-to-Template Studio Screen › Demo Mode generates instantly without triggering backend network call (3.0s)
+  ✓  20 [Desktop Chrome] › tests/prompt-to-template.spec.ts:163:7 › Prompt-to-Template Studio Screen › Displays honest error when ATS scoring backend is unreachable (3.1s)
+  ✓  21 [Desktop Chrome] › tests/prompt-to-template.spec.ts:183:7 › Prompt-to-Template Studio Screen › Displays ATS Readiness Report with score, top recommendations, and limits note (3.1s)
+  ✓  22 [Desktop Chrome] › tests/studio-shell.spec.ts:4:7 › Studio Page Shell Verification › Studio Page renders with AppShell, Floating Nav, and High Contrast Theme (1.9s)
+  ✓  23 [Desktop Chrome] › tests/visual-responsive.spec.ts:4:7 › Placemind Visual & Responsive Suite › Landing Page renders flawlessly with zero horizontal overflow (3.1s)
+  ✓  24 [Desktop Chrome] › tests/visual-responsive.spec.ts:22:7 › Placemind Visual & Responsive Suite › Studio route redirects to the real Resume Builder workspace (2.1s)
+  ✓  25 [Desktop Chrome] › tests/visual-responsive.spec.ts:41:7 › Placemind Visual & Responsive Suite › Universal Download Hub displays all OS targets (macOS, Windows, Linux, Mobile) (1.5s)
+  ✓  26 [Desktop Chrome] › tests/visual-responsive.spec.ts:54:7 › Placemind Visual & Responsive Suite › AI Mock Rehearsal Room states honestly that voice is not available yet (983ms)
+  ✓  27 [Desktop Chrome] › tests/wireframe-capture.spec.ts:4:7 › Placemind Visual Screenshot Capture (Wireframe v1 Alignment) › Capture Onboarding and 8 Flat Tabs (13.2s)
+  ✓  28 [Desktop Chrome] › tests/wireframe-v1.spec.ts:11:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Onboarding wizard is labeled demo setup and lands on the builder (4.4s)
+  ✓  29 [Desktop Chrome] › tests/wireframe-v1.spec.ts:41:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 1 - Dashboard renders greeting and 3 quick actions (2.4s)
+  ✓  30 [Desktop Chrome] › tests/wireframe-v1.spec.ts:50:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 2 - Template Studio renders prompt generator and example chips (2.0s)
+  ✓  31 [Desktop Chrome] › tests/wireframe-v1.spec.ts:61:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 3 - Resume Builder edits contact, saves a real draft and exports (4.0s)
+  ✓  32 [Desktop Chrome] › tests/wireframe-v1.spec.ts:102:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 4 - ATS 1-Pass renders analysis inputs without fabricated prefill (1.6s)
+  ✓  33 [Desktop Chrome] › tests/wireframe-v1.spec.ts:119:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 5 - Interview hub lists sessions with an honest heuristic note (1.6s)
+  ✓  34 [Desktop Chrome] › tests/wireframe-v1.spec.ts:129:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 6 - Report renders 2-column analytical scoring and SVG radar chart (1.3s)
+  ✓  35 [Desktop Chrome] › tests/wireframe-v1.spec.ts:137:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 7 - History renders real artifact records or an honest empty state (1.5s)
+  ✓  36 [Desktop Chrome] › tests/wireframe-v1.spec.ts:148:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 8 - Settings renders profile and AI engine controls (1.4s)
+
+
+  1) [Desktop Chrome] › tests/internal-app.spec.ts:190:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report is honest with no answers and scores after one 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('STAR Structure')
+    Expected: visible
+    Error: strict mode violation: getByText('STAR Structure') resolved to 2 elements:
+        1) <span>Scores come from transparent answer heuristics (S…</span> aka getByText('Scores come from transparent')
+        2) <span class="truncate">STAR Structure</span> aka getByText('STAR Structure', { exact: true })
+
+    Call log:
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByText('STAR Structure')
+
+
+      196 |     await page.reload();
+      197 |     await expect(page.getByText('Session Report')).toBeVisible({ timeout: 15000 });
+    > 198 |     await expect(page.getByText('STAR Structure')).toBeVisible({ timeout: 15000 });
+          |                                                    ^
+      199 |     await expect(page.getByText('Action Ownership')).toBeVisible();
+      200 |   });
+      201 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:198:52
+
+    Error Context: test-results/internal-app-Placemind-Int-849f2-nswers-and-scores-after-one-Desktop-Chrome/error-context.md
+
+  2) [Desktop Chrome] › tests/internal-app.spec.ts:218:7 › Placemind Internal App & SaaS Navigation Suite › Settings renders AI engine controls and no fabricated profile 
+
+    TypeError: page.getByDisplayValue is not a function
+
+      223 |     ).toBeVisible();
+      224 |     // Profile fields start empty - no invented persona.
+    > 225 |     await expect(page.getByDisplayValue(/Rohan|Stanford/)).toHaveCount(0);
+          |                       ^
+      226 |     // AI engine controls live under their own tab.
+      227 |     await page.getByRole('button', { name: 'AI Engine (Gemini vs LM Studio)' }).click();
+      228 |     await expect(page.getByText('Always Use Local LM Studio / Ollama (0-Egress)')).toBeVisible();
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:225:23
+
+    Error Context: test-results/internal-app-Placemind-Int-aa19a-s-and-no-fabricated-profile-Desktop-Chrome/error-context.md
+
+  2 failed
+    [Desktop Chrome] › tests/internal-app.spec.ts:190:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report is honest with no answers and scores after one 
+    [Desktop Chrome] › tests/internal-app.spec.ts:218:7 › Placemind Internal App & SaaS Navigation Suite › Settings renders AI engine controls and no fabricated profile 
+  34 passed (1.5m)
+PW_EXIT_1
