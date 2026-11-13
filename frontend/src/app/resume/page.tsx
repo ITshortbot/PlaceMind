@@ -1,62 +1,211 @@
-'use client';
-
 // ============================================================================
 // File: frontend/src/app/resume/page.tsx
-// Description: Tab 3 - Resume: 3-Column Editor from Wireframe v1
-//              Left: "Your Info" (Details, Photo, Certificates, AI Tips)
-//              Center: "Live Preview" (Hero physical document canvas)
-//              Right: "Templates & Suggestions" (Template picker + XYZ rewrites)
-//              Bottom: Persistent AI Command Bar
+// Description: Resume Builder - edit your own content, render it live into a
+//              real template family, score it on demand, print/export, and
+//              save drafts to the backend. No fabricated sample persona, no
+//              static preview images, no unearned badges.
 // ============================================================================
+'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { useMemo, useState } from 'react';
 import { AppShell } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
+import { Label } from '@/components/ui/Label';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
-import { Label } from '@/components/ui/Label';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Separator } from '@/components/ui/Separator';
-import { Progress } from '@/components/ui/Progress';
-import {
-  Download,
-  Sparkles,
-  Zap,
-  Check,
-  Award,
-  Upload,
-  FileCheck,
-  User,
-  ShieldCheck,
-} from 'lucide-react';
+import { ResumePreview } from '@/components/templates/ResumePreview';
+import { buildPalette } from '@/lib/color/engine';
+import { createResume } from '@/lib/api/resumes';
+import { Download, Save, Gauge } from 'lucide-react';
+import type { ResumeContent, StyleSpec } from '@/types/templates';
 
-const TEMPLATES = [
-  { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp', ats: 94.8 },
-  { id: 3, name: 'AI & Systems Pro', file: '/assets/Resume/rem3.webp', ats: 98.2 },
-  { id: 4, name: 'Full-Stack Modern', file: '/assets/Resume/rem4.webp', ats: 97.2 },
-  { id: 7, name: 'LaTeX Single-Column', file: '/assets/Resume/rem7.webp', ats: 95.6 },
+interface BuilderTemplate {
+  id: string;
+  name: string;
+  style: StyleSpec;
+}
+
+// Real template families rendered by ResumePreview - no thumbnail images.
+const BUILDER_TEMPLATES: BuilderTemplate[] = [
+  {
+    id: 'classic',
+    name: 'Classic',
+    style: {
+      layout: 'single_column',
+      font: 'Times',
+      size_pt: 11,
+      density: 'normal',
+      header_style: 'left',
+      section_order: ['summary', 'experience', 'education', 'skills', 'projects'],
+      mood: 'corporate',
+      hue: 220,
+    },
+  },
+  {
+    id: 'modern',
+    name: 'Modern',
+    style: {
+      layout: 'single_column',
+      font: 'Arial',
+      size_pt: 11,
+      density: 'normal',
+      header_style: 'banner',
+      section_order: ['summary', 'skills', 'experience', 'projects', 'education'],
+      mood: 'tech',
+      hue: 195,
+    },
+  },
+  {
+    id: 'compact',
+    name: 'Compact',
+    style: {
+      layout: 'single_column',
+      font: 'Calibri',
+      size_pt: 10,
+      density: 'compact',
+      header_style: 'left',
+      section_order: ['summary', 'experience', 'skills', 'projects', 'education'],
+      mood: 'minimal',
+      hue: 250,
+    },
+  },
+  {
+    id: 'academic',
+    name: 'Academic',
+    style: {
+      layout: 'single_column',
+      font: 'Georgia',
+      size_pt: 11,
+      density: 'normal',
+      header_style: 'centered',
+      section_order: ['summary', 'education', 'experience', 'projects', 'skills'],
+      mood: 'finance',
+      hue: 160,
+    },
+  },
 ];
 
-export default function ResumePage() {
-  const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATES[0]);
-  const [appliedRewrite, setAppliedRewrite] = useState(false);
+interface DraftState {
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  summary: string;
+  skills: string;
+  role: string;
+  company: string;
+  bullets: string;
+  degree: string;
+  institution: string;
+  year: string;
+}
 
-  // Resume Form Data
-  const [resumeData, setResumeData] = useState({
-    name: 'Rohan K. Patel',
-    title: 'Staff Software Architect',
-    email: 'rohan.patel@email.com',
-    phone: '+1 (555) 349-2049',
-    summary:
-      'High-performance distributed systems architect with 8+ years building low-latency Kafka pipelines, high-throughput microservices, and AI RAG search infrastructure.',
-    bullet1: 'Scaled distributed Kafka streaming pipelines to 4.5M events/sec, cutting latency by 42%.',
-    bullet2: 'Engineered cloud database index handling 250M queries daily with 99.99% uptime and zero data egress.',
-    skills: 'Distributed Systems, Kafka, Go, Rust, Python, pgvector, Next.js, Kubernetes',
-  });
+const EMPTY_DRAFT: DraftState = {
+  name: '',
+  title: '',
+  email: '',
+  phone: '',
+  summary: '',
+  skills: '',
+  role: '',
+  company: '',
+  bullets: '',
+  degree: '',
+  institution: '',
+  year: '',
+};
+
+export default function ResumePage() {
+  const [selectedTemplate, setSelectedTemplate] = useState(BUILDER_TEMPLATES[0]);
+  const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveMessage, setSaveMessage] = useState<string>('');
+
+  const set = <K extends keyof DraftState>(key: K, value: DraftState[K]) =>
+    setDraft((prev) => ({ ...prev, [key]: value }));
+
+  // Map the form onto the typed ResumeContent the renderer consumes.
+  const content: ResumeContent = useMemo(() => {
+    const bulletList = draft.bullets
+      .split('\n')
+      .map((b) => b.trim())
+      .filter(Boolean);
+    return {
+      headline: draft.title || draft.name || 'Your Resume',
+      summary: draft.summary,
+      skills: draft.skills
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      experience:
+        draft.role || bulletList.length
+          ? [
+              {
+                role: draft.role || 'Role',
+                company: draft.company || null,
+                bullets: bulletList,
+              },
+            ]
+          : [],
+      projects: [],
+      education:
+        draft.degree || draft.institution
+          ? [
+              {
+                degree: draft.degree,
+                institution: draft.institution || null,
+                year: draft.year || null,
+              },
+            ]
+          : [],
+    };
+  }, [draft]);
+
+  const palette = useMemo(
+    () => buildPalette(selectedTemplate.style.mood, selectedTemplate.style.hue ?? undefined),
+    [selectedTemplate]
+  );
+
+  const toPlainText = () =>
+    [
+      draft.name,
+      draft.title,
+      [draft.email, draft.phone].filter(Boolean).join(' | '),
+      '',
+      draft.summary && `SUMMARY\n${draft.summary}`,
+      draft.skills && `SKILLS\n${draft.skills}`,
+      (draft.role || draft.bullets) &&
+        `EXPERIENCE\n${[draft.role, draft.company].filter(Boolean).join(', ')}\n${draft.bullets}`,
+      (draft.degree || draft.institution) &&
+        `EDUCATION\n${[draft.degree, draft.institution, draft.year].filter(Boolean).join(', ')}`,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+  const handleSave = async () => {
+    if (!draft.name.trim()) {
+      setSaveState('error');
+      setSaveMessage('Add at least a name before saving.');
+      return;
+    }
+    setSaveState('saving');
+    setSaveMessage('');
+    try {
+      const fileName = `${draft.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_')}_draft.txt`;
+      await createResume({
+        file_name: fileName,
+        raw_text: toPlainText(),
+        parsed_metadata: { builder: true, template: selectedTemplate.id, contact: { email: draft.email, phone: draft.phone } },
+      });
+      setSaveState('saved');
+      setSaveMessage('Draft saved to your workspace.');
+    } catch (err) {
+      setSaveState('error');
+      setSaveMessage(err instanceof Error ? err.message : 'Save failed.');
+    }
+  };
 
   return (
     <AppShell>
@@ -68,176 +217,152 @@ export default function ResumePage() {
         ]}
         actionButton={
           <div className="flex items-center gap-2">
-            <Badge variant="accent" size="sm" className="font-mono bg-[#FACC15] text-[#0A0A0C] border-none font-bold">
-              {selectedTemplate.ats}% ATS Score
-            </Badge>
-            <Button variant="default" size="sm" icon={<Download className="w-3.5 h-3.5 text-[#0A0A0C]" />}>
-              Export PDF
+            <Button variant="outline" size="sm" onClick={handleSave} disabled={saveState === 'saving'}>
+              <Save className="w-3.5 h-3.5" />
+              <span>{saveState === 'saving' ? 'Saving...' : 'Save Draft'}</span>
+            </Button>
+            <Button variant="default" size="sm" onClick={() => window.print()}>
+              <Download className="w-3.5 h-3.5 text-[#0A0A0C]" />
+              <span>Export PDF</span>
             </Button>
           </div>
         }
       />
 
-      {/* Main 3-Column Layout from Wireframe v1 */}
+      {saveMessage && (
+        <div
+          className={`mx-6 mt-3 p-3 rounded-xl text-xs font-semibold border ${
+            saveState === 'saved'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+          }`}
+        >
+          {saveMessage}
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-[calc(100vh-64px)] pb-20">
-        {/* ----------------------------------------------------------------- */}
-        {/* LEFT COLUMN: "Your Info" (Info, Contact, Certificates, AI Tips)   */}
-        {/* ----------------------------------------------------------------- */}
-        <aside className="w-full lg:w-80 p-5 space-y-5 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-r border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-[#6C5CE7]" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1E] dark:text-white">
-              Your Information
-            </h3>
-          </div>
+        {/* LEFT COLUMN: your real content */}
+        <aside className="w-full lg:w-80 p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-r border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1E] dark:text-white">
+            Your Information
+          </h3>
 
           <div className="space-y-3 text-xs">
             <div className="space-y-1">
               <Label>Full Name</Label>
-              <Input
-                type="text"
-                value={resumeData.name}
-                onChange={(e) => setResumeData({ ...resumeData, name: e.target.value })}
-              />
+              <Input type="text" value={draft.name} onChange={(e) => set('name', e.target.value)} placeholder="Your name" />
             </div>
-
             <div className="space-y-1">
               <Label>Target Title</Label>
-              <Input
-                type="text"
-                value={resumeData.title}
-                onChange={(e) => setResumeData({ ...resumeData, title: e.target.value })}
-              />
+              <Input type="text" value={draft.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Backend Engineer" />
             </div>
-
             <div className="space-y-1">
               <Label>Email</Label>
-              <Input
-                type="email"
-                value={resumeData.email}
-                onChange={(e) => setResumeData({ ...resumeData, email: e.target.value })}
-              />
+              <Input type="email" value={draft.email} onChange={(e) => set('email', e.target.value)} placeholder="you@example.com" />
             </div>
-
             <div className="space-y-1">
-              <Label>Executive Summary</Label>
-              <Textarea
-                rows={3}
-                value={resumeData.summary}
-                onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
-              />
+              <Label>Phone</Label>
+              <Input type="text" value={draft.phone} onChange={(e) => set('phone', e.target.value)} placeholder="Optional" />
+            </div>
+            <div className="space-y-1">
+              <Label>Professional Summary</Label>
+              <Textarea rows={3} value={draft.summary} onChange={(e) => set('summary', e.target.value)} placeholder="2-3 sentences about your experience" />
+            </div>
+            <div className="space-y-1">
+              <Label>Skills (comma separated)</Label>
+              <Textarea rows={2} value={draft.skills} onChange={(e) => set('skills', e.target.value)} placeholder="Python, FastAPI, PostgreSQL" />
             </div>
           </div>
 
           <Separator />
 
-          {/* Uploaded Certificates & Credentials */}
-          <div className="space-y-2">
-            <Label>Verified Certificates</Label>
-            <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-[#16A34A]" />
-                <span className="font-semibold truncate">AWS Solutions Architect Pro</span>
-              </div>
-              <Badge variant="success" size="sm">Verified</Badge>
+          <div className="space-y-3 text-xs">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1E] dark:text-white">Most Recent Role</h4>
+            <div className="space-y-1">
+              <Label>Role</Label>
+              <Input type="text" value={draft.role} onChange={(e) => set('role', e.target.value)} placeholder="e.g. Backend Engineer" />
+            </div>
+            <div className="space-y-1">
+              <Label>Company</Label>
+              <Input type="text" value={draft.company} onChange={(e) => set('company', e.target.value)} placeholder="Employer name" />
+            </div>
+            <div className="space-y-1">
+              <Label>Achievement Bullets (one per line)</Label>
+              <Textarea rows={4} value={draft.bullets} onChange={(e) => set('bullets', e.target.value)} placeholder={'Built FastAPI services serving 2M requests/day\nCut p95 latency from 800ms to 240ms'} />
             </div>
           </div>
 
           <Separator />
 
-          {/* Contextual AI Feedback Tip */}
-          <Card className="p-3.5 bg-[#6C5CE7]/10 border-[#6C5CE7]/30 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#6C5CE7] dark:text-[#8F82FF]">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI Formatting Signal</span>
+          <div className="space-y-3 text-xs">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1E] dark:text-white">Education</h4>
+            <div className="space-y-1">
+              <Label>Degree</Label>
+              <Input type="text" value={draft.degree} onChange={(e) => set('degree', e.target.value)} placeholder="e.g. B.Tech Computer Science" />
             </div>
-            <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] leading-relaxed">
-              Target role requires deep stream-processing metrics. Ensure Kafka throughput is quantified.
-            </p>
-          </Card>
+            <div className="space-y-1">
+              <Label>Institution</Label>
+              <Input type="text" value={draft.institution} onChange={(e) => set('institution', e.target.value)} placeholder="University name" />
+            </div>
+            <div className="space-y-1">
+              <Label>Year</Label>
+              <Input type="text" value={draft.year} onChange={(e) => set('year', e.target.value)} placeholder="e.g. 2023" />
+            </div>
+          </div>
         </aside>
 
-        {/* ----------------------------------------------------------------- */}
-        {/* CENTER COLUMN: Live Physical Document Retina Canvas (Hero)         */}
-        {/* ----------------------------------------------------------------- */}
-        <main className="flex-1 p-6 lg:p-8 bg-black/[0.03] dark:bg-black/40 flex items-center justify-center overflow-y-auto">
-          <Card
-            variant="elevated"
-            className="relative w-full max-w-md aspect-[3/4] overflow-hidden shadow-2xl shadow-black/25 dark:shadow-black/80 border-2 border-black/[0.12] dark:border-white/[0.15] bg-white transition-transform duration-300 hover:scale-[1.01]"
-          >
-            <Image
-              src={selectedTemplate.file}
-              alt={selectedTemplate.name}
-              fill
-              priority
-              className="object-cover object-top"
+        {/* CENTER COLUMN: live render of YOUR content in the selected layout */}
+        <main className="flex-1 p-6 lg:p-8 bg-black/[0.03] dark:bg-black/40 overflow-y-auto">
+          {draft.name || draft.summary || draft.role ? (
+            <ResumePreview
+              style={selectedTemplate.style}
+              content={content}
+              palette={palette}
+              showExportButton={false}
             />
-            <div className="absolute top-3 right-3">
-              <Badge variant="neutral" size="sm" className="bg-black/85 text-white font-mono border-none shadow-md">
-                {selectedTemplate.ats}% ATS Verified
-              </Badge>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-3 max-w-sm mx-auto">
+              <Gauge className="w-8 h-8 text-[#6C5CE7]" />
+              <p className="text-sm font-semibold text-[#1A1A1E] dark:text-white">
+                Start typing on the left
+              </p>
+              <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] leading-relaxed">
+                Your own content renders here live in the selected template. Nothing is pre-filled
+                and nothing is invented - what you type is exactly what exports.
+              </p>
             </div>
-          </Card>
+          )}
         </main>
 
-        {/* ----------------------------------------------------------------- */}
-        {/* RIGHT COLUMN: "Templates & Suggestions" (Picker + XYZ Rewrites)   */}
-        {/* ----------------------------------------------------------------- */}
-        <aside className="w-full lg:w-80 p-5 space-y-5 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-l border-black/[0.08] dark:border-white/[0.08] flex-shrink-0">
+        {/* RIGHT COLUMN: template picker (renders, not thumbnails) */}
+        <aside className="w-full lg:w-72 p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-l border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print">
           <div className="space-y-2">
-            <Label>Quick Template Switcher</Label>
+            <Label>Template Layout</Label>
             <div className="grid grid-cols-2 gap-2">
-              {TEMPLATES.map((tmpl) => (
-                <div
+              {BUILDER_TEMPLATES.map((tmpl) => (
+                <button
                   key={tmpl.id}
+                  type="button"
                   onClick={() => setSelectedTemplate(tmpl)}
-                  className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border text-left transition-all ${
                     selectedTemplate.id === tmpl.id
                       ? 'border-[#6C5CE7] bg-[#6C5CE7]/15 ring-1 ring-[#6C5CE7]'
                       : 'border-black/[0.08] dark:border-white/[0.08] hover:border-black/20'
                   }`}
                 >
-                  <div className="font-bold text-[11px] truncate">{tmpl.name}</div>
-                  <span className="text-[10px] font-mono text-[#16A34A] font-bold">
-                    {tmpl.ats}%
-                  </span>
-                </div>
+                  <div className="font-bold text-[11px] text-[#1A1A1E] dark:text-white">{tmpl.name}</div>
+                  <div className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA] font-mono">
+                    {tmpl.style.font} {tmpl.style.size_pt}pt
+                  </div>
+                </button>
               ))}
             </div>
+            <p className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA] leading-relaxed pt-1">
+              Layouts are rendered live with WCAG-checked palettes. Use Analyze to score a saved
+              resume against a job description.
+            </p>
           </div>
-
-          <Separator />
-
-          {/* AI Google XYZ Rewrite Proposal */}
-          <Card
-            variant="elevated"
-            className="p-4 border-2 border-[#FACC15] bg-gradient-to-br from-[#FACC15]/15 via-white dark:via-[#16161D] to-transparent space-y-3 shadow-xl"
-          >
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#FACC15]" />
-              <h4 className="text-xs font-black text-[#0A0A0C] dark:text-white">
-                Google XYZ Metric Optimization
-              </h4>
-            </div>
-
-            <div className="text-[11px] text-[#7A7A85] line-through">
-              &quot;Helped team optimize Kafka streaming latency.&quot;
-            </div>
-
-            <div className="p-3 rounded-xl bg-white dark:bg-[#0E0E12] border border-[#FACC15]/40 text-xs font-semibold text-[#0A0A0C] dark:text-white shadow-xs">
-              &quot;Scaled distributed Kafka streaming pipelines to 4.5M events/sec, cutting latency by 42%.&quot;
-            </div>
-
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setAppliedRewrite(true)}
-              className="w-full text-xs font-extrabold text-[#0A0A0C]"
-            >
-              {appliedRewrite ? <Check className="w-4 h-4" /> : <Zap className="w-4 h-4 text-[#0A0A0C]" />}
-              <span>{appliedRewrite ? 'Optimization Applied' : '1-Click Apply'}</span>
-            </Button>
-          </Card>
         </aside>
       </div>
     </AppShell>
