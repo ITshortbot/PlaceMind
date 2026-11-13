@@ -2,60 +2,44 @@
 
 // ============================================================================
 // File: frontend/src/app/dashboard/page.tsx
-// Description: Tab 1 - Dashboard: Optimized Single-Screen Layout (No scrolling required).
-//              Features personalized greeting, 3 quick action cards, compact recent resumes,
-//              and interview activity, perfectly framing the bottom floating AI command capsule.
+// Description: Tab 1 - Dashboard: quick actions plus the user's REAL saved
+//              resumes and interview sessions from the backend. No demo
+//              metrics: counts, scores and dates below are live records,
+//              and sections say so when empty.
 // ============================================================================
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { AppShell } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import {
-  FileText,
-  Wand2,
-  Mic,
-  Clock,
-  Sparkles,
-  ExternalLink,
-  Zap,
-} from 'lucide-react';
+import { FileText, Wand2, Mic, Clock, ExternalLink } from 'lucide-react';
+import { listResumes, ResumeSummary } from '@/lib/api/resumes';
+import { listInterviewSessions, SessionSummary } from '@/lib/api/interviews';
 
-const RECENT_RESUMES = [
-  {
-    id: 'stripe-staff',
-    name: 'Rohan_Patel_Staff_Architect_2026.pdf',
-    date: 'Aug 26, 2026',
-    atsScore: 94.8,
-    targetRole: 'Staff Software Architect · Stripe',
-    file: '/assets/Resume/rem1.webp',
-  },
-  {
-    id: 'ai-lead',
-    name: 'Rohan_AI_Systems_Specialist.pdf',
-    date: 'Aug 24, 2026',
-    atsScore: 98.2,
-    targetRole: 'Senior AI Engineer · OpenAI',
-    file: '/assets/Resume/rem3.webp',
-  },
-];
-
-const RECENT_INTERVIEWS = [
-  {
-    sessionId: 'sess-84920',
-    role: 'Staff Distributed Systems Engineer',
-    company: 'Stripe Core Infrastructure',
-    date: 'Aug 26, 2026',
-    score: '88.5%',
-    status: 'Completed',
-    questionsCount: 6,
-  },
-];
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime())
+    ? iso
+    : date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 export default function DashboardPage() {
+  const [resumes, setResumes] = useState<ResumeSummary[] | null>(null);
+  const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
+
+  useEffect(() => {
+    listResumes().then(setResumes).catch(() => setResumes([]));
+    listInterviewSessions().then(setSessions).catch(() => setSessions([]));
+  }, []);
+
+  const scored = (resumes ?? []).filter((r) => r.latest_ats_score !== null);
+  const avgAts =
+    scored.length > 0
+      ? Math.round((scored.reduce((sum, r) => sum + (r.latest_ats_score ?? 0), 0) / scored.length) * 10) / 10
+      : null;
+
   return (
     <AppShell>
       <TopBar
@@ -70,36 +54,42 @@ export default function DashboardPage() {
       />
 
       <main className="px-4 sm:px-8 py-3 max-w-7xl mx-auto w-full flex flex-col justify-between space-y-4">
-        {/* Personalized Welcome Header */}
+        {/* Welcome Header - real workspace state only */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FACC15]/15 text-[#854D0E] dark:text-[#FACC15] text-[11px] font-black mb-1 border border-[#FACC15]/30">
-              <Sparkles className="w-3 h-3" />
-              <span>Targeting: Stripe &bull; Staff Software Architect Track</span>
-            </div>
             <h1 className="text-xl sm:text-3xl font-black text-[#0A0A0C] dark:text-[#F8F9FA] tracking-tight">
-              Welcome back, Rohan
+              Welcome back
             </h1>
             <p className="text-xs text-[#4A4A52] dark:text-[#A1A1AA]">
-              Here is your active placement intelligence profile based on your target role.
+              Your saved resumes and practice sessions, loaded from your workspace.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5">
             <div className="px-3 py-1 rounded-2xl bg-white dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-sm text-xs font-bold flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#FACC15] shadow-xs" />
-              <span>Avg ATS: <strong>96.5%</strong></span>
+              <span>
+                Resumes saved: <strong>{resumes === null ? '...' : resumes.length}</strong>
+              </span>
             </div>
             <div className="px-3 py-1 rounded-2xl bg-white dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-sm text-xs font-bold flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-[#FACC15] fill-[#FACC15]" />
-              <span>Streak: <strong>4 Days</strong></span>
+              <Mic className="w-3.5 h-3.5 text-[#FACC15]" />
+              <span>
+                Practice sessions: <strong>{sessions === null ? '...' : sessions.length}</strong>
+              </span>
             </div>
+            {avgAts !== null && (
+              <div className="px-3 py-1 rounded-2xl bg-white dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-sm text-xs font-bold flex items-center gap-2">
+                <span>
+                  Avg ATS: <strong>{avgAts}%</strong>
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 3-Card Quick-Action Row (High-Contrast Glassmorphic Cards) */}
+        {/* 3-Card Quick-Action Row */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* Action 1: Build a Resume */}
           <Link
             href="/resume"
             className="md:col-span-4 p-4 sm:p-5 rounded-3xl bg-white/90 dark:bg-[#101015]/90 border border-black/[0.1] dark:border-white/[0.12] hover:border-[#FACC15] shadow-sm hover:shadow-xl hover:shadow-[#FACC15]/10 transition-all duration-300 hover:-translate-y-0.5 flex flex-col justify-between group cursor-pointer"
@@ -122,7 +112,6 @@ export default function DashboardPage() {
             </span>
           </Link>
 
-          {/* Action 2: Auto-Generate for a Job */}
           <Link
             href="/ats"
             className="md:col-span-4 p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#FACC15]/20 via-white dark:via-[#14141A] to-white dark:to-[#101015] border-2 border-[#FACC15] shadow-lg shadow-[#FACC15]/15 hover:shadow-2xl hover:shadow-[#FACC15]/25 transition-all duration-300 hover:-translate-y-0.5 flex flex-col justify-between group cursor-pointer"
@@ -145,7 +134,6 @@ export default function DashboardPage() {
             </span>
           </Link>
 
-          {/* Action 3: Practice an Interview */}
           <Link
             href="/interview"
             className="md:col-span-4 p-4 sm:p-5 rounded-3xl bg-white/90 dark:bg-[#101015]/90 border border-black/[0.1] dark:border-white/[0.12] hover:border-[#FACC15] shadow-sm hover:shadow-xl hover:shadow-[#FACC15]/10 transition-all duration-300 hover:-translate-y-0.5 flex flex-col justify-between group cursor-pointer"
@@ -169,46 +157,59 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Section: Recent Resumes (Compact Row) */}
+        {/* Section: Recent Resumes - real records */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-black uppercase tracking-wider text-[#1A1A1E] dark:text-white">
               Recent Resumes
             </h2>
-            <Link href="/template" className="text-[11px] text-[#FACC15] dark:text-[#FACC15] hover:underline font-bold">
-              Browse All Templates (10) &rarr;
+            <Link href="/history" className="text-[11px] text-[#FACC15] dark:text-[#FACC15] hover:underline font-bold">
+              View All &rarr;
             </Link>
           </div>
 
+          {resumes !== null && resumes.length === 0 && (
+            <div className="p-4 rounded-2xl bg-white/90 dark:bg-[#121217] border border-dashed border-black/[0.15] dark:border-white/[0.15] text-xs text-[#5A5A63] dark:text-[#A1A1AA] flex items-center justify-between gap-3">
+              <span>No resumes saved yet. Upload one to see it here.</span>
+              <Link href="/resumes/upload">
+                <Button variant="secondary" size="sm" className="h-7 text-[11px] px-2.5">
+                  Upload Resume
+                </Button>
+              </Link>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {RECENT_RESUMES.map((res) => (
+            {(resumes ?? []).slice(0, 2).map((res) => (
               <div
                 key={res.id}
                 className="p-3.5 rounded-2xl bg-white/90 dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-sm flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative w-9 h-12 rounded-lg overflow-hidden border border-black/10 flex-shrink-0 bg-white shadow-xs">
-                    <Image src={res.file} alt={res.name} fill className="object-cover object-top" />
+                  <div className="w-9 h-12 rounded-lg border border-black/10 flex-shrink-0 bg-white shadow-xs flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-[#8A8A92]" />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xs font-bold text-[#1A1A1E] dark:text-white truncate">
-                      {res.name}
+                      {res.file_name}
                     </h3>
                     <p className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA] truncate mt-0.5">
-                      {res.targetRole}
+                      {res.section_count} section{res.section_count === 1 ? '' : 's'} parsed
                     </p>
                     <div className="flex items-center gap-1.5 mt-1 text-[9px] text-[#8A8A92]">
                       <Clock className="w-2.5 h-2.5" />
-                      <span>{res.date}</span>
+                      <span>{formatDate(res.created_at)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                  <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-[#16A34A]/10 text-[#16A34A] dark:text-[#22C55E]">
-                    {res.atsScore}% ATS
-                  </span>
-                  <Link href="/resume">
+                  {res.latest_ats_score !== null && (
+                    <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-[#16A34A]/10 text-[#16A34A] dark:text-[#22C55E]">
+                      {res.latest_ats_score}% ATS
+                    </span>
+                  )}
+                  <Link href={`/resumes/${res.id}/edit`}>
                     <Button variant="default" size="sm" className="h-7 text-[11px] px-2.5">
                       Open in Editor
                     </Button>
@@ -219,21 +220,32 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Section: Recent Interview Sessions (Compact Row) */}
+        {/* Section: Recent Interview Sessions - real records */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-black uppercase tracking-wider text-[#1A1A1E] dark:text-white">
               Recent Interview Sessions
             </h2>
-            <Link href="/interview" className="text-[11px] text-[#FACC15] dark:text-[#FACC15] hover:underline font-bold">
+            <Link href="/interview/new" className="text-[11px] text-[#FACC15] dark:text-[#FACC15] hover:underline font-bold">
               New Simulation &rarr;
             </Link>
           </div>
 
+          {sessions !== null && sessions.length === 0 && (
+            <div className="p-4 rounded-2xl bg-white/90 dark:bg-[#121217] border border-dashed border-black/[0.15] dark:border-white/[0.15] text-xs text-[#5A5A63] dark:text-[#A1A1AA] flex items-center justify-between gap-3">
+              <span>No practice sessions yet. Start a simulation to see it here.</span>
+              <Link href="/interview/new">
+                <Button variant="secondary" size="sm" className="h-7 text-[11px] px-2.5">
+                  Start Practicing
+                </Button>
+              </Link>
+            </div>
+          )}
+
           <div className="space-y-2">
-            {RECENT_INTERVIEWS.map((interview) => (
+            {(sessions ?? []).slice(0, 3).map((interview) => (
               <div
-                key={interview.sessionId}
+                key={interview.session_id}
                 className="p-3.5 rounded-2xl bg-white/90 dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-sm flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3">
@@ -243,27 +255,30 @@ export default function DashboardPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-xs font-bold text-[#1A1A1E] dark:text-white">
-                        {interview.role}
+                        {interview.target_role}
                       </h3>
                       <Badge variant="accent" size="sm">
                         {interview.status}
                       </Badge>
                     </div>
                     <p className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA] mt-0.5">
-                      {interview.company} &bull; {interview.questionsCount} Questions Answered
+                      {interview.company ? `${interview.company} \u2022 ` : ''}
+                      {interview.answered}/{interview.question_count} Questions Answered
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="text-xs font-black text-[#16A34A] dark:text-[#22C55E]">
-                      {interview.score}
-                    </div>
-                    <div className="text-[9px] text-[#8A8A92]">{interview.date}</div>
+                    {interview.average_score !== null && (
+                      <div className="text-xs font-black text-[#16A34A] dark:text-[#22C55E]">
+                        {Math.round(interview.average_score * 10) / 10}/100
+                      </div>
+                    )}
+                    <div className="text-[9px] text-[#8A8A92]">{formatDate(interview.created_at)}</div>
                   </div>
 
-                  <Link href="/report">
+                  <Link href={`/interview/${interview.session_id}/report`}>
                     <Button variant="secondary" size="sm" icon={<ExternalLink className="w-3 h-3" />} className="h-7 text-[11px] px-2.5">
                       View Report
                     </Button>
