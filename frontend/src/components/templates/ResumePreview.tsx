@@ -367,7 +367,19 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
               .no-print {
                 display: none !important;
               }
+              /* Resume-only output: hide all app chrome (nav rail, header,
+                 command bars, background layers) outside the sheet. */
+              body * {
+                visibility: hidden !important;
+              }
+              #resume-preview-sheet,
+              #resume-preview-sheet * {
+                visibility: visible !important;
+              }
               #resume-preview-sheet {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
                 border-radius: 0 !important;
