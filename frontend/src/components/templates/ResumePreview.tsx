@@ -378,6 +378,10 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
               body *:not(:has(#resume-preview-sheet)):not(#resume-preview-sheet):not(#resume-preview-sheet *) {
                 display: none !important;
               }
+              body,
+              body *:has(#resume-preview-sheet) {
+                background: white !important;
+              }
               #resume-preview-sheet {
                 position: static !important;
                 box-shadow: none !important;
