@@ -95,7 +95,9 @@ export default function ResumePage() {
     return {
       name: draft.name || undefined,
       contact: [draft.email, draft.phone].filter(Boolean).join('  |  ') || undefined,
-      headline: draft.title || draft.name || 'Your Resume',
+      // Never echo the name as the headline; keep the old empty-state placeholder
+      // only when nothing has been entered at all.
+      headline: draft.title || (draft.name ? undefined : 'Your Resume'),
       summary: draft.summary,
       skills: draft.skills
         .split(',')

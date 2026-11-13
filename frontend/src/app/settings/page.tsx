@@ -343,9 +343,12 @@ export default function SettingsPage() {
                       are set in this environment, so that upload is skipped.
                     </p>
                     <p className="text-[11px] leading-relaxed">
-                      This is a single-user demo: there is no account system, no telemetry pipeline,
-                      and nothing here is reviewed by a third party. Delete saved records from the
-                      History page to remove them.
+                      In this demo environment no third-party service processes your data: no
+                      Gemini API key and no Cloudflare R2 credentials are configured. If you add a
+                      Gemini key, resume and job-description text is sent to Google for AI-written
+                      suggestions; if you add R2 credentials, uploaded PDF files are stored in
+                      Cloudflare. This is a single-user demo with no account system and no
+                      telemetry pipeline. Delete saved records from the History page to remove them.
                     </p>
                   </div>
                 </div>

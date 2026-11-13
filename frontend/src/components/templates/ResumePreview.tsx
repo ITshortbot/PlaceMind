@@ -309,9 +309,11 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
             <h1 className="text-2xl font-bold tracking-tight select-text text-white">
               {content.name || 'Candidate Resume'}
             </h1>
-            <p className="text-sm font-medium mt-1 opacity-90 select-text text-white/95">
-              {content.headline}
-            </p>
+            {content.headline && (
+              <p className="text-sm font-medium mt-1 opacity-90 select-text text-white/95">
+                {content.headline}
+              </p>
+            )}
             {content.contact && (
               <p className="text-xs mt-1 opacity-80 select-text text-white/90">
                 {content.contact}
@@ -330,12 +332,14 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
             >
               {content.name || 'Candidate Resume'}
             </h1>
-            <p
-              className="text-sm font-medium mt-1 select-text"
-              style={{ color: palette.accent }}
-            >
-              {content.headline}
-            </p>
+            {content.headline && (
+              <p
+                className="text-sm font-medium mt-1 select-text"
+                style={{ color: palette.accent }}
+              >
+                {content.headline}
+              </p>
+            )}
             {content.contact && (
               <p
                 className="text-xs mt-1 select-text"

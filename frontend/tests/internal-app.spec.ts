@@ -286,6 +286,21 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
     // No fake dictation control is rendered.
     await expect(page.getByRole('button', { name: 'Voice Input' })).toHaveCount(0);
     const barInput = page.getByPlaceholder('Describe the resume you want');
+
+    // Each quick action does what its tooltip says: insert a starter prompt.
+    const starters: Array<[RegExp, RegExp]> = [
+      [/metric-driven bullets/, /Enhance metrics/],
+      [/PDF export/, /Export latest tailored resume/],
+      [/ATS matching/, /Attach target Job Description/],
+      [/bullet rewrites/, /Rewrite active bullet points/],
+    ];
+    for (const [tooltip, inserted] of starters) {
+      await page.getByTitle(tooltip).click();
+      await expect(barInput).toHaveValue(inserted);
+      await barInput.fill('');
+    }
+
+    // Typing + submitting hands the text to Template Studio.
     await barInput.fill('synthetic playwright check: teal resume for a data analyst fresher');
     await page.getByRole('button', { name: 'Run Prompt' }).click();
     await page.waitForURL('**/template**');
