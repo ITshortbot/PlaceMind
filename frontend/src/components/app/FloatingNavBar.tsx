@@ -34,7 +34,7 @@ const NAV_ITEMS = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Templates', href: '/template', icon: LayoutGrid },
   { name: 'Resume Builder', href: '/resume', icon: FileText },
-  { name: 'Studio Editor', href: '/studio', icon: FileEdit },
+  { name: 'Resume Builder', href: '/resume', icon: FileEdit },
   { name: 'ATS 1-Pass', href: '/ats', icon: FileCheck2 },
   { name: 'Upload & Parse', href: '/resumes/upload', icon: UploadCloud },
   { name: 'Live Interview', href: '/interview', icon: Mic },

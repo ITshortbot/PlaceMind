@@ -19,73 +19,9 @@ import { ResumePreview } from '@/components/templates/ResumePreview';
 import { buildPalette } from '@/lib/color/engine';
 import { createResume } from '@/lib/api/resumes';
 import { Download, Save, Gauge } from 'lucide-react';
-import type { ResumeContent, StyleSpec } from '@/types/templates';
+import type { ResumeContent } from '@/types/templates';
+import { BUILDER_TEMPLATES } from '@/lib/builderTemplates';
 
-interface BuilderTemplate {
-  id: string;
-  name: string;
-  style: StyleSpec;
-}
-
-// Real template families rendered by ResumePreview - no thumbnail images.
-const BUILDER_TEMPLATES: BuilderTemplate[] = [
-  {
-    id: 'classic',
-    name: 'Classic',
-    style: {
-      layout: 'single_column',
-      font: 'Times',
-      size_pt: 11,
-      density: 'normal',
-      header_style: 'left',
-      section_order: ['summary', 'experience', 'education', 'skills', 'projects'],
-      mood: 'corporate',
-      hue: 220,
-    },
-  },
-  {
-    id: 'modern',
-    name: 'Modern',
-    style: {
-      layout: 'single_column',
-      font: 'Arial',
-      size_pt: 11,
-      density: 'normal',
-      header_style: 'banner',
-      section_order: ['summary', 'skills', 'experience', 'projects', 'education'],
-      mood: 'tech',
-      hue: 195,
-    },
-  },
-  {
-    id: 'compact',
-    name: 'Compact',
-    style: {
-      layout: 'single_column',
-      font: 'Calibri',
-      size_pt: 10,
-      density: 'compact',
-      header_style: 'left',
-      section_order: ['summary', 'experience', 'skills', 'projects', 'education'],
-      mood: 'minimal',
-      hue: 250,
-    },
-  },
-  {
-    id: 'academic',
-    name: 'Academic',
-    style: {
-      layout: 'single_column',
-      font: 'Georgia',
-      size_pt: 11,
-      density: 'normal',
-      header_style: 'centered',
-      section_order: ['summary', 'education', 'experience', 'projects', 'skills'],
-      mood: 'finance',
-      hue: 160,
-    },
-  },
-];
 
 interface DraftState {
   name: string;

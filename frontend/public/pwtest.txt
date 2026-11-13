@@ -1,4 +1,47 @@
-nohup: ignoring input
-[WebServer] [Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id]
-Error: Process from config.webServer was not able to start. Exit code: 1
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/workspaces/PlaceMind/frontend/node_modules/lucide-react/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+
+   at ../src/components/templates/ResumePreview.tsx:12
+
+  10 |
+  11 | import React from 'react';
+> 12 | import { Printer } from 'lucide-react';
+     | ^
+  13 | import { Palette } from '../../lib/color/engine.ts';
+  14 | import {
+  15 |   DENSITY_TOKENS,
+    at /workspaces/PlaceMind/frontend/node_modules/lucide-react/dist/cjs/lucide-react.js:10:13
+    at Object.<anonymous> (/workspaces/PlaceMind/frontend/src/components/templates/ResumePreview.tsx:12:1)
+    at Object.<anonymous> (/workspaces/PlaceMind/frontend/tests/templates-snapshot.test.ts:21:1)
+TAP version 13
+# Subtest: buildPalette creates valid palettes for all 5 moods
+ok 1 - buildPalette creates valid palettes for all 5 moods
+  ---
+  duration_ms: 59.391282
+  type: 'test'
+  ...
+# Subtest: buildPalette supports custom hue override
+ok 2 - buildPalette supports custom hue override
+  ---
+  duration_ms: 83.741384
+  type: 'test'
+  ...
+# Subtest: adjustHexForContrast preserves high-contrast brand colors
+ok 3 - adjustHexForContrast preserves high-contrast brand colors
+  ---
+  duration_ms: 26.678314
+  type: 'test'
+  ...
+# Subtest: adjustHexForContrast darkens low-contrast colors until contrast >= 4.5:1
+ok 4 - adjustHexForContrast darkens low-contrast colors until contrast >= 4.5:1
+  ---
+  duration_ms: 1394.189098
+  type: 'test'
+  ...
+# Subtest: MOOD_DEFAULT_HUES covers all required moods with distinctive hues
+ok 5 - MOOD_DEFAULT_HUES covers all required moods with distinctive hues
+  ---
+  duration_ms: 38.641694
+  type: 'test'
+  ...
 

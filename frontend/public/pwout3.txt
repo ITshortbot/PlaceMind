@@ -1,0 +1,5 @@
+BUTTONS=["","","Save Draft","Export PDF","ClassicTimes 11pt","ModernArial 11pt","CompactCalibri 10pt","AcademicGeorgia 11pt","","","","","",""]
+URL=http://localhost:3000/resume
+TITLE=Placemind — AI Career Copilot | ATS Resume Scoring & Mock Interviews
+TEXTBOXES=13
+DEBUG_DONE

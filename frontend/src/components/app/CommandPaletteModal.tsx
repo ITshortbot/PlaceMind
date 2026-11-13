@@ -36,7 +36,7 @@ const SEARCH_ITEMS = [
   { name: 'Dashboard', category: 'Navigation', href: '/dashboard', icon: LayoutDashboard, desc: 'Overview & daily ATS health' },
   { name: 'Templates Gallery', category: 'Resume', href: '/template', icon: LayoutGrid, desc: '10 verified enterprise formats' },
   { name: 'Resume Builder', category: 'Resume', href: '/resume', icon: FileText, desc: '3-panel document canvas & AI rewrites' },
-  { name: 'Resume Studio Editor', category: 'Resume', href: '/studio', icon: FileEdit, desc: 'Direct typography & layout tuning' },
+  { name: 'Resume Builder', category: 'Resume', href: '/resume', icon: FileEdit, desc: 'Enter your content, pick a layout, export' },
   { name: 'ATS 1-Pass Auto-Gen', category: 'Intelligence', href: '/ats', icon: FileCheck2, desc: 'Synthesize resume from JD in one pass' },
   { name: 'Upload & Parse Resume', category: 'Quick Action', href: '/resumes/upload', icon: UploadCloud, desc: 'Extract in-memory 0-egress signals' },
   { name: 'Live Mock Interview', category: 'Interview', href: '/interview', icon: Mic, desc: 'Recruiter speech & STAR probes' },

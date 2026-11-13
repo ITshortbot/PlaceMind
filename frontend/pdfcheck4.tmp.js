@@ -1,0 +1,27 @@
+const { chromium } = require('@playwright/test');
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.goto('http://localhost:3000/resume', { waitUntil: 'networkidle', timeout: 60000 });
+  const fill = async (ph, v) => page.fill(`[placeholder="${ph}"]`, v);
+  await fill('Your name', 'Alex Doe');
+  await page.locator('[placeholder="e.g. Backend Engineer"]').first().fill('Backend Engineer');
+  await page.locator('[placeholder="e.g. Backend Engineer"]').nth(1).fill('Backend Engineer');
+  await fill('you@example.com', 'alex.doe@example.com');
+  await fill('Optional', '+91 90000 00000');
+  await fill('2-3 sentences about your experience', 'Backend engineer with 3 years building Python APIs and data pipelines.');
+  await fill('Python, FastAPI, PostgreSQL', 'Python, FastAPI, PostgreSQL, Redis, Docker');
+  await fill('Employer name', 'ExampleCorp');
+  await page.locator('[placeholder*="Built FastAPI services"]').fill('Built FastAPI services serving 2M requests/day\nCut p95 latency from 800ms to 240ms');
+  await fill('e.g. B.Tech Computer Science', 'B.Tech Computer Science');
+  await fill('University name', 'Example University');
+  await fill('e.g. 2023', '2023');
+  await page.waitForTimeout(1500);
+  const btns = await page.getByRole('button').allTextContents();
+  console.log('AFTER_FILL_BUTTONS=' + JSON.stringify(btns.map(b => b.slice(0, 40))));
+  const n = await page.getByRole('button', { name: /Classic/ }).count();
+  console.log('CLASSIC_COUNT=' + n);
+  await page.screenshot({ path: '/workspaces/PlaceMind/frontend/public/pwdebug2.png' });
+  await browser.close();
+  console.log('DEBUG2_DONE');
+})().catch(e => { console.error('DEBUG2_FAIL', e.message.slice(0, 300)); process.exit(1); });

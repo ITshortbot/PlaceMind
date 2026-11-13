@@ -1,0 +1,4 @@
+PDF_CHECK2_FAIL locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /Classic/ }).first()[22m
+

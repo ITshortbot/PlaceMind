@@ -1,0 +1,13 @@
+
+->       system * (-> v24.22.2)
+iojs -> N/A (default)
+node -> stable (-> N/A) (default)
+unstable -> N/A (default)
+Downloading and installing node v22.23.5...
+Downloading https://nodejs.org/dist/v22.23.5/node-v22.23.5-linux-x64.tar.xz...
+#                                                                                                                     1.3%#################################################################################################                    85.0%################################################################################################################### 100.0%
+Computing checksum with sha256sum
+Checksums matched!
+Now using node v22.23.5 (npm v10.9.9)
+Creating default alias: default -> 22 (-> v22.23.5 *)
+v22.23.5

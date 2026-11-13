@@ -11,7 +11,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -32,12 +31,11 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { ResumePreview } from '@/components/templates/ResumePreview';
+import { BUILDER_TEMPLATES, SAMPLE_RESUME_CONTENT } from '@/lib/builderTemplates';
+import { buildPalette } from '@/lib/color/engine';
 
-const TEMPLATES_PREVIEW = [
-  { id: 1, name: 'Minimalist Standard', file: '/assets/Resume/rem1.webp', ats: 94.8, bestFor: 'Workday / Stripe' },
-  { id: 3, name: 'AI & Systems Pro', file: '/assets/Resume/rem3.webp', ats: 98.2, bestFor: 'Greenhouse / OpenAI' },
-  { id: 4, name: 'Full-Stack Modern', file: '/assets/Resume/rem4.webp', ats: 97.2, bestFor: 'Lever / Vercel' },
-];
+
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -54,7 +52,7 @@ export default function OnboardingPage() {
     specialization: 'Computer Science & Distributed Systems',
     targetRole: 'Staff Software Architect',
     targetCompany: 'Stripe Core Infrastructure',
-    selectedTemplateId: 1,
+    selectedTemplateId: 'classic',
     autoSelectTemplate: true,
   });
 
@@ -355,9 +353,9 @@ export default function OnboardingPage() {
 
                 {/* Manual Template Choices */}
                 <div className="space-y-2 pt-1">
-                  <Label>Or Pick From Verified Gallery</Label>
+                  <Label>Or Pick A Layout (sample previews)</Label>
                   <div className="grid grid-cols-3 gap-2.5">
-                    {TEMPLATES_PREVIEW.map((tmpl) => (
+                    {BUILDER_TEMPLATES.map((tmpl) => (
                       <div
                         key={tmpl.id}
                         onClick={() =>
@@ -369,12 +367,17 @@ export default function OnboardingPage() {
                             : 'border-black/[0.08] dark:border-white/[0.08] hover:border-black/20'
                         }`}
                       >
-                        <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden border border-black/10 bg-white">
-                          <Image src={tmpl.file} alt={tmpl.name} fill className="object-cover object-top" />
+                        <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden border border-black/10 bg-white pointer-events-none">
+                          <div
+                            className="absolute top-0 left-0 origin-top-left"
+                            style={{ width: '794px', transform: 'scale(0.16)', transformOrigin: 'top left' }}
+                          >
+                            <ResumePreview content={SAMPLE_RESUME_CONTENT} style={tmpl.style} palette={buildPalette(tmpl.style.mood, tmpl.style.hue ?? undefined)} />
+                          </div>
                         </div>
                         <div className="text-[10px] font-bold truncate">{tmpl.name}</div>
-                        <span className="text-[9px] font-mono text-[#16A34A] font-bold block">
-                          {tmpl.ats}% ATS
+                        <span className="text-[9px] font-mono text-[#4A4A52] dark:text-[#A1A1AA] block">
+                          Sample layout
                         </span>
                       </div>
                     ))}

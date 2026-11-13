@@ -1,5 +1,1 @@
-Traceback (most recent call last):
-  File "/workspaces/PlaceMind/backend/../scripts/seed_demo.py", line 17, in <module>
-    from app.models import Resume  # noqa: E402
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-ModuleNotFoundError: No module named 'app.models'
+Seeded 2 synthetic demo resumes + JDs.
