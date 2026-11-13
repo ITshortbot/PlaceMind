@@ -87,7 +87,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
             >
               Core Competencies & Skills
             </h2>
-            <div className="flex flex-wrap gap-1.5 select-text">
+            <div className="skills-chips flex flex-wrap gap-1.5 select-text">
               {content.skills.map((skill, idx) => (
                 <span
                   key={idx}
@@ -360,7 +360,11 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
             @media print {
               @page {
                 size: A4 portrait;
-                margin: 0;
+                /* Vertical page margin: continuation pages get real top/bottom
+                   breathing room (box padding does not repeat at page breaks),
+                   and physical printers cannot print to the paper edge.
+                   Left/right stay 0: the sheet supplies its own side padding. */
+                margin: 12mm 0;
               }
               body {
                 background: white !important;
@@ -400,6 +404,22 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
               .resume-section {
                 break-inside: avoid;
                 page-break-inside: avoid;
+              }
+              /* Chromium treats flex rows as monolithic when fragmenting:
+                 a chip row that lands on a page break is clipped instead of
+                 moved. Inline-block chips fragment line-by-line cleanly. */
+              .skills-chips {
+                display: block !important;
+                break-inside: avoid;
+                page-break-inside: avoid;
+              }
+              .skills-chips > span {
+                display: inline-block !important;
+                margin: 0 6px 6px 0 !important;
+              }
+              .section-title {
+                break-after: avoid;
+                page-break-after: avoid;
               }
             }
           `,
