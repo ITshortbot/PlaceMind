@@ -195,7 +195,7 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
     await answerQuestion(sessionId);
     await page.reload();
     await expect(page.getByText('Session Report')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('STAR Structure')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('STAR Structure').first()).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Action Ownership')).toBeVisible();
   });
 
@@ -222,7 +222,10 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
       page.getByRole('heading', { name: 'Account & Application Settings' })
     ).toBeVisible();
     // Profile fields start empty - no invented persona.
-    await expect(page.getByDisplayValue(/Rohan|Stanford/)).toHaveCount(0);
+    const inputValues = await page
+      .locator('input')
+      .evaluateAll((els) => els.map((el) => (el as HTMLInputElement).value).join(' | '));
+    expect(inputValues).not.toMatch(/Rohan|Stanford/);
     // AI engine controls live under their own tab.
     await page.getByRole('button', { name: 'AI Engine (Gemini vs LM Studio)' }).click();
     await expect(page.getByText('Always Use Local LM Studio / Ollama (0-Egress)')).toBeVisible();
