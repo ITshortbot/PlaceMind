@@ -133,6 +133,8 @@ export default function ResumePage() {
       .map((b) => b.trim())
       .filter(Boolean);
     return {
+      name: draft.name || undefined,
+      contact: [draft.email, draft.phone].filter(Boolean).join('  |  ') || undefined,
       headline: draft.title || draft.name || 'Your Resume',
       summary: draft.summary,
       skills: draft.skills

@@ -129,6 +129,8 @@ class EducationItem(StrictBaseModel):
 
 
 class ResumeContent(StrictBaseModel):
+    name: Optional[str] = Field(default=None, max_length=120)
+    contact: Optional[str] = Field(default=None, max_length=200)
     headline: str = Field(..., max_length=120)
     summary: str = Field(..., max_length=400)
     skills: List[str] = Field(default_factory=list, max_length=20)

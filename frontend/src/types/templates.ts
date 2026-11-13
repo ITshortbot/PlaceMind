@@ -42,6 +42,8 @@ export interface EducationItem {
 }
 
 export interface ResumeContent {
+  name?: string;
+  contact?: string;
   headline: string;
   summary: string;
   skills: string[];
