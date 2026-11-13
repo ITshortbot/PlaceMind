@@ -293,7 +293,7 @@ export default function OnboardingPage() {
                   Choose Starting Template
                 </h1>
                 <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-                  Pick your favorite or let AI choose based on {formData.targetCompany}&apos;s ATS parser.
+                  Pick a starting layout, or keep the default single-column layout that parses reliably in common ATS systems.
                 </p>
               </div>
 
@@ -310,10 +310,10 @@ export default function OnboardingPage() {
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2 text-xs font-bold text-[#1A1A1E] dark:text-white">
                       <Wand2 className="w-4 h-4 text-[#16A34A]" />
-                      <span>Auto-Select According to Company ATS (Recommended)</span>
+                      <span>Default ATS-Friendly Layout (Recommended)</span>
                     </div>
                     <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA]">
-                      Automatically sets single-column Workday/Greenhouse verified layout.
+                      Uses the single-column Classic layout, the safest default for ATS parsing. You can switch layouts anytime in the builder.
                     </p>
                   </div>
                   <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] flex-shrink-0" />
