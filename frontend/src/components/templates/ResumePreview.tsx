@@ -9,6 +9,7 @@
 // ============================================================================
 
 import React from 'react';
+import { Printer } from 'lucide-react';
 import { Palette } from '../../lib/color/engine.ts';
 import {
   DENSITY_TOKENS,
@@ -268,8 +269,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
       {/* ─── Top Control Bar ─── */}
       {showExportButton && (
         <div className="w-full max-w-[210mm] flex items-center justify-between mb-4 no-print">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="font-semibold text-slate-200">{family.name}</span>
+          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{family.name}</span>
             <span>•</span>
             <span>{style.font}</span>
             <span>•</span>
@@ -282,7 +283,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all"
           >
-            <span>🖨️</span>
+            <Printer className="w-4 h-4" aria-hidden="true" />
             <span>Export to PDF (Print)</span>
           </button>
         </div>

@@ -11,6 +11,7 @@
 // ============================================================================
 
 import React, { useEffect, useId, useMemo, useState } from 'react';
+import { Landmark, Zap, Palette as PaletteIcon, Square, TrendingUp } from 'lucide-react';
 import {
   buildPalette,
   adjustHexForContrast,
@@ -30,12 +31,12 @@ export interface ColorPickerProps {
   className?: string;
 }
 
-const MOODS: { id: Mood; label: string; icon: string }[] = [
-  { id: 'corporate', label: 'Corporate', icon: '🏛️' },
-  { id: 'tech', label: 'Tech', icon: '⚡' },
-  { id: 'creative', label: 'Creative', icon: '🎨' },
-  { id: 'minimal', label: 'Minimal', icon: '◻️' },
-  { id: 'finance', label: 'Finance', icon: '📈' },
+const MOODS: { id: Mood; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'corporate', label: 'Corporate', icon: Landmark },
+  { id: 'tech', label: 'Tech', icon: Zap },
+  { id: 'creative', label: 'Creative', icon: PaletteIcon },
+  { id: 'minimal', label: 'Minimal', icon: Square },
+  { id: 'finance', label: 'Finance', icon: TrendingUp },
 ];
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({
@@ -129,7 +130,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                     : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-white/5'
                 }`}
               >
-                <span>{m.icon}</span>
+                <m.icon className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{m.label}</span>
               </button>
             );

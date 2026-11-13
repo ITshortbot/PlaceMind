@@ -6,6 +6,7 @@
 // ============================================================================
 
 import React, { useState } from 'react';
+import { Lightbulb } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
@@ -440,7 +441,7 @@ export function InteractiveDemoWidget() {
                           </Badge>
                         </div>
                         <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] leading-[1.7]">
-                          💡 <strong className="text-[#1A1A1E] dark:text-[#F5F5F7]">AI Suggestion:</strong>{' '}
+                          <Lightbulb className="w-3.5 h-3.5 inline-block align-[-2px] text-[#6C5CE7]" aria-hidden="true" /> <strong className="text-[#1A1A1E] dark:text-[#F5F5F7]">Suggestion:</strong>{' '}
                           {item.improvement_suggestion}
                         </p>
                       </div>

@@ -438,7 +438,7 @@ export function ResumeGallery() {
                         {activePreview.category}
                       </Badge>
                       <span className="text-xs font-mono text-[#16A34A] dark:text-[#22C55E] font-bold">
-                        ✓ {activePreview.atsScore}% ATS Verified
+                        Sample preview - ATS-friendly layout
                       </span>
                     </div>
 

@@ -62,7 +62,7 @@ export default function OnboardingPage() {
     if (currentStep < 4) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      router.push('/dashboard');
+      router.push('/resume');
     }
   };
 
