@@ -372,19 +372,14 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
               .no-print {
                 display: none !important;
               }
-              /* Resume-only output: hide all app chrome (nav rail, header,
-                 command bars, background layers) outside the sheet. */
-              body * {
-                visibility: hidden !important;
-              }
-              #resume-preview-sheet,
-              #resume-preview-sheet * {
-                visibility: visible !important;
+              /* Resume-only output: remove all app chrome (nav rail, header,
+                 command bars, background layers) outside the sheet from the
+                 print layout so no blank spill pages are generated. */
+              body *:not(:has(#resume-preview-sheet)):not(#resume-preview-sheet):not(#resume-preview-sheet *) {
+                display: none !important;
               }
               #resume-preview-sheet {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
+                position: static !important;
                 box-shadow: none !important;
                 border: none !important;
                 border-radius: 0 !important;
