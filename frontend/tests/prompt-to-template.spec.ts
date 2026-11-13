@@ -123,9 +123,13 @@ test.describe('Prompt-to-Template Studio Screen', () => {
     await page.fill('#prompt-input', 'complex request');
     await page.click('#generate-template-btn');
 
-    // Verify fallback badge is visible
+    // Verify the honest fallback badge: preset layout with sample content, not a model result
     await expect(page.locator('#fallback-badge')).toBeVisible();
-    await expect(page.locator('#fallback-badge')).toContainText('Preset Fallback');
+    await expect(page.locator('#fallback-badge')).toContainText('Preset layout');
+    await expect(page.locator('#fallback-badge')).toHaveAttribute(
+      'title',
+      /No live model is configured/
+    );
   });
 
   test('Demo Mode generates instantly without triggering backend network call', async ({
@@ -154,6 +158,26 @@ test.describe('Prompt-to-Template Studio Screen', () => {
     );
     // Confirm backend was NOT called
     expect(apiCalled).toBe(false);
+  });
+
+  test('Displays honest error when ATS scoring backend is unreachable', async ({ page }) => {
+    await page.route('**/api/v1/ats/score-doc', async (route) => {
+      await route.fulfill({ status: 500, body: 'backend down' });
+    });
+
+    await page.goto('/template');
+    await page.waitForLoadState('domcontentloaded');
+
+    // Generate in demo mode; the deterministic ATS audit then fails honestly.
+    await page.check('#demo-mode-toggle');
+    await page.click('button:has-text("clean dark-teal resume for a fresher data analyst")');
+    await page.click('#generate-template-btn');
+
+    await expect(
+      page.getByText(
+        'ATS readiness service is unreachable. Start the backend and retry - no score was computed.'
+      )
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('Displays ATS Readiness Report with score, top recommendations, and limits note', async ({
@@ -206,8 +230,14 @@ test.describe('Prompt-to-Template Studio Screen', () => {
     const atsPanel = page.locator('#ats-readiness-panel');
     await expect(atsPanel).toBeVisible();
 
+    // Generate a demo resume; the deterministic readiness audit runs against it.
+    await page.check('#demo-mode-toggle');
+    await page.click('button:has-text("clean dark-teal resume for a fresher data analyst")');
+    await page.click('#generate-template-btn');
+
     // Verify score and mandatory disclaimer note
-    await expect(page.locator('#ats-overall-score')).toBeVisible();
+    await expect(page.locator('#ats-overall-score')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('#ats-overall-score')).toContainText('88/100');
     await expect(page.locator('#ats-limits-note')).toContainText(
       'This readiness score is an automated estimation based on standard ATS parsing heuristics'
     );

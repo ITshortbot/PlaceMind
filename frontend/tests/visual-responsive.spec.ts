@@ -19,17 +19,23 @@ test.describe('Placemind Visual & Responsive Suite', () => {
     await page.screenshot({ path: `tests/screenshots/landing-${page.viewportSize()?.width}px.png`, fullPage: false });
   });
 
-  test('Studio Interior Workspace loads all 3 panels and template switchers', async ({ page }) => {
+  test('Studio route redirects to the real Resume Builder workspace', async ({ page }) => {
     await page.goto('/studio');
+    await page.waitForURL('**/resume');
     await page.waitForLoadState('networkidle');
 
-    // Verify Studio Title and Panels
-    await expect(page.getByText('Placemind Studio')).toBeVisible();
-    await expect(page.getByText('ATS Audit Score')).toBeVisible();
-    await expect(page.getByText('Target Job Criteria')).toBeVisible();
+    // The builder workspace: form pane, live preview empty state, layout switcher.
+    await expect(page.getByText('Your Information')).toBeVisible();
+    await expect(page.getByText('Start typing on the left')).toBeVisible();
+    await expect(page.getByText('TEMPLATE LAYOUT')).toBeVisible();
+    for (const name of ['Classic', 'Modern', 'Compact', 'Academic']) {
+      await expect(page.getByRole('button', { name: new RegExp(name) })).toBeVisible();
+    }
+    await expect(page.getByRole('button', { name: /Save Draft/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Export PDF/ })).toBeVisible();
 
     // Capture screenshot
-    await page.screenshot({ path: `tests/screenshots/studio-${page.viewportSize()?.width}px.png`, fullPage: false });
+    await page.screenshot({ path: `tests/screenshots/builder-${page.viewportSize()?.width}px.png`, fullPage: false });
   });
 
   test('Universal Download Hub displays all OS targets (macOS, Windows, Linux, Mobile)', async ({ page }) => {
@@ -45,12 +51,12 @@ test.describe('Placemind Visual & Responsive Suite', () => {
     await page.screenshot({ path: `tests/screenshots/download-${page.viewportSize()?.width}px.png`, fullPage: false });
   });
 
-  test('AI Mock Rehearsal Room renders waveform visualizer and question probes', async ({ page }) => {
+  test('AI Mock Rehearsal Room states honestly that voice is not available yet', async ({ page }) => {
     await page.goto('/rehearse');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByText('AI Technical Phone Screen Rehearsal')).toBeVisible();
-    await expect(page.getByText('Listening to speech...')).toBeVisible();
+    // The feature is not built; the page must say so instead of faking a waveform.
+    await expect(page.getByText('Voice rehearsal is not available yet')).toBeVisible();
 
     // Capture screenshot
     await page.screenshot({ path: `tests/screenshots/rehearse-${page.viewportSize()?.width}px.png`, fullPage: false });
