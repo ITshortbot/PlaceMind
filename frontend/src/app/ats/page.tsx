@@ -7,7 +7,7 @@
 //              POST /api/v1/resume/score, and renders the live ATSGapReport.
 // ============================================================================
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AppShell } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
@@ -78,7 +78,12 @@ export default function AtsAutoGeneratePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [jobTitle, setJobTitle] = useState('');
   const [jdText, setJdText] = useState('');
-  const [aiMode, setAiMode] = useState<'cloud' | 'local'>(AIServiceClient.getPreferredAIMode());
+  // Start from the SSR-safe default and apply the saved Settings preference on
+  // mount. Reading localStorage in the initializer causes a hydration mismatch.
+  const [aiMode, setAiMode] = useState<'cloud' | 'local'>('cloud');
+  useEffect(() => {
+    setAiMode(AIServiceClient.getPreferredAIMode());
+  }, []);
 
   const { status, report, error, latencyMs, scoreResume, reset } = useATSScoring();
 
@@ -162,14 +167,21 @@ export default function AtsAutoGeneratePage() {
                   {selectedFile?.name} · {latencyMs ? `${(latencyMs / 1000).toFixed(1)}s` : ''}
                   {report.processing_metadata.is_fallback && (
                     <span className="text-[#FACC15] font-bold ml-2 inline-flex items-center gap-1">
-                      <Zap className="w-3 h-3" /> Fallback: Cloud
+                      <Zap className="w-3 h-3" />
+                      {report.processing_metadata.model_used.startsWith('none')
+                        ? 'No AI provider - deterministic analysis'
+                        : 'Fallback: Cloud'}
                     </span>
                   )}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1 text-xs text-[#8A8A92]">
                 <span className="font-mono">{report.processing_metadata.model_used}</span>
-                <span>{report.processing_metadata.latency_ms.toFixed(0)}ms LLM latency</span>
+                <span>
+                  {report.processing_metadata.model_used.startsWith('none')
+                    ? 'no LLM call made'
+                    : `${report.processing_metadata.latency_ms.toFixed(0)}ms LLM latency`}
+                </span>
               </div>
             </div>
 
@@ -295,14 +307,15 @@ export default function AtsAutoGeneratePage() {
         <div className="text-center max-w-xl mx-auto space-y-2">
           <Badge variant="accent" size="md" className="bg-[#FACC15] text-[#0A0A0C] border-none font-bold">
             <Wand2 className="w-3.5 h-3.5 mr-1" />
-            1-PASS AI SCORING PIPELINE
+            1-PASS SCORING PIPELINE
           </Badge>
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-[#0A0A0C] dark:text-[#F8F9FA]">
             Analyze Resume vs. Job Description
           </h1>
           <p className="text-xs sm:text-sm text-[#4A4A52] dark:text-[#A1A1AA]">
-            Upload your PDF resume and paste a job description. Our backend computes bipartite
-            cosine similarity and synthesizes an AI-powered gap report.
+            Upload your PDF resume and paste a job description. The backend scores it with local
+            bipartite cosine similarity. AI-written suggestions run only when a provider (Gemini API
+            key or local LM Studio) is configured; otherwise you get the built-in deterministic analysis.
           </p>
         </div>
 
@@ -395,9 +408,7 @@ export default function AtsAutoGeneratePage() {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label className="mb-0">Job Description</Label>
-              <span className="text-[10px] text-[#854D0E] dark:text-[#FACC15] font-bold">
-                Live Semantic Parser Ready
-              </span>
+
             </div>
             <Textarea
               rows={6}

@@ -184,27 +184,47 @@ class ATSScoringEngine:
             "missing_keywords": missing_kw,
         })
 
-        ai_response = await self.router.complete(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
-            mode=mode,
-            temperature=0.2,
-        )
-
-        # Parse LLM response safely
+        # The provider call is optional: without a configured provider the report
+        # still ships with the deterministic gap matrix and generic guidance, and
+        # processing_metadata records exactly what produced it.
         remediation_lookup: Dict[str, str] = {}
         bullets: List[str] = []
+        ai_model_used = "none (deterministic local analysis)"
+        ai_routing_mode = mode.value if isinstance(mode, RoutingMode) else str(mode)
+        ai_latency_ms = 0.0
+        ai_is_fallback = True
+        ai_response = None
         try:
-            content_clean = ai_response.content.strip()
-            if content_clean.startswith("```"):
-                content_clean = re.sub(r"^```json|^```|```$", "", content_clean, flags=re.MULTILINE).strip()
-            parsed_ai = json.loads(content_clean)
-            for item in parsed_ai.get("remediations", []):
-                remediation_lookup[item.get("requirement", "")] = item.get("suggestion", "")
-            bullets = parsed_ai.get("actionable_bullets", [])
-        except Exception:
+            ai_response = await self.router.complete(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content},
+                ],
+                mode=mode,
+                temperature=0.2,
+            )
+            ai_model_used = ai_response.model_used
+            ai_routing_mode = ai_response.routing_mode.value
+            ai_latency_ms = ai_response.latency_ms
+            ai_is_fallback = ai_response.is_fallback
+        except Exception as llm_err:
+            logger.warning(
+                "LLM gap synthesis unavailable, using deterministic suggestions: %s",
+                str(llm_err),
+            )
+
+        if ai_response is not None:
+            try:
+                content_clean = ai_response.content.strip()
+                if content_clean.startswith("```"):
+                    content_clean = re.sub(r"^```json|^```|```$", "", content_clean, flags=re.MULTILINE).strip()
+                parsed_ai = json.loads(content_clean)
+                for item in parsed_ai.get("remediations", []):
+                    remediation_lookup[item.get("requirement", "")] = item.get("suggestion", "")
+                bullets = parsed_ai.get("actionable_bullets", [])
+            except Exception:
+                bullets = []
+        if not bullets:
             bullets = [
                 "Quantify technical accomplishments with tangible metrics (e.g. latency reduced by X%, throughput increased by Y%).",
                 "Directly integrate missing domain keywords into your primary work experience bullet points."
@@ -253,10 +273,10 @@ class ATSScoringEngine:
             parsed_sections=parsed_sections,
             pdf_r2_url=pdf_r2_url,
             processing_metadata=ModelAuditMetadata(
-                model_used=ai_response.model_used,
-                routing_mode=ai_response.routing_mode.value,
-                latency_ms=ai_response.latency_ms,
-                is_fallback=ai_response.is_fallback,
+                model_used=ai_model_used,
+                routing_mode=ai_routing_mode,
+                latency_ms=ai_latency_ms,
+                is_fallback=ai_is_fallback,
                 embedding_dimension=384,
             ),
         )

@@ -62,6 +62,30 @@ export default function ResumePage() {
   const set = <K extends keyof DraftState>(key: K, value: DraftState[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
 
+  // Pre-fill contact/education details saved in Settings (this browser only).
+  // Fields the user already typed into are never overwritten.
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem('placemind.profile');
+      if (!raw) return;
+      const profile = JSON.parse(raw) as {
+        fullName?: string;
+        phone?: string;
+        college?: string;
+        specialization?: string;
+      };
+      setDraft((prev) => ({
+        ...prev,
+        name: prev.name || profile.fullName || '',
+        phone: prev.phone || profile.phone || '',
+        institution: prev.institution || profile.college || '',
+        degree: prev.degree || profile.specialization || '',
+      }));
+    } catch {
+      // storage unavailable - start empty
+    }
+  }, []);
+
   // Map the form onto the typed ResumeContent the renderer consumes.
   const content: ResumeContent = useMemo(() => {
     const bulletList = draft.bullets

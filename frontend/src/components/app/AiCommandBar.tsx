@@ -6,7 +6,7 @@
 //              - Positioned comfortably lower (bottom-3 / bottom-4).
 //              - Gentle, slow rotating yellow aura beam (soft intensity) that stays alive.
 //              - Pill-shaped outer frosted capsule with deep floating drop shadow.
-//              - Left quick actions: Star / Presets, Download / Archive, Attachment / Upload JD.
+//              - Left quick actions insert starter prompts (they do not export/attach directly).
 //              - Inset pill input field with independent outer & inner drop shadows.
 //              - Right quick actions: Pencil direct rewrite & yellow send trigger.
 // ============================================================================
@@ -17,8 +17,6 @@ import {
   Star,
   Download,
   Paperclip,
-  Mic,
-  MicOff,
   Pencil,
   Send,
   Check,
@@ -35,7 +33,6 @@ export function AiCommandBar({
 }: AiCommandBarProps) {
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -115,7 +112,7 @@ export function AiCommandBar({
               className={`p-1.5 rounded-full hover:bg-white/10 hover:text-[#FACC15] transition-all active:scale-90 cursor-pointer ${
                 activeTool === 'star' ? 'text-[#FACC15] bg-white/10' : ''
               }`}
-              title="Apply Star Candidate Metrics"
+              title="Insert a starter prompt for metric-driven bullets"
               aria-label="Star Presets"
             >
               <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeTool === 'star' ? 'fill-current text-[#FACC15]' : ''}`} />
@@ -126,7 +123,7 @@ export function AiCommandBar({
               type="button"
               onClick={() => handleToolClick('download', 'Export latest tailored resume version as PDF')}
               className="p-1.5 rounded-full hover:bg-white/10 hover:text-[#FACC15] transition-all active:scale-90 cursor-pointer"
-              title="Quick Export & Download"
+              title="Insert a starter prompt for PDF export"
               aria-label="Export"
             >
               <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -137,7 +134,7 @@ export function AiCommandBar({
               type="button"
               onClick={() => handleToolClick('attach', 'Attach target Job Description for real-time ATS match')}
               className="p-1.5 rounded-full hover:bg-white/10 hover:text-[#FACC15] transition-all active:scale-90 cursor-pointer"
-              title="Attach Job Description or File"
+              title="Insert a starter prompt for ATS matching"
               aria-label="Attach File"
             >
               <Paperclip className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -146,21 +143,6 @@ export function AiCommandBar({
 
           {/* Center Inset Pill Input Stage with Micro Drop Shadow */}
           <div className="flex-1 h-full rounded-full bg-white/10 dark:bg-white/5 border border-white/10 shadow-md px-3 sm:px-3.5 flex items-center gap-2 min-w-0">
-            {/* Mic Dictation Trigger */}
-            <button
-              type="button"
-              onClick={() => setIsRecording(!isRecording)}
-              className={`p-1 rounded-full transition-all cursor-pointer flex-shrink-0 ${
-                isRecording
-                  ? 'bg-[#EF4444] text-white animate-pulse'
-                  : 'text-white/70 hover:text-[#FACC15] hover:bg-white/10'
-              }`}
-              title={isRecording ? 'Stop Recording' : 'Voice Dictation'}
-              aria-label="Voice Input"
-            >
-              {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-            </button>
-
             {/* Text Input */}
             <input
               type="text"
@@ -168,7 +150,7 @@ export function AiCommandBar({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isRecording ? 'Listening to voice prompt...' : placeholder}
+              placeholder={placeholder}
               className="flex-1 bg-transparent border-none text-xs sm:text-sm font-semibold text-white placeholder:text-white/40 focus:outline-none min-w-0"
             />
 
@@ -176,7 +158,7 @@ export function AiCommandBar({
             {lastAction && (
               <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-black text-[#FACC15] px-2 py-0.5 rounded-full bg-[#FACC15]/20 animate-fade-in flex-shrink-0">
                 <Check className="w-3 h-3" />
-                <span>Applied!</span>
+                <span>Sent to Template Studio</span>
               </span>
             )}
           </div>
@@ -188,7 +170,7 @@ export function AiCommandBar({
               type="button"
               onClick={() => handleToolClick('pencil', 'Rewrite active bullet points for higher ATS punchiness')}
               className="p-1.5 rounded-full hover:bg-white/10 hover:text-[#FACC15] transition-all active:scale-90 cursor-pointer"
-              title="Direct Bullet Rewrite Tool"
+              title="Insert a starter prompt for bullet rewrites"
               aria-label="Direct Rewrite"
             >
               <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

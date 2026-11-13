@@ -4,40 +4,96 @@
 // File: frontend/src/app/settings/page.tsx
 // Description: Tab 8 - Settings: Profile Info, AI Engine Routing Preference,
 //              Notifications & Privacy from Wireframe v1
+//
+// Persistence model (single-user demo): profile and engine preference are
+// saved to this browser's localStorage and read back by the Resume Builder
+// and ATS page. Nothing here creates an account or syncs anywhere.
 // ============================================================================
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppShell } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Separator } from '@/components/ui/Separator';
 import {
-  Settings,
   User,
   ShieldCheck,
-  Bell,
   Cpu,
-  Trash2,
   CheckCircle2,
   Sparkles,
   Server,
   Lock,
+  Database,
 } from 'lucide-react';
+
+const PROFILE_STORAGE_KEY = 'placemind.profile';
+const AI_MODE_STORAGE_KEY = 'placemind.aiMode';
+
+interface StoredProfile {
+  fullName: string;
+  phone: string;
+  college: string;
+  specialization: string;
+}
+
+const EMPTY_PROFILE: StoredProfile = {
+  fullName: '',
+  phone: '',
+  college: '',
+  specialization: '',
+};
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'engine' | 'privacy'>('profile');
-  const [enginePreference, setEnginePreference] = useState<'auto' | 'cloud' | 'local'>('local');
-  const [localUrl, setLocalUrl] = useState('http://localhost:1234/v1');
-  const [isSaved, setIsSaved] = useState(false);
+  const [profile, setProfile] = useState<StoredProfile>(EMPTY_PROFILE);
+  const [enginePreference, setEnginePreference] = useState<'cloud' | 'local'>('cloud');
+  const [savedTab, setSavedTab] = useState<string | null>(null);
 
-  const handleSave = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2500);
+  // Load persisted preferences on mount.
+  useEffect(() => {
+    try {
+      const rawProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+      if (rawProfile) {
+        const parsed = JSON.parse(rawProfile) as Partial<StoredProfile>;
+        setProfile({ ...EMPTY_PROFILE, ...parsed });
+      }
+      if (window.localStorage.getItem(AI_MODE_STORAGE_KEY) === 'local') {
+        setEnginePreference('local');
+      }
+    } catch {
+      // storage unavailable - start from empty defaults
+    }
+  }, []);
+
+  const flashSaved = (tab: string) => {
+    setSavedTab(tab);
+    setTimeout(() => setSavedTab(null), 2500);
   };
+
+  const saveProfile = () => {
+    try {
+      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      flashSaved('profile');
+    } catch {
+      setSavedTab('error');
+      setTimeout(() => setSavedTab(null), 2500);
+    }
+  };
+
+  const saveEngine = () => {
+    try {
+      window.localStorage.setItem(AI_MODE_STORAGE_KEY, enginePreference);
+      flashSaved('engine');
+    } catch {
+      setSavedTab('error');
+      setTimeout(() => setSavedTab(null), 2500);
+    }
+  };
+
+  const setField = (field: keyof StoredProfile) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setProfile((prev) => ({ ...prev, [field]: e.target.value }));
 
   return (
     <AppShell showAiBar={false}>
@@ -55,7 +111,7 @@ export default function SettingsPage() {
             Account & Application Settings
           </h1>
           <p className="text-xs sm:text-sm text-[#5A5A63] dark:text-[#A1A1AA] mt-1">
-            Manage your personal profile, local LLM pairing, and telemetry preferences.
+            Local preferences for this single-user demo. Saved in this browser only.
           </p>
         </div>
 
@@ -71,7 +127,7 @@ export default function SettingsPage() {
               }`}
             >
               <User className="w-4 h-4" />
-              <span>Profile & Education (Step 2)</span>
+              <span>Profile & Education</span>
             </button>
 
             <button
@@ -95,7 +151,7 @@ export default function SettingsPage() {
               }`}
             >
               <Lock className="w-4 h-4" />
-              <span>Privacy & Zero-Disk Sandbox</span>
+              <span>Privacy & Data Retention</span>
             </button>
           </aside>
 
@@ -108,35 +164,61 @@ export default function SettingsPage() {
                   <div className="border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
                     <h3 className="text-base font-bold">Profile & Education Basics</h3>
                     <p className="text-xs text-[#8A8A92] mt-0.5">
-                      Pre-fills your contact and university fields across all 10 templates.
+                      Saved in this browser. The Resume Builder pre-fills new drafts with these details.
                     </p>
                   </div>
 
                   <div className="space-y-3">
                     <div className="space-y-1">
                       <Label>Full Name</Label>
-                      <Input placeholder="Your full name" />
+                      <Input
+                        placeholder="Your full name"
+                        value={profile.fullName}
+                        onChange={setField('fullName')}
+                      />
                     </div>
 
                     <div className="space-y-1">
                       <Label>Phone Number</Label>
-                      <Input placeholder="Your phone number" />
+                      <Input
+                        placeholder="Your phone number"
+                        value={profile.phone}
+                        onChange={setField('phone')}
+                      />
                     </div>
 
                     <div className="space-y-1">
                       <Label>College / University</Label>
-                      <Input placeholder="Your college or university" />
+                      <Input
+                        placeholder="Your college or university"
+                        value={profile.college}
+                        onChange={setField('college')}
+                      />
                     </div>
 
                     <div className="space-y-1">
                       <Label>Specialization</Label>
-                      <Input placeholder="Your specialization" />
+                      <Input
+                        placeholder="Your specialization"
+                        value={profile.specialization}
+                        onChange={setField('specialization')}
+                      />
                     </div>
                   </div>
 
-                  <div className="pt-2 flex justify-end">
-                    <Button variant="default" size="default" onClick={handleSave}>
-                      Save Changes
+                  <div className="pt-2 flex items-center justify-end gap-3">
+                    {savedTab === 'profile' && (
+                      <span className="text-xs font-bold text-[#16A34A] flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Saved in this browser
+                      </span>
+                    )}
+                    {savedTab === 'error' && (
+                      <span className="text-xs font-bold text-[#DC2626]">
+                        Could not save - browser storage unavailable
+                      </span>
+                    )}
+                    <Button variant="default" size="default" onClick={saveProfile}>
+                      Save Profile
                     </Button>
                   </div>
                 </div>
@@ -148,10 +230,10 @@ export default function SettingsPage() {
                   <div className="border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
                     <h3 className="text-base font-bold flex items-center gap-2">
                       <ShieldCheck className="w-5 h-5 text-[#16A34A]" />
-                      AI Engine Routing & Egress Control
+                      AI Engine Routing Preference
                     </h3>
                     <p className="text-xs text-[#8A8A92] mt-0.5">
-                      Toggle between Cloud Gemini 2.5 and Local LM Studio / Ollama.
+                      Choose which engine the ATS 1-Pass page asks the backend to use.
                     </p>
                   </div>
 
@@ -167,10 +249,12 @@ export default function SettingsPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#1A1A1E] dark:text-white">
                           <Server className="w-4 h-4 text-[#16A34A]" />
-                          <span>Always Use Local LM Studio / Ollama (0-Egress)</span>
+                          <span>Prefer Local LM Studio</span>
                         </div>
                         <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA]">
-                          Zero data ever leaves your device.
+                          Requests the LM Studio server on the backend host (server-side
+                          LM_STUDIO_API_BASE, default http://localhost:1234/v1). If it is not
+                          running, the report falls back to the built-in deterministic analysis.
                         </p>
                       </div>
                       <input
@@ -192,10 +276,12 @@ export default function SettingsPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#1A1A1E] dark:text-white">
                           <Sparkles className="w-4 h-4 text-[#6C5CE7]" />
-                          <span>Gemini 2.5 Cloud Fast-Track</span>
+                          <span>Prefer Gemini Cloud</span>
                         </div>
                         <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA]">
-                          Fastest cloud synthesis with ephemeral memory buffers.
+                          Requests Gemini for AI-written suggestions. Requires a Gemini API key
+                          configured on the backend; without one, the report falls back to the
+                          built-in deterministic analysis.
                         </p>
                       </div>
                       <input
@@ -207,41 +293,59 @@ export default function SettingsPage() {
                     </label>
                   </div>
 
-                  <div className="space-y-1.5 pt-2">
-                    <Label>Local Endpoint URL</Label>
-                    <Input
-                      type="text"
-                      value={localUrl}
-                      onChange={(e) => setLocalUrl(e.target.value)}
-                      className="font-mono text-xs"
-                    />
-                  </div>
+                  <p className="text-[11px] text-[#8A8A92]">
+                    Core scoring (semantic similarity, keywords, structure) always runs locally on
+                    the backend and does not depend on either provider.
+                  </p>
 
-                  <div className="pt-2 flex justify-end">
-                    <Button variant="default" size="default" onClick={handleSave}>
-                      Save Preferences
+                  <div className="pt-2 flex items-center justify-end gap-3">
+                    {savedTab === 'engine' && (
+                      <span className="text-xs font-bold text-[#16A34A] flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Saved in this browser
+                      </span>
+                    )}
+                    {savedTab === 'error' && (
+                      <span className="text-xs font-bold text-[#DC2626]">
+                        Could not save - browser storage unavailable
+                      </span>
+                    )}
+                    <Button variant="default" size="default" onClick={saveEngine}>
+                      Save Preference
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* TAB 3: Privacy & Zero-Disk Sandbox */}
+              {/* TAB 3: Privacy & Data Retention */}
               {activeTab === 'privacy' && (
                 <div className="space-y-4">
                   <div className="border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
-                    <h3 className="text-base font-bold">Privacy Sandbox & Telemetry</h3>
+                    <h3 className="text-base font-bold">Privacy & Data Retention</h3>
                     <p className="text-xs text-[#8A8A92] mt-0.5">
-                      Verify your security posture and data retention policies.
+                      What this build stores, and where.
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#16A34A]/10 border border-[#16A34A]/30 text-xs text-[#16A34A] dark:text-[#22C55E] space-y-1">
-                    <div className="font-bold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Zero-Disk Stream Extraction Active</span>
+                  <div className="p-4 rounded-2xl bg-[#6C5CE7]/10 border border-[#6C5CE7]/30 text-xs text-[#4A4A52] dark:text-[#A1A1AA] space-y-2">
+                    <div className="font-bold flex items-center gap-1.5 text-[#1A1A1E] dark:text-white">
+                      <Database className="w-4 h-4 text-[#6C5CE7]" />
+                      <span>Local demo persistence - records are kept, not flushed</span>
                     </div>
                     <p className="text-[11px] leading-relaxed">
-                      Resumes are parsed via in-memory PyMuPDF buffers and flushed instantly after session evaluation.
+                      Resumes you upload or save, their parsed text, section embeddings, interview
+                      sessions and ATS reports are stored in this environment&apos;s local Postgres
+                      database so they survive reloads and appear on the Dashboard and History pages.
+                    </p>
+                    <p className="text-[11px] leading-relaxed">
+                      PDF text extraction runs in memory (PyMuPDF); the parsed result is then saved
+                      like any other record. With Cloudflare R2 credentials configured, the backend
+                      can also store the uploaded PDF file itself in cloud mode - no R2 credentials
+                      are set in this environment, so that upload is skipped.
+                    </p>
+                    <p className="text-[11px] leading-relaxed">
+                      This is a single-user demo: there is no account system, no telemetry pipeline,
+                      and nothing here is reviewed by a third party. Delete saved records from the
+                      History page to remove them.
                     </p>
                   </div>
                 </div>

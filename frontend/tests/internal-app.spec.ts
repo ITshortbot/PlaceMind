@@ -215,7 +215,9 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
     await expect(page.getByText('pw_alex_backend_2026.txt').first()).toBeVisible();
   });
 
-  test('Settings renders AI engine controls and no fabricated profile', async ({ page }) => {
+  test('Settings renders engine controls, no fabricated profile, and saves persist', async ({
+    page,
+  }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
     await expect(
@@ -226,10 +228,128 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
       .locator('input')
       .evaluateAll((els) => els.map((el) => (el as HTMLInputElement).value).join(' | '));
     expect(inputValues).not.toMatch(/Rohan|Stanford/);
-    // AI engine controls live under their own tab.
+
+    // Saving the profile writes to this browser and survives a reload.
+    await page.getByPlaceholder('Your full name').fill('Alex Morgan');
+    await page.getByPlaceholder('Your phone number').fill('+1 555 010 2030');
+    await page.getByPlaceholder('Your college or university').fill('State University');
+    await page.getByRole('button', { name: 'Save Profile' }).click();
+    await expect(page.getByText('Saved in this browser').first()).toBeVisible();
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByPlaceholder('Your full name')).toHaveValue('Alex Morgan');
+    await expect(page.getByPlaceholder('Your phone number')).toHaveValue('+1 555 010 2030');
+    await expect(page.getByPlaceholder('Your college or university')).toHaveValue('State University');
+
+    // Engine preference lives under its own tab and persists to localStorage.
     await page.getByRole('button', { name: 'AI Engine (Gemini vs LM Studio)' }).click();
-    await expect(page.getByText('Always Use Local LM Studio / Ollama (0-Egress)')).toBeVisible();
-    await expect(page.getByText('Gemini 2.5 Cloud Fast-Track')).toBeVisible();
-    await expect(page.getByText('Local Endpoint URL')).toBeVisible();
+    await expect(page.getByText('Prefer Local LM Studio')).toBeVisible();
+    await expect(page.getByText('Prefer Gemini Cloud')).toBeVisible();
+    await page.getByText('Prefer Local LM Studio').click();
+    await page.getByRole('button', { name: 'Save Preference' }).click();
+    await expect(page.getByText('Saved in this browser').first()).toBeVisible();
+    const stored = await page.evaluate(() => window.localStorage.getItem('placemind.aiMode'));
+    expect(stored).toBe('local');
+
+    // Privacy copy states the real persistence model - no flushed-instantly claims.
+    await page.getByRole('button', { name: 'Privacy & Data Retention' }).click();
+    await expect(page.getByText(/Local demo persistence/i)).toBeVisible();
+    await expect(page.getByText(/Zero-Disk Stream Extraction/i)).toHaveCount(0);
+    await expect(page.getByText(/flushed instantly/i)).toHaveCount(0);
+  });
+
+  test('Resume Builder pre-fills details saved in Settings', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        'placemind.profile',
+        JSON.stringify({
+          fullName: 'Alex Morgan',
+          phone: '+1 555 010 2030',
+          college: 'State University',
+          specialization: 'B.S. Computer Science',
+        })
+      );
+    });
+    await page.goto('/resume');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByPlaceholder('Your name')).toHaveValue('Alex Morgan');
+    await expect(page.getByPlaceholder('Optional', { exact: true })).toHaveValue('+1 555 010 2030');
+    await expect(page.getByPlaceholder('University name')).toHaveValue('State University');
+    await expect(page.getByPlaceholder('e.g. B.Tech Computer Science')).toHaveValue(
+      'B.S. Computer Science'
+    );
+  });
+
+  test('AI command bar hands the prompt to Template Studio', async ({ page }) => {
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    // No fake dictation control is rendered.
+    await expect(page.getByRole('button', { name: 'Voice Input' })).toHaveCount(0);
+    const barInput = page.getByPlaceholder('Describe the resume you want');
+    await barInput.fill('synthetic playwright check: teal resume for a data analyst fresher');
+    await page.getByRole('button', { name: 'Run Prompt' }).click();
+    await page.waitForURL('**/template**');
+    await expect(page.locator('#prompt-input')).toHaveValue(/teal resume/);
+  });
+});
+
+test.describe('ATS 1-Pass: honest copy and provider-free scoring', () => {
+  test('ATS page states the deterministic pipeline and shows no readiness badges', async ({
+    page,
+  }) => {
+    await page.goto('/ats');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('1-PASS SCORING PIPELINE')).toBeVisible();
+    await expect(page.getByText(/cosine similarity/i).first()).toBeVisible();
+    // No static "live parser ready" badge and no unconditional AI claims.
+    await expect(page.getByText('Live Semantic Parser Ready')).toHaveCount(0);
+  });
+
+  test('ATS upload scores a synthetic PDF with no AI provider configured', async ({ page }) => {
+    test.setTimeout(180000);
+    // Build the synthetic PDF on the fly - no binary resumes are stored in the repo.
+    const { execFileSync } = await import('node:child_process');
+    const pdfPath = '/tmp/pw-ats-synthetic.pdf';
+    const pdfScript = [
+      'import fitz',
+      'doc = fitz.open()',
+      'page = doc.new_page()',
+      'text = "\\n".join([',
+      '  "Alex Morgan",',
+      '  "alex.morgan@example.com | +1 555 010 2030",',
+      '  "",',
+      '  "SUMMARY",',
+      '  "Backend engineer with 5 years building payments APIs.",',
+      '  "",',
+      '  "EXPERIENCE",',
+      '  "Senior Backend Engineer, FinCore, 2021-2026",',
+      '  "- Built Kafka stream processing pipeline handling 2M events/day.",',
+      '  "- Cut API p95 latency by 40% with Redis caching.",',
+      '  "",',
+      '  "SKILLS",',
+      '  "Python, FastAPI, PostgreSQL, Redis, Kafka, Docker",',
+      '  "",',
+      '  "EDUCATION",',
+      '  "B.S. Computer Science, State University, 2020",',
+      '])',
+      'page.insert_text((72, 72), text, fontsize=11)',
+      'doc.save("/tmp/pw-ats-synthetic.pdf")',
+    ].join('\n');
+    execFileSync('python', ['-c', pdfScript]);
+
+    await page.goto('/ats');
+    await page.waitForLoadState('networkidle');
+    await page.locator('input[type="file"]').setInputFiles(pdfPath);
+    await page.getByPlaceholder('e.g. Senior Frontend Engineer at Stripe').fill('Backend Engineer');
+    await page.getByPlaceholder('Paste job posting text here...').fill(
+      'We are hiring a Backend Engineer to build FastAPI services on PostgreSQL and Redis, ' +
+        'with Kafka event pipelines and Docker-based deployments.'
+    );
+    await page.getByRole('button', { name: /run ats gap analysis/i }).click();
+
+    // The request must succeed without any AI provider: deterministic report, no 500.
+    await expect(page.getByText(/overall ats alignment/i)).toBeVisible({ timeout: 150000 });
+    await expect(page.getByText(/deterministic local analysis/i).first()).toBeVisible();
+    await expect(page.getByText(/no llm call made/i).first()).toBeVisible();
   });
 });
