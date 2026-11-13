@@ -343,12 +343,15 @@ export default function SettingsPage() {
                       are set in this environment, so that upload is skipped.
                     </p>
                     <p className="text-[11px] leading-relaxed">
-                      In this demo environment no third-party service processes your data: no
-                      Gemini API key and no Cloudflare R2 credentials are configured. If you add a
+                      In this environment no third-party service processes your data: the backend
+                      runs with no Gemini API key and no Cloudflare R2 credentials, and the LM
+                      Studio option points at a server on this machine
+                      (http://localhost:1234/v1), which is not currently running. If you add a
                       Gemini key, resume and job-description text is sent to Google for AI-written
-                      suggestions; if you add R2 credentials, uploaded PDF files are stored in
-                      Cloudflare. This is a single-user demo with no account system and no
-                      telemetry pipeline. Delete saved records from the History page to remove them.
+                      suggestions. If you point LM Studio at a remote host, text is sent to that
+                      host. If you add R2 credentials, uploaded PDF files are stored in Cloudflare.
+                      This is a single-user demo with no account system and no telemetry pipeline.
+                      Delete saved records from the History page to remove them.
                     </p>
                   </div>
                 </div>
