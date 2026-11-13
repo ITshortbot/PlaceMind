@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field(default="development", description="development | staging | production")
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3005",  # Playwright production-test server
     ]
 
     # Database Configuration (Neon PostgreSQL)
