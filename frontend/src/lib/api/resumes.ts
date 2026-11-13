@@ -38,7 +38,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     let detail = `Request failed (${res.status})`;
     try {
       const body = await res.json();
-      if (body?.detail) detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+      // Only surface human-readable details; validation arrays stay as status codes.
+      if (typeof body?.detail === 'string') detail = body.detail;
     } catch {
       /* keep default detail */
     }

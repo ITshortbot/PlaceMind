@@ -1,5 +1,314 @@
-BUTTONS=["","","Save Draft","Export PDF","ClassicTimes 11pt","ModernArial 11pt","CompactCalibri 10pt","AcademicGeorgia 11pt","","","","","",""]
-URL=http://localhost:3000/resume
-TITLE=Placemind — AI Career Copilot | ATS Resume Scoring & Mock Interviews
-TEXTBOXES=13
-DEBUG_DONE
+
+Running 36 tests using 1 worker
+
+  ✓   1 [Desktop Chrome] › tests/hover-test.spec.ts:4:7 › Hover Extension Test › Hovering an item extends frosted yellow box (3.3s)
+  ✓   2 [Desktop Chrome] › tests/internal-app.spec.ts:60:7 › Placemind Internal App & SaaS Navigation Suite › Landing Page (Untouched) renders flawlessly (1.5s)
+  ✓   3 [Desktop Chrome] › tests/internal-app.spec.ts:67:7 › Placemind Internal App & SaaS Navigation Suite › Dashboard loads greeting, quick action cards and real workspace stats (1.5s)
+  ✓   4 [Desktop Chrome] › tests/internal-app.spec.ts:82:7 › Placemind Internal App & SaaS Navigation Suite › Resume Upload Wizard supports in-memory parsing checklist (1.6s)
+  ✘   5 [Desktop Chrome] › tests/internal-app.spec.ts:89:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis renders real score for a saved resume (5.6s)
+  ✘   6 [Desktop Chrome] › tests/internal-app.spec.ts:98:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis shows an honest error for an unknown resume (8.5s)
+  ✓   7 [Desktop Chrome] › tests/internal-app.spec.ts:104:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor loads a saved resume and survives reload (1.4s)
+  ✘   8 [Desktop Chrome] › tests/internal-app.spec.ts:115:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor shows an honest error for an unknown resume (6.3s)
+  ✘   9 [Desktop Chrome] › tests/internal-app.spec.ts:121:7 › Placemind Internal App & SaaS Navigation Suite › Interview Setup starts a real practice session (30.1s)
+  ✘  10 [Desktop Chrome] › tests/internal-app.spec.ts:132:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview session loads conversational answer UI (5.6s)
+  ✘  11 [Desktop Chrome] › tests/internal-app.spec.ts:143:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview shows an honest error for an unknown session (6.4s)
+  ✘  12 [Desktop Chrome] › tests/internal-app.spec.ts:149:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report renders scoring dimensions for a real session (6.4s)
+  ✘  13 [Desktop Chrome] › tests/internal-app.spec.ts:157:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report shows an honest error for an unknown session (6.4s)
+  ✓  14 [Desktop Chrome] › tests/internal-app.spec.ts:163:7 › Placemind Internal App & SaaS Navigation Suite › History archive lists the real seeded record (1.5s)
+  ✘  15 [Desktop Chrome] › tests/internal-app.spec.ts:173:7 › Placemind Internal App & SaaS Navigation Suite › Settings page renders AI Engine preference toggle (Local vs Cloud) (6.4s)
+  ✓  16 [Desktop Chrome] › tests/prompt-to-template.spec.ts:13:7 › Prompt-to-Template Studio Screen › Renders prompt studio with live preview, color picker, and example chips (628ms)
+  ✓  17 [Desktop Chrome] › tests/prompt-to-template.spec.ts:36:7 › Prompt-to-Template Studio Screen › Generates template via mocked API and updates live preview (1.5s)
+  ✓  18 [Desktop Chrome] › tests/prompt-to-template.spec.ts:89:7 › Prompt-to-Template Studio Screen › Displays preset fallback badge when source="fallback" (1.2s)
+  ✓  19 [Desktop Chrome] › tests/prompt-to-template.spec.ts:135:7 › Prompt-to-Template Studio Screen › Demo Mode generates instantly without triggering backend network call (2.8s)
+  ✓  20 [Desktop Chrome] › tests/prompt-to-template.spec.ts:163:7 › Prompt-to-Template Studio Screen › Displays honest error when ATS scoring backend is unreachable (3.2s)
+  ✓  21 [Desktop Chrome] › tests/prompt-to-template.spec.ts:183:7 › Prompt-to-Template Studio Screen › Displays ATS Readiness Report with score, top recommendations, and limits note (3.1s)
+  ✓  22 [Desktop Chrome] › tests/studio-shell.spec.ts:4:7 › Studio Page Shell Verification › Studio Page renders with AppShell, Floating Nav, and High Contrast Theme (2.1s)
+  ✓  23 [Desktop Chrome] › tests/visual-responsive.spec.ts:4:7 › Placemind Visual & Responsive Suite › Landing Page renders flawlessly with zero horizontal overflow (3.3s)
+  ✓  24 [Desktop Chrome] › tests/visual-responsive.spec.ts:22:7 › Placemind Visual & Responsive Suite › Studio route redirects to the real Resume Builder workspace (1.9s)
+  ✓  25 [Desktop Chrome] › tests/visual-responsive.spec.ts:41:7 › Placemind Visual & Responsive Suite › Universal Download Hub displays all OS targets (macOS, Windows, Linux, Mobile) (1.2s)
+  ✓  26 [Desktop Chrome] › tests/visual-responsive.spec.ts:54:7 › Placemind Visual & Responsive Suite › AI Mock Rehearsal Room states honestly that voice is not available yet (925ms)
+  ✓  27 [Desktop Chrome] › tests/wireframe-capture.spec.ts:4:7 › Placemind Visual Screenshot Capture (Wireframe v1 Alignment) › Capture Onboarding and 8 Flat Tabs (14.2s)
+  ✓  28 [Desktop Chrome] › tests/wireframe-v1.spec.ts:11:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Onboarding wizard is labeled demo setup and lands on the builder (4.5s)
+  ✓  29 [Desktop Chrome] › tests/wireframe-v1.spec.ts:41:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 1 - Dashboard renders greeting and 3 quick actions (1.6s)
+  ✓  30 [Desktop Chrome] › tests/wireframe-v1.spec.ts:50:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 2 - Template Studio renders prompt generator and example chips (1.7s)
+  ✓  31 [Desktop Chrome] › tests/wireframe-v1.spec.ts:61:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 3 - Resume Builder edits contact, saves a real draft and exports (2.5s)
+  ✘  32 [Desktop Chrome] › tests/wireframe-v1.spec.ts:102:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 4 - ATS 1-Pass renders analysis inputs and scoring weights (6.5s)
+  ✓  33 [Desktop Chrome] › tests/wireframe-v1.spec.ts:113:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 5 - Interview hub lists sessions with an honest heuristic note (1.4s)
+  ✓  34 [Desktop Chrome] › tests/wireframe-v1.spec.ts:123:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 6 - Report renders 2-column analytical scoring and SVG radar chart (1.2s)
+  ✓  35 [Desktop Chrome] › tests/wireframe-v1.spec.ts:131:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 7 - History renders real artifact records or an honest empty state (1.4s)
+  ✓  36 [Desktop Chrome] › tests/wireframe-v1.spec.ts:142:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 8 - Settings renders profile and AI engine controls (1.3s)
+
+
+  1) [Desktop Chrome] › tests/internal-app.spec.ts:89:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis renders real score for a saved resume 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Structure & Sections')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Structure & Sections')
+
+
+      91 |     // Real deterministic analysis on the backend can take a moment.
+      92 |     await expect(page.getByText('ATS Gap Analysis')).toBeVisible({ timeout: 30000 });
+    > 93 |     await expect(page.getByText('Structure & Sections')).toBeVisible();
+         |                                                          ^
+      94 |     await expect(page.getByText('Formatting & Dates')).toBeVisible();
+      95 |     await expect(page.getByText('Re-run Scan')).toBeVisible();
+      96 |   });
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:93:58
+
+    Error Context: test-results/internal-app-Placemind-Int-78bce-al-score-for-a-saved-resume-Desktop-Chrome/error-context.md
+
+  2) [Desktop Chrome] › tests/internal-app.spec.ts:98:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis shows an honest error for an unknown resume 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Could not load this resume.')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Could not load this resume.')
+
+
+       99 |     await page.goto('/resumes/no-such-resume/analyze');
+      100 |     await page.waitForLoadState('networkidle');
+    > 101 |     await expect(page.getByText('Could not load this resume.')).toBeVisible();
+          |                                                                 ^
+      102 |   });
+      103 |
+      104 |   test('Resume Editor loads a saved resume and survives reload', async ({ page }) => {
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:101:65
+
+    Error Context: test-results/internal-app-Placemind-Int-3d01b-error-for-an-unknown-resume-Desktop-Chrome/error-context.md
+
+  3) [Desktop Chrome] › tests/internal-app.spec.ts:115:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor shows an honest error for an unknown resume 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Could not load this resume.')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Could not load this resume.')
+
+
+      116 |     await page.goto('/resumes/no-such-resume/edit');
+      117 |     await page.waitForLoadState('networkidle');
+    > 118 |     await expect(page.getByText('Could not load this resume.')).toBeVisible();
+          |                                                                 ^
+      119 |   });
+      120 |
+      121 |   test('Interview Setup starts a real practice session', async ({ page }) => {
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:118:65
+
+    Error Context: test-results/internal-app-Placemind-Int-16edf-error-for-an-unknown-resume-Desktop-Chrome/error-context.md
+
+  4) [Desktop Chrome] › tests/internal-app.spec.ts:121:7 › Placemind Internal App & SaaS Navigation Suite › Interview Setup starts a real practice session 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Start Practice Session' })
+        - locator resolved to <button disabled class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer bg-[#FACC15] text-[#0A0A0C] hover:bg-[#FFE033] shadow-lg shadow-[#FACC15]/20 active:scale-[0.98] border border-[#FACC15]/40 h-11 rounded-2xl px…>…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+          - waiting 100ms
+        34 × waiting for element to be visible, enabled and stable
+           - element is not enabled
+         - retrying click action
+           - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+
+
+      126 |       page.getByText('Paste the job description for JD-tailored questions (optional)')
+      127 |     ).toBeVisible();
+    > 128 |     await page.getByRole('button', { name: 'Start Practice Session' }).click();
+          |                                                                        ^
+      129 |     await page.waitForURL(/\/interview\/[^/]+$/, { timeout: 20000 });
+      130 |   });
+      131 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:128:72
+
+    Error Context: test-results/internal-app-Placemind-Int-20c69-rts-a-real-practice-session-Desktop-Chrome/error-context.md
+
+  5) [Desktop Chrome] › tests/internal-app.spec.ts:132:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview session loads conversational answer UI 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('[object Object]').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('[object Object]').first()
+
+
+      137 |     ).toBeVisible({ timeout: 15000 });
+      138 |     if (session.question) {
+    > 139 |       await expect(page.getByText(session.question, { exact: false }).first()).toBeVisible();
+          |                                                                                ^
+      140 |     }
+      141 |   });
+      142 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:139:80
+
+    Error Context: test-results/internal-app-Placemind-Int-10d8f-ds-conversational-answer-UI-Desktop-Chrome/error-context.md
+
+  6) [Desktop Chrome] › tests/internal-app.spec.ts:143:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview shows an honest error for an unknown session 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Could not load this session.')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Could not load this session.')
+
+
+      144 |     await page.goto('/interview/no-such-session');
+      145 |     await page.waitForLoadState('networkidle');
+    > 146 |     await expect(page.getByText('Could not load this session.')).toBeVisible();
+          |                                                                  ^
+      147 |   });
+      148 |
+      149 |   test('Interview Report renders scoring dimensions for a real session', async ({ page }) => {
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:146:66
+
+    Error Context: test-results/internal-app-Placemind-Int-c222d-rror-for-an-unknown-session-Desktop-Chrome/error-context.md
+
+  7) [Desktop Chrome] › tests/internal-app.spec.ts:149:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report renders scoring dimensions for a real session 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('STAR Structure')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('STAR Structure')
+
+
+      151 |     await page.goto(`/interview/${session.id}/report`);
+      152 |     await expect(page.getByText('Session Report')).toBeVisible({ timeout: 15000 });
+    > 153 |     await expect(page.getByText('STAR Structure')).toBeVisible();
+          |                                                    ^
+      154 |     await expect(page.getByText('Action Ownership')).toBeVisible();
+      155 |   });
+      156 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:153:52
+
+    Error Context: test-results/internal-app-Placemind-Int-f548d-mensions-for-a-real-session-Desktop-Chrome/error-context.md
+
+  8) [Desktop Chrome] › tests/internal-app.spec.ts:157:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report shows an honest error for an unknown session 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Could not load the report.')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Could not load the report.')
+
+
+      158 |     await page.goto('/interview/no-such-session/report');
+      159 |     await page.waitForLoadState('networkidle');
+    > 160 |     await expect(page.getByText('Could not load the report.')).toBeVisible();
+          |                                                                ^
+      161 |   });
+      162 |
+      163 |   test('History archive lists the real seeded record', async ({ page }) => {
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:160:64
+
+    Error Context: test-results/internal-app-Placemind-Int-c5bcc-rror-for-an-unknown-session-Desktop-Chrome/error-context.md
+
+  9) [Desktop Chrome] › tests/internal-app.spec.ts:173:7 › Placemind Internal App & SaaS Navigation Suite › Settings page renders AI Engine preference toggle (Local vs Cloud) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Always Use Local LM Studio / Ollama (0-Egress)')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Always Use Local LM Studio / Ollama (0-Egress)')
+
+
+      175 |     await page.waitForLoadState('networkidle');
+      176 |     await expect(page.getByText('AI Engine (Gemini vs LM Studio)')).toBeVisible();
+    > 177 |     await expect(page.getByText('Always Use Local LM Studio / Ollama (0-Egress)')).toBeVisible();
+          |                                                                                    ^
+      178 |     await expect(page.getByText('Gemini 2.5 Cloud Fast-Track')).toBeVisible();
+      179 |     await expect(page.getByText('Local Endpoint URL')).toBeVisible();
+      180 |   });
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:177:84
+
+    Error Context: test-results/internal-app-Placemind-Int-f479b-ence-toggle-Local-vs-Cloud--Desktop-Chrome/error-context.md
+
+  10) [Desktop Chrome] › tests/wireframe-v1.spec.ts:102:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 4 - ATS 1-Pass renders analysis inputs and scoring weights 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Semantic Coverage (50%)')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Semantic Coverage (50%)')
+
+
+      104 |     await page.waitForLoadState('networkidle');
+      105 |     await expect(page.getByText('ATS 1-Pass')).toBeVisible();
+    > 106 |     await expect(page.getByText('Semantic Coverage (50%)')).toBeVisible();
+          |                                                             ^
+      107 |     await expect(page.getByText('Keyword Density (30%)')).toBeVisible();
+      108 |     await expect(page.getByText('Resume Structure (20%)')).toBeVisible();
+      109 |     await expect(page.getByText('Resume PDF')).toBeVisible();
+        at /workspaces/PlaceMind/frontend/tests/wireframe-v1.spec.ts:106:61
+
+    Error Context: test-results/wireframe-v1-Placemind-App-23a1f--inputs-and-scoring-weights-Desktop-Chrome/error-context.md
+
+  10 failed
+    [Desktop Chrome] › tests/internal-app.spec.ts:89:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis renders real score for a saved resume 
+    [Desktop Chrome] › tests/internal-app.spec.ts:98:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis shows an honest error for an unknown resume 
+    [Desktop Chrome] › tests/internal-app.spec.ts:115:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor shows an honest error for an unknown resume 
+    [Desktop Chrome] › tests/internal-app.spec.ts:121:7 › Placemind Internal App & SaaS Navigation Suite › Interview Setup starts a real practice session 
+    [Desktop Chrome] › tests/internal-app.spec.ts:132:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview session loads conversational answer UI 
+    [Desktop Chrome] › tests/internal-app.spec.ts:143:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview shows an honest error for an unknown session 
+    [Desktop Chrome] › tests/internal-app.spec.ts:149:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report renders scoring dimensions for a real session 
+    [Desktop Chrome] › tests/internal-app.spec.ts:157:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report shows an honest error for an unknown session 
+    [Desktop Chrome] › tests/internal-app.spec.ts:173:7 › Placemind Internal App & SaaS Navigation Suite › Settings page renders AI Engine preference toggle (Local vs Cloud) 
+    [Desktop Chrome] › tests/wireframe-v1.spec.ts:102:7 › Placemind App Flow Suite (Onboarding + Core Tabs) › Tab 4 - ATS 1-Pass renders analysis inputs and scoring weights 
+  26 passed (2.8m)
+PW_EXIT_1

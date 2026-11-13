@@ -1,0 +1,2 @@
+CORS_ORIGINS=["https://automatic-telegram-jjgr4ppx5j943qr6-3000.app.github.dev"]
+CLOUDENV_ENVIRONMENT_ID=c6b0445b-3a27-42d9-bc7f-94d2dcf04f26

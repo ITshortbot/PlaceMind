@@ -1,0 +1,21 @@
+
+> placemind-frontend@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.27
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 24.8s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/18) ...
+Error occurred prerendering page "/404". Read more: https://nextjs.org/docs/messages/prerender-error
+[Error [PageNotFoundError]: Cannot find module for page: /_document] {
+  code: 'ENOENT'
+}
+Error occurred prerendering page "/500". Read more: https://nextjs.org/docs/messages/prerender-error
+[Error [PageNotFoundError]: Cannot find module for page: /_document] {
+  code: 'ENOENT'
+}
+Export encountered an error on /_error: /404, exiting the build.
+ ⨯ Next.js build worker exited with code: 1 and signal: null

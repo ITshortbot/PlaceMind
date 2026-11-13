@@ -7,21 +7,21 @@
 # Test info
 
 - Name: internal-app.spec.ts >> Placemind Internal App & SaaS Navigation Suite >> Settings page renders AI Engine preference toggle (Local vs Cloud)
-- Location: tests/internal-app.spec.ts:69:7
+- Location: tests/internal-app.spec.ts:173:7
 
 # Error details
 
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('AI Engine Routing & Egress Control')
+Locator: getByText('Always Use Local LM Studio / Ollama (0-Egress)')
 Expected: visible
 Timeout: 5000ms
 Error: element(s) not found
 
 Call log:
   - Expect "toBeVisible" with timeout 5000ms
-  - waiting for getByText('AI Engine Routing & Egress Control')
+  - waiting for getByText('Always Use Local LM Studio / Ollama (0-Egress)')
 
 ```
 
@@ -37,9 +37,6 @@ Call log:
       - img
     - link:
       - /url: /template
-      - img
-    - link:
-      - /url: /resume
       - img
     - link:
       - /url: /resume
@@ -104,81 +101,111 @@ Call log:
 # Test source
 
 ```ts
-  1  | import { test, expect } from '@playwright/test';
-  2  | 
-  3  | test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
-  4  |   test('Landing Page (Untouched) renders flawlessly', async ({ page }) => {
-  5  |     await page.goto('/');
-  6  |     await page.waitForLoadState('networkidle');
-  7  |     await expect(page).toHaveTitle(/Placemind/);
-  8  |     await expect(page.locator('h1')).toBeVisible();
-  9  |   });
-  10 | 
-  11 |   test('Dashboard loads persistent sidebar, quick action cards and stats', async ({ page }) => {
-  12 |     await page.goto('/dashboard');
-  13 |     await page.waitForLoadState('networkidle');
-  14 |     await expect(page.getByText('Welcome back, Rohan')).toBeVisible();
-  15 |     await expect(page.getByText('Upload & Parse Resume')).toBeVisible();
-  16 |     await expect(page.getByText('Recent Resumes')).toBeVisible();
-  17 |   });
-  18 | 
-  19 |   test('Resume Upload Wizard supports in-memory parsing checklist', async ({ page }) => {
-  20 |     await page.goto('/resumes/upload');
-  21 |     await page.waitForLoadState('networkidle');
-  22 |     await expect(page.getByText('Upload & Audit Your Resume')).toBeVisible();
-  23 |     await expect(page.getByText('Drag and drop your resume PDF here')).toBeVisible();
-  24 |   });
-  25 | 
-  26 |   test('ATS Gap Analysis renders prominent 89.4% score and gap report', async ({ page }) => {
-  27 |     await page.goto('/resumes/stripe-staff/analyze');
-  28 |     await page.waitForLoadState('networkidle');
-  29 |     await expect(page.getByText('89.4%')).toBeVisible();
-  30 |     await expect(page.getByText('Semantic Coverage')).toBeVisible();
-  31 |     await expect(page.getByText('Apache Kafka Stream Processing')).toBeVisible();
-  32 |   });
-  33 | 
-  34 |   test('Resume Editor loads two-pane canvas with inline XYZ rewrites', async ({ page }) => {
-  35 |     await page.goto('/resumes/stripe-staff/edit');
-  36 |     await page.waitForLoadState('networkidle');
-  37 |     await expect(page.getByText('Experience Optimization Studio')).toBeVisible();
-  38 |     await expect(page.getByText('Accept & Apply').first()).toBeVisible();
-  39 |   });
-  40 | 
-  41 |   test('Interview Setup wizard shows detected weak areas and mode toggle', async ({ page }) => {
-  42 |     await page.goto('/interview/new');
-  43 |     await page.waitForLoadState('networkidle');
-  44 |     await expect(page.getByText('Configure Your Mock Interview')).toBeVisible();
-  45 |     await expect(page.getByText('Distributed Kafka Systems')).toBeVisible();
-  46 |   });
-  47 | 
-  48 |   test('Live Interview session minimizes chrome and loads conversational chat', async ({ page }) => {
-  49 |     await page.goto('/interview/sess-12345');
-  50 |     await page.waitForLoadState('networkidle');
-  51 |     await expect(page.getByText('Placemind Live Session')).toBeVisible();
-  52 |     await expect(page.getByText('End Session')).toBeVisible();
-  53 |   });
-  54 | 
-  55 |   test('Interview Report renders multi-dimensional radar chart and review', async ({ page }) => {
-  56 |     await page.goto('/interview/sess-12345/report');
-  57 |     await page.waitForLoadState('networkidle');
-  58 |     await expect(page.getByText('Overall Interview Score')).toBeVisible();
-  59 |     await expect(page.getByText('STAR Structure')).toBeVisible();
-  60 |   });
-  61 | 
-  62 |   test('History archive page renders scannable data table and tabs', async ({ page }) => {
-  63 |     await page.goto('/history');
-  64 |     await page.waitForLoadState('networkidle');
-  65 |     await expect(page.getByText('Activity History & Document Archive')).toBeVisible();
-  66 |     await expect(page.getByText('All Items')).toBeVisible();
-  67 |   });
-  68 | 
-  69 |   test('Settings page renders AI Engine preference toggle (Local vs Cloud)', async ({ page }) => {
-  70 |     await page.goto('/settings');
-  71 |     await page.waitForLoadState('networkidle');
-> 72 |     await expect(page.getByText('AI Engine Routing & Egress Control')).toBeVisible();
-     |                                                                        ^ Error: expect(locator).toBeVisible() failed
-  73 |     await expect(page.getByText('Always Use Local LM Studio / Ollama (Zero-Egress)')).toBeVisible();
-  74 |   });
-  75 | });
-  76 | 
+  77  |     await expect(page.getByText('Auto-Generate for a Job')).toBeVisible();
+  78  |     await expect(page.getByText('Practice Interview')).toBeVisible();
+  79  |     await expect(page.getByText('Practice sessions:')).toBeVisible();
+  80  |   });
+  81  | 
+  82  |   test('Resume Upload Wizard supports in-memory parsing checklist', async ({ page }) => {
+  83  |     await page.goto('/resumes/upload');
+  84  |     await page.waitForLoadState('networkidle');
+  85  |     await expect(page.getByText('Upload & Audit Your Resume')).toBeVisible();
+  86  |     await expect(page.getByText('Drag and drop your resume PDF here')).toBeVisible();
+  87  |   });
+  88  | 
+  89  |   test('ATS Gap Analysis renders real score for a saved resume', async ({ page }) => {
+  90  |     await page.goto(`/resumes/${resumeId}/analyze`);
+  91  |     // Real deterministic analysis on the backend can take a moment.
+  92  |     await expect(page.getByText('ATS Gap Analysis')).toBeVisible({ timeout: 30000 });
+  93  |     await expect(page.getByText('Structure & Sections')).toBeVisible();
+  94  |     await expect(page.getByText('Formatting & Dates')).toBeVisible();
+  95  |     await expect(page.getByText('Re-run Scan')).toBeVisible();
+  96  |   });
+  97  | 
+  98  |   test('ATS Gap Analysis shows an honest error for an unknown resume', async ({ page }) => {
+  99  |     await page.goto('/resumes/no-such-resume/analyze');
+  100 |     await page.waitForLoadState('networkidle');
+  101 |     await expect(page.getByText('Could not load this resume.')).toBeVisible();
+  102 |   });
+  103 | 
+  104 |   test('Resume Editor loads a saved resume and survives reload', async ({ page }) => {
+  105 |     await page.goto(`/resumes/${resumeId}/edit`);
+  106 |     await expect(page.getByText('Resume Editor')).toBeVisible({ timeout: 15000 });
+  107 |     await expect(page.getByRole('button', { name: 'Save Changes' })).toBeVisible();
+  108 |     await expect(page.getByText(/Alex Morgan/).first()).toBeVisible();
+  109 |     // Reload: the record must persist from the backend, not local state.
+  110 |     await page.reload();
+  111 |     await expect(page.getByText('Resume Editor')).toBeVisible({ timeout: 15000 });
+  112 |     await expect(page.getByText(/Alex Morgan/).first()).toBeVisible();
+  113 |   });
+  114 | 
+  115 |   test('Resume Editor shows an honest error for an unknown resume', async ({ page }) => {
+  116 |     await page.goto('/resumes/no-such-resume/edit');
+  117 |     await page.waitForLoadState('networkidle');
+  118 |     await expect(page.getByText('Could not load this resume.')).toBeVisible();
+  119 |   });
+  120 | 
+  121 |   test('Interview Setup starts a real practice session', async ({ page }) => {
+  122 |     await page.goto('/interview/new');
+  123 |     await page.waitForLoadState('networkidle');
+  124 |     await expect(page.getByText('MOCK INTERVIEW PRACTICE')).toBeVisible();
+  125 |     await expect(
+  126 |       page.getByText('Paste the job description for JD-tailored questions (optional)')
+  127 |     ).toBeVisible();
+  128 |     await page.getByRole('button', { name: 'Start Practice Session' }).click();
+  129 |     await page.waitForURL(/\/interview\/[^/]+$/, { timeout: 20000 });
+  130 |   });
+  131 | 
+  132 |   test('Live Interview session loads conversational answer UI', async ({ page }) => {
+  133 |     const session = await createSession();
+  134 |     await page.goto(`/interview/${session.id}`);
+  135 |     await expect(
+  136 |       page.getByPlaceholder('Type your answer (aim for 60-120 words with a concrete metric)...')
+  137 |     ).toBeVisible({ timeout: 15000 });
+  138 |     if (session.question) {
+  139 |       await expect(page.getByText(session.question, { exact: false }).first()).toBeVisible();
+  140 |     }
+  141 |   });
+  142 | 
+  143 |   test('Live Interview shows an honest error for an unknown session', async ({ page }) => {
+  144 |     await page.goto('/interview/no-such-session');
+  145 |     await page.waitForLoadState('networkidle');
+  146 |     await expect(page.getByText('Could not load this session.')).toBeVisible();
+  147 |   });
+  148 | 
+  149 |   test('Interview Report renders scoring dimensions for a real session', async ({ page }) => {
+  150 |     const session = await createSession();
+  151 |     await page.goto(`/interview/${session.id}/report`);
+  152 |     await expect(page.getByText('Session Report')).toBeVisible({ timeout: 15000 });
+  153 |     await expect(page.getByText('STAR Structure')).toBeVisible();
+  154 |     await expect(page.getByText('Action Ownership')).toBeVisible();
+  155 |   });
+  156 | 
+  157 |   test('Interview Report shows an honest error for an unknown session', async ({ page }) => {
+  158 |     await page.goto('/interview/no-such-session/report');
+  159 |     await page.waitForLoadState('networkidle');
+  160 |     await expect(page.getByText('Could not load the report.')).toBeVisible();
+  161 |   });
+  162 | 
+  163 |   test('History archive lists the real seeded record', async ({ page }) => {
+  164 |     await page.goto('/history');
+  165 |     await page.waitForLoadState('networkidle');
+  166 |     await expect(page.getByText('Your Resume Artifacts & Files')).toBeVisible();
+  167 |     await expect(
+  168 |       page.getByText('Every entry below is a real saved record. Upload a resume to add one.')
+  169 |     ).toBeVisible();
+  170 |     await expect(page.getByText('pw_alex_backend_2026.txt').first()).toBeVisible();
+  171 |   });
+  172 | 
+  173 |   test('Settings page renders AI Engine preference toggle (Local vs Cloud)', async ({ page }) => {
+  174 |     await page.goto('/settings');
+  175 |     await page.waitForLoadState('networkidle');
+  176 |     await expect(page.getByText('AI Engine (Gemini vs LM Studio)')).toBeVisible();
+> 177 |     await expect(page.getByText('Always Use Local LM Studio / Ollama (0-Egress)')).toBeVisible();
+      |                                                                                    ^ Error: expect(locator).toBeVisible() failed
+  178 |     await expect(page.getByText('Gemini 2.5 Cloud Fast-Track')).toBeVisible();
+  179 |     await expect(page.getByText('Local Endpoint URL')).toBeVisible();
+  180 |   });
+  181 | });
+  182 | 
 ```

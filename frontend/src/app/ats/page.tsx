@@ -77,9 +77,7 @@ export default function AtsAutoGeneratePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [jobTitle, setJobTitle] = useState('Staff Software Engineer · Stripe Core Infrastructure');
-  const [jdText, setJdText] = useState(
-    `We are looking for a Staff Engineer to lead high-throughput event processing (Kafka), optimize PostgreSQL & vector search pipelines, and guarantee 99.99% multi-region uptime.`
-  );
+  const [jdText, setJdText] = useState('');
   const [aiMode, setAiMode] = useState<'cloud' | 'local'>(AIServiceClient.getPreferredAIMode());
 
   const { status, report, error, latencyMs, scoreResume, reset } = useATSScoring();

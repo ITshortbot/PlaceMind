@@ -115,22 +115,22 @@ export default function SettingsPage() {
                   <div className="space-y-3">
                     <div className="space-y-1">
                       <Label>Full Name</Label>
-                      <Input defaultValue="Rohan K. Patel" />
+                      <Input placeholder="Your full name" />
                     </div>
 
                     <div className="space-y-1">
                       <Label>Phone Number</Label>
-                      <Input defaultValue="+1 (555) 349-2049" />
+                      <Input placeholder="Your phone number" />
                     </div>
 
                     <div className="space-y-1">
                       <Label>College / University</Label>
-                      <Input defaultValue="Stanford University" />
+                      <Input placeholder="Your college or university" />
                     </div>
 
                     <div className="space-y-1">
                       <Label>Specialization</Label>
-                      <Input defaultValue="Computer Science & Distributed Systems" />
+                      <Input placeholder="Your specialization" />
                     </div>
                   </div>
 

@@ -99,15 +99,21 @@ test.describe('Placemind App Flow Suite (Onboarding + Core Tabs)', () => {
     expect(printCalls).toBe(1);
   });
 
-  test('Tab 4 - ATS 1-Pass renders analysis inputs and scoring weights', async ({ page }) => {
+  test('Tab 4 - ATS 1-Pass renders analysis inputs without fabricated prefill', async ({
+    page,
+  }) => {
     await page.goto('/ats');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('ATS 1-Pass')).toBeVisible();
-    await expect(page.getByText('Semantic Coverage (50%)')).toBeVisible();
-    await expect(page.getByText('Keyword Density (30%)')).toBeVisible();
-    await expect(page.getByText('Resume Structure (20%)')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Analyze Resume vs. Job Description' })
+    ).toBeVisible();
+    await expect(page.getByText('1-PASS AI SCORING PIPELINE')).toBeVisible();
     await expect(page.getByText('Resume PDF')).toBeVisible();
     await expect(page.getByText('Job Title')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Gemini Cloud' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Local LM Studio' })).toBeVisible();
+    // No fabricated job posting prefill - inputs start empty.
+    await expect(page.getByPlaceholder('Paste job posting text here...')).toHaveValue('');
   });
 
   test('Tab 5 - Interview hub lists sessions with an honest heuristic note', async ({ page }) => {

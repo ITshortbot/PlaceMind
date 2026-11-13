@@ -1,0 +1,3 @@
+codespa+   41844  0.1  5.7 1649420 470776 pts/0  Sl   06:25   0:20 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+codespa+  124550  1.4  8.8 76844512 721260 pts/1 Sl   08:29   0:43 next-server (v15.5.27)
+codespa+  138375  3.1 11.7 77857552 951672 pts/1 Sl   08:47   0:59 next-server (v15.5.27)

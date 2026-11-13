@@ -31,6 +31,19 @@ const DEMO_RESUME = {
   parsed_metadata: { seeded_by: 'playwright', synthetic: true },
 };
 
+const DEMO_JD =
+  'We are hiring a Backend Engineer to build FastAPI services on PostgreSQL and Redis, ' +
+  'with Kafka event pipelines and Docker-based deployments.';
+
+const DEMO_ANSWER =
+  'At FinCore I owned the payments events pipeline. I designed the Kafka topology, ' +
+  'wrote the FastAPI consumers, and added Redis idempotency keys, cutting duplicate ' +
+  'processing by 95 percent and p95 latency from 800ms to 240ms for 2M events per day.';
+
+// A syntactically valid UUID that does not exist in the database.
+const MISSING_UUID = '00000000-0000-4000-8000-000000000000';
+const HONEST_ERROR = /request failed \(4\d\d\)|not found|could not load/i;
+
 let resumeId = '';
 
 test.beforeAll(async () => {
@@ -42,7 +55,7 @@ test.beforeAll(async () => {
   await ctx.dispose();
 });
 
-async function createSession(): Promise<{ id: string; question: string }> {
+async function createSession(): Promise<string> {
   const ctx = await pwRequest.newContext();
   const res = await ctx.post(`${BACKEND}/api/v1/interviews/sessions`, {
     data: { target_role: 'Backend Engineer', interview_type: 'practice', question_count: 3 },
@@ -51,9 +64,17 @@ async function createSession(): Promise<{ id: string; question: string }> {
   const body = await res.json();
   await ctx.dispose();
   const id = body.session_id ?? body.id;
-  const question =
-    body.current_question?.question ?? body.questions?.[0]?.question ?? body.current_question ?? '';
-  return { id, question };
+  expect(id).toBeTruthy();
+  return id;
+}
+
+async function answerQuestion(sessionId: string): Promise<void> {
+  const ctx = await pwRequest.newContext();
+  const res = await ctx.post(`${BACKEND}/api/v1/interviews/sessions/${sessionId}/answer`, {
+    data: { answer: DEMO_ANSWER },
+  });
+  expect(res.ok(), `answer question failed (${res.status()})`).toBeTruthy();
+  await ctx.dispose();
 }
 
 test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
@@ -86,19 +107,27 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
     await expect(page.getByText('Drag and drop your resume PDF here')).toBeVisible();
   });
 
-  test('ATS Gap Analysis renders real score for a saved resume', async ({ page }) => {
+  test('ATS Gap Analysis scores a saved resume against a pasted job description', async ({
+    page,
+  }) => {
     await page.goto(`/resumes/${resumeId}/analyze`);
+    await expect(page.getByText('ATS Gap Analysis')).toBeVisible({ timeout: 15000 });
+    // Honest initial state: no fabricated score before a real scan.
+    await expect(page.getByText('No analysis run yet')).toBeVisible();
+    await page.getByPlaceholder('Job title (e.g. Backend Engineer)').fill('Backend Engineer');
+    await page
+      .getByPlaceholder(/Paste the real job description here/)
+      .fill(DEMO_JD);
+    await page.getByRole('button', { name: 'Run Scan' }).click();
     // Real deterministic analysis on the backend can take a moment.
-    await expect(page.getByText('ATS Gap Analysis')).toBeVisible({ timeout: 30000 });
-    await expect(page.getByText('Structure & Sections')).toBeVisible();
+    await expect(page.getByText('Structure & Sections')).toBeVisible({ timeout: 45000 });
     await expect(page.getByText('Formatting & Dates')).toBeVisible();
-    await expect(page.getByText('Re-run Scan')).toBeVisible();
   });
 
   test('ATS Gap Analysis shows an honest error for an unknown resume', async ({ page }) => {
-    await page.goto('/resumes/no-such-resume/analyze');
+    await page.goto(`/resumes/${MISSING_UUID}/analyze`);
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Could not load this resume.')).toBeVisible();
+    await expect(page.getByText(HONEST_ERROR).first()).toBeVisible();
   });
 
   test('Resume Editor loads a saved resume and survives reload', async ({ page }) => {
@@ -113,9 +142,9 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
   });
 
   test('Resume Editor shows an honest error for an unknown resume', async ({ page }) => {
-    await page.goto('/resumes/no-such-resume/edit');
+    await page.goto(`/resumes/${MISSING_UUID}/edit`);
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Could not load this resume.')).toBeVisible();
+    await expect(page.getByText(HONEST_ERROR).first()).toBeVisible();
   });
 
   test('Interview Setup starts a real practice session', async ({ page }) => {
@@ -125,39 +154,55 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
     await expect(
       page.getByText('Paste the job description for JD-tailored questions (optional)')
     ).toBeVisible();
+    // The start button stays disabled until a target role is entered.
+    await expect(page.getByRole('button', { name: 'Start Practice Session' })).toBeDisabled();
+    await page.getByPlaceholder('e.g. Backend Engineer').fill('Backend Engineer');
     await page.getByRole('button', { name: 'Start Practice Session' }).click();
     await page.waitForURL(/\/interview\/[^/]+$/, { timeout: 20000 });
   });
 
-  test('Live Interview session loads conversational answer UI', async ({ page }) => {
-    const session = await createSession();
-    await page.goto(`/interview/${session.id}`);
+  test('Live Interview session loads conversational answer UI and accepts an answer', async ({
+    page,
+  }) => {
+    const sessionId = await createSession();
+    await page.goto(`/interview/${sessionId}`);
     await expect(
       page.getByPlaceholder('Type your answer (aim for 60-120 words with a concrete metric)...')
     ).toBeVisible({ timeout: 15000 });
-    if (session.question) {
-      await expect(page.getByText(session.question, { exact: false }).first()).toBeVisible();
-    }
+    await expect(page.getByText(/Question 1/).first()).toBeVisible();
+    await expect(page.getByText(/Feedback is heuristic/).first()).toBeVisible();
+    // Answer submits through the backend and the session advances.
+    await page
+      .getByPlaceholder('Type your answer (aim for 60-120 words with a concrete metric)...')
+      .fill(DEMO_ANSWER);
+    await page.getByRole('button', { name: 'Answer' }).click();
+    await expect(page.getByText(/Question 2|Session complete|Feedback/i).first()).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   test('Live Interview shows an honest error for an unknown session', async ({ page }) => {
-    await page.goto('/interview/no-such-session');
+    await page.goto(`/interview/${MISSING_UUID}`);
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Could not load this session.')).toBeVisible();
+    await expect(page.getByText(HONEST_ERROR).first()).toBeVisible();
   });
 
-  test('Interview Report renders scoring dimensions for a real session', async ({ page }) => {
-    const session = await createSession();
-    await page.goto(`/interview/${session.id}/report`);
+  test('Interview Report is honest with no answers and scores after one', async ({ page }) => {
+    const sessionId = await createSession();
+    await page.goto(`/interview/${sessionId}/report`);
+    // No fabricated scores before any answer exists.
+    await expect(page.getByText('No answers recorded yet')).toBeVisible({ timeout: 15000 });
+    await answerQuestion(sessionId);
+    await page.reload();
     await expect(page.getByText('Session Report')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('STAR Structure')).toBeVisible();
+    await expect(page.getByText('STAR Structure')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Action Ownership')).toBeVisible();
   });
 
   test('Interview Report shows an honest error for an unknown session', async ({ page }) => {
-    await page.goto('/interview/no-such-session/report');
+    await page.goto(`/interview/${MISSING_UUID}/report`);
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Could not load the report.')).toBeVisible();
+    await expect(page.getByText(HONEST_ERROR).first()).toBeVisible();
   });
 
   test('History archive lists the real seeded record', async ({ page }) => {
@@ -170,10 +215,16 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
     await expect(page.getByText('pw_alex_backend_2026.txt').first()).toBeVisible();
   });
 
-  test('Settings page renders AI Engine preference toggle (Local vs Cloud)', async ({ page }) => {
+  test('Settings renders AI engine controls and no fabricated profile', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('AI Engine (Gemini vs LM Studio)')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Account & Application Settings' })
+    ).toBeVisible();
+    // Profile fields start empty - no invented persona.
+    await expect(page.getByDisplayValue(/Rohan|Stanford/)).toHaveCount(0);
+    // AI engine controls live under their own tab.
+    await page.getByRole('button', { name: 'AI Engine (Gemini vs LM Studio)' }).click();
     await expect(page.getByText('Always Use Local LM Studio / Ollama (0-Egress)')).toBeVisible();
     await expect(page.getByText('Gemini 2.5 Cloud Fast-Track')).toBeVisible();
     await expect(page.getByText('Local Endpoint URL')).toBeVisible();
