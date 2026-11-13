@@ -1,0 +1,92 @@
+
+> placemind-frontend@1.0.0 test:color
+> node --experimental-strip-types --test tests/color-engine.test.ts
+
+TAP version 13
+# (node:116485) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspaces/PlaceMind/frontend/tests/color-engine.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /workspaces/PlaceMind/frontend/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: buildPalette creates valid palettes for all 5 moods
+ok 1 - buildPalette creates valid palettes for all 5 moods
+  ---
+  duration_ms: 2.499401
+  type: 'test'
+  ...
+# Subtest: buildPalette supports custom hue override
+ok 2 - buildPalette supports custom hue override
+  ---
+  duration_ms: 0.271216
+  type: 'test'
+  ...
+# Subtest: adjustHexForContrast preserves high-contrast brand colors
+ok 3 - adjustHexForContrast preserves high-contrast brand colors
+  ---
+  duration_ms: 0.376793
+  type: 'test'
+  ...
+# Subtest: adjustHexForContrast darkens low-contrast colors until contrast >= 4.5:1
+ok 4 - adjustHexForContrast darkens low-contrast colors until contrast >= 4.5:1
+  ---
+  duration_ms: 0.475106
+  type: 'test'
+  ...
+# Subtest: MOOD_DEFAULT_HUES covers all required moods with distinctive hues
+ok 5 - MOOD_DEFAULT_HUES covers all required moods with distinctive hues
+  ---
+  duration_ms: 0.382243
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 178.25564
+
+> placemind-frontend@1.0.0 test:snapshot
+> npx -y tsx --test tests/templates-snapshot.test.ts
+
+TAP version 13
+# Subtest: Family registry tokens snapshot check
+ok 1 - Family registry tokens snapshot check
+  ---
+  duration_ms: 0.997711
+  type: 'test'
+  ...
+# Subtest: Snapshot test for Classic family
+ok 2 - Snapshot test for Classic family
+  ---
+  duration_ms: 10.692792
+  type: 'test'
+  ...
+# Subtest: Snapshot test for Modern family (with accent header band)
+ok 3 - Snapshot test for Modern family (with accent header band)
+  ---
+  duration_ms: 1.843678
+  type: 'test'
+  ...
+# Subtest: Snapshot test for Compact family (high density)
+ok 4 - Snapshot test for Compact family (high density)
+  ---
+  duration_ms: 1.693689
+  type: 'test'
+  ...
+# Subtest: Snapshot test for Academic family (education and projects first)
+ok 5 - Snapshot test for Academic family (education and projects first)
+  ---
+  duration_ms: 1.650889
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 674.734197

@@ -1,0 +1,11 @@
+Backend engineer with 3 years building Python APIs and data pipelines. Experienced in high-throughput services, caching
+CORE COMPETENCIES & SKILLS
+Python
+FastAPI
+PostgreSQL
+Redis
+Docker
+Kafka
+Kubernetes
+AWS
+Terraform

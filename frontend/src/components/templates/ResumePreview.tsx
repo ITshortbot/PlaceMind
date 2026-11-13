@@ -384,6 +384,10 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
               }
               #resume-preview-sheet {
                 position: static !important;
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+                aspect-ratio: auto !important;
                 box-shadow: none !important;
                 border: none !important;
                 border-radius: 0 !important;

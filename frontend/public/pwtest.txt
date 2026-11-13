@@ -1,47 +1,530 @@
-ReferenceError: require is not defined in ES module scope, you can use import instead
-This file is being treated as an ES module because it has a '.js' file extension and '/workspaces/PlaceMind/frontend/node_modules/lucide-react/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
 
-   at ../src/components/templates/ResumePreview.tsx:12
+Running 31 tests using 1 worker
 
-  10 |
-  11 | import React from 'react';
-> 12 | import { Printer } from 'lucide-react';
-     | ^
-  13 | import { Palette } from '../../lib/color/engine.ts';
-  14 | import {
-  15 |   DENSITY_TOKENS,
-    at /workspaces/PlaceMind/frontend/node_modules/lucide-react/dist/cjs/lucide-react.js:10:13
-    at Object.<anonymous> (/workspaces/PlaceMind/frontend/src/components/templates/ResumePreview.tsx:12:1)
-    at Object.<anonymous> (/workspaces/PlaceMind/frontend/tests/templates-snapshot.test.ts:21:1)
-TAP version 13
-# Subtest: buildPalette creates valid palettes for all 5 moods
-ok 1 - buildPalette creates valid palettes for all 5 moods
-  ---
-  duration_ms: 59.391282
-  type: 'test'
-  ...
-# Subtest: buildPalette supports custom hue override
-ok 2 - buildPalette supports custom hue override
-  ---
-  duration_ms: 83.741384
-  type: 'test'
-  ...
-# Subtest: adjustHexForContrast preserves high-contrast brand colors
-ok 3 - adjustHexForContrast preserves high-contrast brand colors
-  ---
-  duration_ms: 26.678314
-  type: 'test'
-  ...
-# Subtest: adjustHexForContrast darkens low-contrast colors until contrast >= 4.5:1
-ok 4 - adjustHexForContrast darkens low-contrast colors until contrast >= 4.5:1
-  ---
-  duration_ms: 1394.189098
-  type: 'test'
-  ...
-# Subtest: MOOD_DEFAULT_HUES covers all required moods with distinctive hues
-ok 5 - MOOD_DEFAULT_HUES covers all required moods with distinctive hues
-  ---
-  duration_ms: 38.641694
-  type: 'test'
-  ...
+  ✓   1 [Desktop Chrome] › tests/hover-test.spec.ts:4:7 › Hover Extension Test › Hovering an item extends frosted yellow box (3.0s)
+  ✓   2 [Desktop Chrome] › tests/internal-app.spec.ts:4:7 › Placemind Internal App & SaaS Navigation Suite › Landing Page (Untouched) renders flawlessly (1.7s)
+  ✘   3 [Desktop Chrome] › tests/internal-app.spec.ts:11:7 › Placemind Internal App & SaaS Navigation Suite › Dashboard loads persistent sidebar, quick action cards and stats (6.2s)
+  ✓   4 [Desktop Chrome] › tests/internal-app.spec.ts:19:7 › Placemind Internal App & SaaS Navigation Suite › Resume Upload Wizard supports in-memory parsing checklist (1.3s)
+  ✘   5 [Desktop Chrome] › tests/internal-app.spec.ts:26:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis renders prominent 89.4% score and gap report (6.5s)
+  ✘   6 [Desktop Chrome] › tests/internal-app.spec.ts:34:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor loads two-pane canvas with inline XYZ rewrites (6.2s)
+  ✘   7 [Desktop Chrome] › tests/internal-app.spec.ts:41:7 › Placemind Internal App & SaaS Navigation Suite › Interview Setup wizard shows detected weak areas and mode toggle (6.3s)
+  ✘   8 [Desktop Chrome] › tests/internal-app.spec.ts:48:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview session minimizes chrome and loads conversational chat (5.9s)
+  ✘   9 [Desktop Chrome] › tests/internal-app.spec.ts:55:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report renders multi-dimensional radar chart and review (6.3s)
+  ✘  10 [Desktop Chrome] › tests/internal-app.spec.ts:62:7 › Placemind Internal App & SaaS Navigation Suite › History archive page renders scannable data table and tabs (6.5s)
+  ✘  11 [Desktop Chrome] › tests/internal-app.spec.ts:69:7 › Placemind Internal App & SaaS Navigation Suite › Settings page renders AI Engine preference toggle (Local vs Cloud) (6.2s)
+  ✓  12 [Desktop Chrome] › tests/prompt-to-template.spec.ts:13:7 › Prompt-to-Template Studio Screen › Renders prompt studio with live preview, color picker, and example chips (597ms)
+  ✓  13 [Desktop Chrome] › tests/prompt-to-template.spec.ts:36:7 › Prompt-to-Template Studio Screen › Generates template via mocked API and updates live preview (1.7s)
+  ✘  14 [Desktop Chrome] › tests/prompt-to-template.spec.ts:89:7 › Prompt-to-Template Studio Screen › Displays preset fallback badge when source="fallback" (6.1s)
+  ✓  15 [Desktop Chrome] › tests/prompt-to-template.spec.ts:131:7 › Prompt-to-Template Studio Screen › Demo Mode generates instantly without triggering backend network call (2.9s)
+  ✘  16 [Desktop Chrome] › tests/prompt-to-template.spec.ts:159:7 › Prompt-to-Template Studio Screen › Displays ATS Readiness Report with score, top recommendations, and limits note (5.5s)
+  ✓  17 [Desktop Chrome] › tests/studio-shell.spec.ts:4:7 › Studio Page Shell Verification › Studio Page renders with AppShell, Floating Nav, and High Contrast Theme (1.8s)
+  ✓  18 [Desktop Chrome] › tests/visual-responsive.spec.ts:4:7 › Placemind Visual & Responsive Suite › Landing Page renders flawlessly with zero horizontal overflow (3.4s)
+  ✘  19 [Desktop Chrome] › tests/visual-responsive.spec.ts:22:7 › Placemind Visual & Responsive Suite › Studio Interior Workspace loads all 3 panels and template switchers (6.2s)
+  ✓  20 [Desktop Chrome] › tests/visual-responsive.spec.ts:35:7 › Placemind Visual & Responsive Suite › Universal Download Hub displays all OS targets (macOS, Windows, Linux, Mobile) (1.3s)
+  ✘  21 [Desktop Chrome] › tests/visual-responsive.spec.ts:48:7 › Placemind Visual & Responsive Suite › AI Mock Rehearsal Room renders waveform visualizer and question probes (5.9s)
+  ✓  22 [Desktop Chrome] › tests/wireframe-capture.spec.ts:4:7 › Placemind Visual Screenshot Capture (Wireframe v1 Alignment) › Capture Onboarding and 8 Flat Tabs (12.2s)
+  ✘  23 [Desktop Chrome] › tests/wireframe-v1.spec.ts:4:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Step 1-4 Onboarding Wizard works seamlessly (30.1s)
+  ✘  24 [Desktop Chrome] › tests/wireframe-v1.spec.ts:32:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 1 - Dashboard renders greeting, 3 quick actions, and AI command bar (6.6s)
+  ✘  25 [Desktop Chrome] › tests/wireframe-v1.spec.ts:41:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 2 - Template Gallery renders 2x5 grid with ATS badges (6.3s)
+  ✘  26 [Desktop Chrome] › tests/wireframe-v1.spec.ts:48:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 3 - Resume renders 3-column layout and physical hero document preview (6.3s)
+  ✘  27 [Desktop Chrome] › tests/wireframe-v1.spec.ts:57:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 4 - ATS Auto-Generate allows 1-pass synthesis (6.2s)
+  ✘  28 [Desktop Chrome] › tests/wireframe-v1.spec.ts:64:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 5 - Interview renders split setup and live conversation (6.2s)
+  ✓  29 [Desktop Chrome] › tests/wireframe-v1.spec.ts:72:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 6 - Report renders 2-column analytical scoring and SVG radar chart (1.5s)
+  ✘  30 [Desktop Chrome] › tests/wireframe-v1.spec.ts:80:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 7 - History renders chronological artifact cards (6.2s)
+  ✓  31 [Desktop Chrome] › tests/wireframe-v1.spec.ts:87:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 8 - Settings renders profile and AI engine controls (1.2s)
 
+
+  1) [Desktop Chrome] › tests/internal-app.spec.ts:11:7 › Placemind Internal App & SaaS Navigation Suite › Dashboard loads persistent sidebar, quick action cards and stats 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Welcome back, Rohan')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Welcome back, Rohan')
+
+
+      12 |     await page.goto('/dashboard');
+      13 |     await page.waitForLoadState('networkidle');
+    > 14 |     await expect(page.getByText('Welcome back, Rohan')).toBeVisible();
+         |                                                         ^
+      15 |     await expect(page.getByText('Upload & Parse Resume')).toBeVisible();
+      16 |     await expect(page.getByText('Recent Resumes')).toBeVisible();
+      17 |   });
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:14:57
+
+    Error Context: test-results/internal-app-Placemind-Int-6fdcb-uick-action-cards-and-stats-Desktop-Chrome/error-context.md
+
+  2) [Desktop Chrome] › tests/internal-app.spec.ts:26:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis renders prominent 89.4% score and gap report 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('89.4%')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('89.4%')
+
+
+      27 |     await page.goto('/resumes/stripe-staff/analyze');
+      28 |     await page.waitForLoadState('networkidle');
+    > 29 |     await expect(page.getByText('89.4%')).toBeVisible();
+         |                                           ^
+      30 |     await expect(page.getByText('Semantic Coverage')).toBeVisible();
+      31 |     await expect(page.getByText('Apache Kafka Stream Processing')).toBeVisible();
+      32 |   });
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:29:43
+
+    Error Context: test-results/internal-app-Placemind-Int-59378-t-89-4-score-and-gap-report-Desktop-Chrome/error-context.md
+
+  3) [Desktop Chrome] › tests/internal-app.spec.ts:34:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor loads two-pane canvas with inline XYZ rewrites 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Experience Optimization Studio')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Experience Optimization Studio')
+
+
+      35 |     await page.goto('/resumes/stripe-staff/edit');
+      36 |     await page.waitForLoadState('networkidle');
+    > 37 |     await expect(page.getByText('Experience Optimization Studio')).toBeVisible();
+         |                                                                    ^
+      38 |     await expect(page.getByText('Accept & Apply').first()).toBeVisible();
+      39 |   });
+      40 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:37:68
+
+    Error Context: test-results/internal-app-Placemind-Int-1c078-as-with-inline-XYZ-rewrites-Desktop-Chrome/error-context.md
+
+  4) [Desktop Chrome] › tests/internal-app.spec.ts:41:7 › Placemind Internal App & SaaS Navigation Suite › Interview Setup wizard shows detected weak areas and mode toggle 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Distributed Kafka Systems')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Distributed Kafka Systems')
+
+
+      43 |     await page.waitForLoadState('networkidle');
+      44 |     await expect(page.getByText('Configure Your Mock Interview')).toBeVisible();
+    > 45 |     await expect(page.getByText('Distributed Kafka Systems')).toBeVisible();
+         |                                                               ^
+      46 |   });
+      47 |
+      48 |   test('Live Interview session minimizes chrome and loads conversational chat', async ({ page }) => {
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:45:63
+
+    Error Context: test-results/internal-app-Placemind-Int-90d13--weak-areas-and-mode-toggle-Desktop-Chrome/error-context.md
+
+  5) [Desktop Chrome] › tests/internal-app.spec.ts:48:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview session minimizes chrome and loads conversational chat 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Placemind Live Session')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Placemind Live Session')
+
+
+      49 |     await page.goto('/interview/sess-12345');
+      50 |     await page.waitForLoadState('networkidle');
+    > 51 |     await expect(page.getByText('Placemind Live Session')).toBeVisible();
+         |                                                            ^
+      52 |     await expect(page.getByText('End Session')).toBeVisible();
+      53 |   });
+      54 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:51:60
+
+    Error Context: test-results/internal-app-Placemind-Int-92c1e-d-loads-conversational-chat-Desktop-Chrome/error-context.md
+
+  6) [Desktop Chrome] › tests/internal-app.spec.ts:55:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report renders multi-dimensional radar chart and review 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Overall Interview Score')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Overall Interview Score')
+
+
+      56 |     await page.goto('/interview/sess-12345/report');
+      57 |     await page.waitForLoadState('networkidle');
+    > 58 |     await expect(page.getByText('Overall Interview Score')).toBeVisible();
+         |                                                             ^
+      59 |     await expect(page.getByText('STAR Structure')).toBeVisible();
+      60 |   });
+      61 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:58:61
+
+    Error Context: test-results/internal-app-Placemind-Int-de972-onal-radar-chart-and-review-Desktop-Chrome/error-context.md
+
+  7) [Desktop Chrome] › tests/internal-app.spec.ts:62:7 › Placemind Internal App & SaaS Navigation Suite › History archive page renders scannable data table and tabs 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Activity History & Document Archive')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Activity History & Document Archive')
+
+
+      63 |     await page.goto('/history');
+      64 |     await page.waitForLoadState('networkidle');
+    > 65 |     await expect(page.getByText('Activity History & Document Archive')).toBeVisible();
+         |                                                                         ^
+      66 |     await expect(page.getByText('All Items')).toBeVisible();
+      67 |   });
+      68 |
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:65:73
+
+    Error Context: test-results/internal-app-Placemind-Int-ee398-annable-data-table-and-tabs-Desktop-Chrome/error-context.md
+
+  8) [Desktop Chrome] › tests/internal-app.spec.ts:69:7 › Placemind Internal App & SaaS Navigation Suite › Settings page renders AI Engine preference toggle (Local vs Cloud) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('AI Engine Routing & Egress Control')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('AI Engine Routing & Egress Control')
+
+
+      70 |     await page.goto('/settings');
+      71 |     await page.waitForLoadState('networkidle');
+    > 72 |     await expect(page.getByText('AI Engine Routing & Egress Control')).toBeVisible();
+         |                                                                        ^
+      73 |     await expect(page.getByText('Always Use Local LM Studio / Ollama (Zero-Egress)')).toBeVisible();
+      74 |   });
+      75 | });
+        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:72:72
+
+    Error Context: test-results/internal-app-Placemind-Int-f479b-ence-toggle-Local-vs-Cloud--Desktop-Chrome/error-context.md
+
+  9) [Desktop Chrome] › tests/prompt-to-template.spec.ts:89:7 › Prompt-to-Template Studio Screen › Displays preset fallback badge when source="fallback" 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#fallback-badge')
+    Expected substring: "Preset Fallback"
+    Received string:    "Preset layout - sample content"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('#fallback-badge')
+        14 × locator resolved to <span id="fallback-badge" title="No live model is configured, so a keyword-matched preset layout with sample placeholder content was used - edit before use" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold">…</span>
+           - unexpected value "Preset layout - sample content"
+
+
+      126 |     // Verify fallback badge is visible
+      127 |     await expect(page.locator('#fallback-badge')).toBeVisible();
+    > 128 |     await expect(page.locator('#fallback-badge')).toContainText('Preset Fallback');
+          |                                                   ^
+      129 |   });
+      130 |
+      131 |   test('Demo Mode generates instantly without triggering backend network call', async ({
+        at /workspaces/PlaceMind/frontend/tests/prompt-to-template.spec.ts:128:51
+
+    Error Context: test-results/prompt-to-template-Prompt--6e5e4-badge-when-source-fallback--Desktop-Chrome/error-context.md
+
+  10) [Desktop Chrome] › tests/prompt-to-template.spec.ts:159:7 › Prompt-to-Template Studio Screen › Displays ATS Readiness Report with score, top recommendations, and limits note 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('#ats-overall-score')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('#ats-overall-score')
+
+
+      208 |
+      209 |     // Verify score and mandatory disclaimer note
+    > 210 |     await expect(page.locator('#ats-overall-score')).toBeVisible();
+          |                                                      ^
+      211 |     await expect(page.locator('#ats-limits-note')).toContainText(
+      212 |       'This readiness score is an automated estimation based on standard ATS parsing heuristics'
+      213 |     );
+        at /workspaces/PlaceMind/frontend/tests/prompt-to-template.spec.ts:210:54
+
+    Error Context: test-results/prompt-to-template-Prompt--8ebfb-mmendations-and-limits-note-Desktop-Chrome/error-context.md
+
+  11) [Desktop Chrome] › tests/visual-responsive.spec.ts:22:7 › Placemind Visual & Responsive Suite › Studio Interior Workspace loads all 3 panels and template switchers 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Placemind Studio')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Placemind Studio')
+
+
+      25 |
+      26 |     // Verify Studio Title and Panels
+    > 27 |     await expect(page.getByText('Placemind Studio')).toBeVisible();
+         |                                                      ^
+      28 |     await expect(page.getByText('ATS Audit Score')).toBeVisible();
+      29 |     await expect(page.getByText('Target Job Criteria')).toBeVisible();
+      30 |
+        at /workspaces/PlaceMind/frontend/tests/visual-responsive.spec.ts:27:54
+
+    Error Context: test-results/visual-responsive-Placemin-d5ef1-nels-and-template-switchers-Desktop-Chrome/error-context.md
+
+  12) [Desktop Chrome] › tests/visual-responsive.spec.ts:48:7 › Placemind Visual & Responsive Suite › AI Mock Rehearsal Room renders waveform visualizer and question probes 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('AI Technical Phone Screen Rehearsal')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('AI Technical Phone Screen Rehearsal')
+
+
+      50 |     await page.waitForLoadState('networkidle');
+      51 |
+    > 52 |     await expect(page.getByText('AI Technical Phone Screen Rehearsal')).toBeVisible();
+         |                                                                         ^
+      53 |     await expect(page.getByText('Listening to speech...')).toBeVisible();
+      54 |
+      55 |     // Capture screenshot
+        at /workspaces/PlaceMind/frontend/tests/visual-responsive.spec.ts:52:73
+
+    Error Context: test-results/visual-responsive-Placemin-06dcc-ualizer-and-question-probes-Desktop-Chrome/error-context.md
+
+  13) [Desktop Chrome] › tests/wireframe-v1.spec.ts:4:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Step 1-4 Onboarding Wizard works seamlessly 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "**/dashboard" until "load"
+      navigated to "http://localhost:3005/resume"
+    ============================================================
+
+      26 |
+      27 |     // Land on Dashboard
+    > 28 |     await page.waitForURL('**/dashboard');
+         |                ^
+      29 |     await expect(page.getByText('Welcome back, Rohan')).toBeVisible();
+      30 |   });
+      31 |
+        at /workspaces/PlaceMind/frontend/tests/wireframe-v1.spec.ts:28:16
+
+    Error Context: test-results/wireframe-v1-Placemind-Wir-97043-ing-Wizard-works-seamlessly-Desktop-Chrome/error-context.md
+
+  14) [Desktop Chrome] › tests/wireframe-v1.spec.ts:32:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 1 - Dashboard renders greeting, 3 quick actions, and AI command bar 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByPlaceholder(/Ask Placemind AI/)
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByPlaceholder(/Ask Placemind AI/)
+
+
+      36 |     await expect(page.getByText('Auto-Generate for a Job')).toBeVisible();
+      37 |     await expect(page.getByText('Practice Interview')).toBeVisible();
+    > 38 |     await expect(page.getByPlaceholder(/Ask Placemind AI/)).toBeVisible();
+         |                                                             ^
+      39 |   });
+      40 |
+      41 |   test('Tab 2 - Template Gallery renders 2x5 grid with ATS badges', async ({ page }) => {
+        at /workspaces/PlaceMind/frontend/tests/wireframe-v1.spec.ts:38:61
+
+    Error Context: test-results/wireframe-v1-Placemind-Wir-35f3b--actions-and-AI-command-bar-Desktop-Chrome/error-context.md
+
+  15) [Desktop Chrome] › tests/wireframe-v1.spec.ts:41:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 2 - Template Gallery renders 2x5 grid with ATS badges 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('ATS-Verified Resume Templates')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('ATS-Verified Resume Templates')
+
+
+      42 |     await page.goto('/template');
+      43 |     await page.waitForLoadState('networkidle');
+    > 44 |     await expect(page.getByText('ATS-Verified Resume Templates')).toBeVisible();
+         |                                                                   ^
+      45 |     await expect(page.getByRole('button', { name: 'Use Template' }).first()).toBeVisible();
+      46 |   });
+      47 |
+        at /workspaces/PlaceMind/frontend/tests/wireframe-v1.spec.ts:44:67
+
+    Error Context: test-results/wireframe-v1-Placemind-Wir-1c288-rs-2x5-grid-with-ATS-badges-Desktop-Chrome/error-context.md
+
+  16) [Desktop Chrome] › tests/wireframe-v1.spec.ts:48:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 3 - Resume renders 3-column layout and physical hero document preview 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Quick Template Switcher')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Quick Template Switcher')
+
+
+      50 |     await page.waitForLoadState('networkidle');
+      51 |     await expect(page.getByText('Your Information')).toBeVisible();
+    > 52 |     await expect(page.getByText('Quick Template Switcher')).toBeVisible();
+         |                                                             ^
+      53 |     await expect(page.getByText('Google XYZ Metric Optimization')).toBeVisible();
+      54 |     await expect(page.getByPlaceholder(/Ask Placemind AI/)).toBeVisible();
+      55 |   });
+        at /workspaces/PlaceMind/frontend/tests/wireframe-v1.spec.ts:52:61
+
+    Error Context: test-results/wireframe-v1-Placemind-Wir-fb2fe-sical-hero-document-preview-Desktop-Chrome/error-context.md
+
+  17) [Desktop Chrome] › tests/wireframe-v1.spec.ts:57:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 4 - ATS Auto-Generate allows 1-pass synthesis 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Auto-Generate Tailored ATS Resume')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Auto-Generate Tailored ATS Resume')
+
+
+      58 |     await page.goto('/ats');
+      59 |     await page.waitForLoadState('networkidle');
+    > 60 |     await expect(page.getByText('Auto-Generate Tailored ATS Resume')).toBeVisible();
+         |                                                                       ^
+      61 |     await expect(page.getByRole('button', { name: /Auto-Generate Resume/ })).toBeVisible();
+      62 |   });
+      63 |
+        at /workspaces/PlaceMind/frontend/tests/wireframe-v1.spec.ts:60:71
+
+    Error Context: test-results/wireframe-v1-Placemind-Wir-b0048-ate-allows-1-pass-synthesis-Desktop-Chrome/error-context.md
+
+  18) [Desktop Chrome] › tests/wireframe-v1.spec.ts:64:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 5 - Interview renders split setup and live conversation 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Interview Setup')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('Interview Setup')
+
+
+      65 |     await page.goto('/interview');
+      66 |     await page.waitForLoadState('networkidle');
+    > 67 |     await expect(page.getByText('Interview Setup')).toBeVisible();
+         |                                                     ^
+      68 |     await expect(page.getByText('Real Recruiter')).toBeVisible();
+      69 |     await expect(page.getByText('AI Practice')).toBeVisible();
+      70 |   });
+        at /workspaces/PlaceMind/frontend/tests/wireframe-v1.spec.ts:67:53
+
+    Error Context: test-results/wireframe-v1-Placemind-Wir-0aec8-setup-and-live-conversation-Desktop-Chrome/error-context.md
+
+  19) [Desktop Chrome] › tests/wireframe-v1.spec.ts:80:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 7 - History renders chronological artifact cards 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: 'Open in Editor' }).first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('button', { name: 'Open in Editor' }).first()
+
+
+      82 |     await page.waitForLoadState('networkidle');
+      83 |     await expect(page.getByText('Your Resume Artifacts & Files')).toBeVisible();
+    > 84 |     await expect(page.getByRole('button', { name: 'Open in Editor' }).first()).toBeVisible();
+         |                                                                                ^
+      85 |   });
+      86 |
+      87 |   test('Tab 8 - Settings renders profile and AI engine controls', async ({ page }) => {
+        at /workspaces/PlaceMind/frontend/tests/wireframe-v1.spec.ts:84:80
+
+    Error Context: test-results/wireframe-v1-Placemind-Wir-5599d-hronological-artifact-cards-Desktop-Chrome/error-context.md
+
+  19 failed
+    [Desktop Chrome] › tests/internal-app.spec.ts:11:7 › Placemind Internal App & SaaS Navigation Suite › Dashboard loads persistent sidebar, quick action cards and stats 
+    [Desktop Chrome] › tests/internal-app.spec.ts:26:7 › Placemind Internal App & SaaS Navigation Suite › ATS Gap Analysis renders prominent 89.4% score and gap report 
+    [Desktop Chrome] › tests/internal-app.spec.ts:34:7 › Placemind Internal App & SaaS Navigation Suite › Resume Editor loads two-pane canvas with inline XYZ rewrites 
+    [Desktop Chrome] › tests/internal-app.spec.ts:41:7 › Placemind Internal App & SaaS Navigation Suite › Interview Setup wizard shows detected weak areas and mode toggle 
+    [Desktop Chrome] › tests/internal-app.spec.ts:48:7 › Placemind Internal App & SaaS Navigation Suite › Live Interview session minimizes chrome and loads conversational chat 
+    [Desktop Chrome] › tests/internal-app.spec.ts:55:7 › Placemind Internal App & SaaS Navigation Suite › Interview Report renders multi-dimensional radar chart and review 
+    [Desktop Chrome] › tests/internal-app.spec.ts:62:7 › Placemind Internal App & SaaS Navigation Suite › History archive page renders scannable data table and tabs 
+    [Desktop Chrome] › tests/internal-app.spec.ts:69:7 › Placemind Internal App & SaaS Navigation Suite › Settings page renders AI Engine preference toggle (Local vs Cloud) 
+    [Desktop Chrome] › tests/prompt-to-template.spec.ts:89:7 › Prompt-to-Template Studio Screen › Displays preset fallback badge when source="fallback" 
+    [Desktop Chrome] › tests/prompt-to-template.spec.ts:159:7 › Prompt-to-Template Studio Screen › Displays ATS Readiness Report with score, top recommendations, and limits note 
+    [Desktop Chrome] › tests/visual-responsive.spec.ts:22:7 › Placemind Visual & Responsive Suite › Studio Interior Workspace loads all 3 panels and template switchers 
+    [Desktop Chrome] › tests/visual-responsive.spec.ts:48:7 › Placemind Visual & Responsive Suite › AI Mock Rehearsal Room renders waveform visualizer and question probes 
+    [Desktop Chrome] › tests/wireframe-v1.spec.ts:4:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Step 1-4 Onboarding Wizard works seamlessly 
+    [Desktop Chrome] › tests/wireframe-v1.spec.ts:32:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 1 - Dashboard renders greeting, 3 quick actions, and AI command bar 
+    [Desktop Chrome] › tests/wireframe-v1.spec.ts:41:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 2 - Template Gallery renders 2x5 grid with ATS badges 
+    [Desktop Chrome] › tests/wireframe-v1.spec.ts:48:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 3 - Resume renders 3-column layout and physical hero document preview 
+    [Desktop Chrome] › tests/wireframe-v1.spec.ts:57:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 4 - ATS Auto-Generate allows 1-pass synthesis 
+    [Desktop Chrome] › tests/wireframe-v1.spec.ts:64:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 5 - Interview renders split setup and live conversation 
+    [Desktop Chrome] › tests/wireframe-v1.spec.ts:80:7 › Placemind Wireframe v1 Suite (Onboarding + 8 Flat Tabs) › Tab 7 - History renders chronological artifact cards 
+  12 passed (3.2m)
