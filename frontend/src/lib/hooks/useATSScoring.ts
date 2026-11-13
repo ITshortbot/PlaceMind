@@ -33,6 +33,7 @@ export function useATSScoring() {
     try {
       const response = await fetch(`${backendUrl}/api/v1/resume/score`, {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       });
       const payload: unknown = await response.json();

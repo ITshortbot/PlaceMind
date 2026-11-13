@@ -216,6 +216,7 @@ export default function TemplatePage() {
       );
       const res = await fetch(`${backendUrl}/api/v1/ats/score-doc`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content: activeData.content,
@@ -292,6 +293,7 @@ export default function TemplatePage() {
 
       const res = await fetch(`${backendUrl}/api/v1/templates/generate`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

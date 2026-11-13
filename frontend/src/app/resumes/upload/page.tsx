@@ -83,6 +83,7 @@ export default function ResumeUploadPage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       const res = await fetch(`${backendUrl}/api/v1/resume/score`, {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       });
 
