@@ -30,7 +30,7 @@ interface AiCommandBarProps {
 }
 
 export function AiCommandBar({
-  placeholder = "Ask Placemind AI (e.g., 'Rewrite summary for Staff role', 'Add 3 distributed systems probes')...",
+  placeholder = "Describe the resume you want - opens the Template Studio with your prompt...",
   onExecute,
 }: AiCommandBarProps) {
   const [input, setInput] = useState('');
@@ -60,11 +60,12 @@ export function AiCommandBar({
       onExecute(input);
     }
 
+    // Brief visual acknowledgement only - the handler runs immediately.
     setTimeout(() => {
       setIsProcessing(false);
       setInput('');
-      setTimeout(() => setLastAction(null), 3000);
-    }, 1200);
+      setTimeout(() => setLastAction(null), 1500);
+    }, 400);
   };
 
   const handleToolClick = (toolName: string, presetText: string) => {

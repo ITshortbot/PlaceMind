@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { FloatingNavBar } from '@/components/app/FloatingNavBar';
 import { AiCommandBar } from '@/components/app/AiCommandBar';
 import { DynamicBackground } from '@/components/ui/DynamicBackground';
@@ -38,8 +38,22 @@ const MOBILE_NAV_ITEMS = [
   { name: 'Report', href: '/report', icon: BarChart3 },
 ];
 
+export const AI_PROMPT_HANDOFF_KEY = 'placemind.pendingPrompt';
+
 export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // The bar's one real job: carry the typed prompt into the Template Studio,
+  // which generates from it. No page-local fake responses.
+  const handleAiCommand = (command: string) => {
+    try {
+      window.localStorage.setItem(AI_PROMPT_HANDOFF_KEY, command);
+    } catch {
+      // storage unavailable - navigate anyway, prompt is lost but nothing fake happens
+    }
+    router.push('/template');
+  };
 
   // The persistent AI command bar is active on the 4 working tabs: Dashboard, Resume, ATS, Interview
   const isWorkingTab =
@@ -62,7 +76,7 @@ export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellP
         {children}
 
         {/* Persistent Bottom AI Command Bar */}
-        {isWorkingTab && <AiCommandBar />}
+        {isWorkingTab && <AiCommandBar onExecute={handleAiCommand} />}
       </div>
 
       {/* Mobile Bottom Tab Bar */}

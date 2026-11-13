@@ -67,7 +67,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#6C5CE7] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#6C5CE7]"></span>
               </span>
-              <span>Next-Gen Career Copilot &bull; 100% Private</span>
+              <span>Next-Gen Career Copilot &bull; Local-First Privacy Option</span>
             </div>
 
             {/* Headline with Expressive Mixed-Weight */}
@@ -124,7 +124,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
               </div>
               <div className="flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-[#0284C7] dark:text-[#38BDF8]" />
-                <span className="font-medium">ATS Parser Guaranteed</span>
+                <span className="font-medium">Deterministic ATS Readiness Checks</span>
               </div>
             </div>
           </motion.div>
@@ -149,8 +149,8 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
                 <Zap className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">Match Score: 92.4%</div>
-                <div className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA]">High Interview Likelihood</div>
+                <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">Sample Match Score: 92.4%</div>
+                <div className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA]">Illustrative preview only</div>
               </div>
             </div>
 
@@ -160,7 +160,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
                 <Award className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">Top 5% Candidate</div>
+                <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">ATS-Friendly Format</div>
                 <div className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA]">Single-Column LaTeX Ready</div>
               </div>
             </div>
@@ -174,6 +174,11 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
               }}
               className="w-full max-w-md bg-white/85 dark:bg-[#16161D]/85 rounded-[30px] p-6 md:p-8 border border-white/80 dark:border-white/15 hover:border-[#6C5CE7]/60 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_80px_-15px_rgba(0,0,0,0.7)] backdrop-blur-2xl relative z-10 group overflow-hidden transition-all"
             >
+              {/* Illustrative sample disclaimer */}
+              <div className="mb-4 px-3 py-2 rounded-xl bg-[#6C5CE7]/10 dark:bg-[#6C5CE7]/15 border border-[#6C5CE7]/30 text-[10px] font-bold uppercase tracking-wider text-[#6C5CE7] dark:text-[#7D6FF0] text-center">
+                Illustrative sample - example output, not a real analysis
+              </div>
+
               {/* Card Header */}
               <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.08]">
                 <div className="flex items-center gap-3">
@@ -204,7 +209,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
                   <div className="text-3xl font-black text-[#1A1A1E] dark:text-[#F5F5F7] flex items-baseline gap-2 mt-0.5">
                     88.5%
                     <span className="text-xs font-bold text-[#16A34A] dark:text-[#22C55E] flex items-center">
-                      <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> High Match
+                      <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> Sample Data
                     </span>
                   </div>
                   <div className="text-[11px] text-[#8A8A92] dark:text-[#6B6B76] mt-0.5">
@@ -274,7 +279,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
               <div className="mt-4 pt-3 border-t border-black/[0.06] dark:border-white/[0.08] text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] leading-relaxed flex items-start gap-2">
                 <Zap className="w-3.5 h-3.5 text-[#6C5CE7] flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-[#1A1A1E] dark:text-[#F5F5F7]">Recommended Rewrite:</strong> Added quantifiable latency reduction metrics to experience bullet (+7.8% score lift).
+                  <strong className="text-[#1A1A1E] dark:text-[#F5F5F7]">Sample Rewrite Tip:</strong> Add quantifiable latency reduction metrics to this experience bullet.
                 </span>
               </div>
             </div>

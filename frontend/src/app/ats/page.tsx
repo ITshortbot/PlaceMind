@@ -32,6 +32,7 @@ import {
   XCircle,
   TrendingUp,
   Zap,
+  Lightbulb,
   RotateCcw,
   Server,
   Cloud,
@@ -162,7 +163,9 @@ export default function AtsAutoGeneratePage() {
                 <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] mt-1">
                   {selectedFile?.name} · {latencyMs ? `${(latencyMs / 1000).toFixed(1)}s` : ''}
                   {report.processing_metadata.is_fallback && (
-                    <span className="text-[#FACC15] font-bold ml-2">⚡ Fallback: Cloud</span>
+                    <span className="text-[#FACC15] font-bold ml-2 inline-flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> Fallback: Cloud
+                    </span>
                   )}
                 </p>
               </div>
@@ -226,7 +229,7 @@ export default function AtsAutoGeneratePage() {
                   )}
                   {item.match_status !== 'covered' && (
                     <div className="p-2.5 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/30 text-[11px] text-[#0A0A0C] dark:text-white leading-relaxed">
-                      <span className="font-bold text-[#854D0E] dark:text-[#FACC15]">💡 Fix: </span>
+                      <span className="font-bold text-[#854D0E] dark:text-[#FACC15] inline-flex items-center gap-1"><Lightbulb className="w-3 h-3" /> Fix: </span>
                       {item.improvement_suggestion}
                     </div>
                   )}
@@ -424,7 +427,7 @@ export default function AtsAutoGeneratePage() {
           {/* Error Message */}
           {isError && error && (
             <div className="p-4 rounded-2xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-xs text-[#DC2626] dark:text-[#F87171] font-semibold">
-              ⚠️ {error}
+              <span className="inline-flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> {error}</span>
             </div>
           )}
 

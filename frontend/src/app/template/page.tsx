@@ -12,7 +12,7 @@
 // ============================================================================
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { AppShell } from '@/components/app/AppShell';
+import { AppShell, AI_PROMPT_HANDOFF_KEY } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { ColorPicker } from '@/components/color/ColorPicker';
 import { ResumePreview } from '@/components/templates/ResumePreview';
@@ -98,7 +98,7 @@ const DEMO_PRESETS: Record<string, GenerateResponse> = {
     },
     warnings: [],
     latency_ms: 18.4,
-    source: 'model',
+    source: 'demo',
   },
   default_sample: {
     style: {
@@ -144,7 +144,7 @@ const DEMO_PRESETS: Record<string, GenerateResponse> = {
     },
     warnings: [],
     latency_ms: 22.1,
-    source: 'model',
+    source: 'demo',
   },
 };
 
@@ -185,6 +185,7 @@ export default function TemplatePage() {
   // ATS Readiness report state
   const [atsReport, setAtsReport] = useState<ScoreDocResponse | null>(null);
   const [atsLoading, setAtsLoading] = useState(false);
+  const [atsError, setAtsError] = useState<string | null>(null);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -204,78 +205,10 @@ export default function TemplatePage() {
   const runAtsScore = async (targetResponse?: GenerateResponse) => {
     const activeData = targetResponse || currentResponse;
     setAtsLoading(true);
+    setAtsError(null);
 
-    if (isDemoMode) {
-      await new Promise((r) => setTimeout(r, 350));
-      setAtsReport({
-        overall: 86.0,
-        categories: {
-          structure: 93.3,
-          formatting: 90.0,
-          keywords: 80.0,
-          semantic: 84.5,
-        },
-        items: [
-          {
-            rule_id: 'headings_present',
-            category: 'structure',
-            passed: true,
-            points: 100.0,
-            evidence: 'All 5 standard sections populated in order: summary, skills, experience, projects, education.',
-            fix: 'No action needed. Standard headings are clearly recognizable.',
-          },
-          {
-            rule_id: 'contact_info_body',
-            category: 'structure',
-            passed: true,
-            points: 100.0,
-            evidence: 'Contact details accessible in text: email, phone, professional URL/link.',
-            fix: 'No action needed. Contact info is fully machine-readable.',
-          },
-          {
-            rule_id: 'bullet_style',
-            category: 'formatting',
-            passed: true,
-            points: 88.0,
-            evidence: 'All bullets begin with strong action verbs and satisfy 35-220 character lengths.',
-            fix: 'No action needed. Bullet points are concise and action-oriented.',
-          },
-          {
-            rule_id: 'consistent_dates',
-            category: 'formatting',
-            passed: true,
-            points: 100.0,
-            evidence: 'Consistent 4-digit years found across experience and education entries.',
-            fix: 'No action needed. Chronological dates are consistent.',
-          },
-          {
-            rule_id: 'length_fit',
-            category: 'structure',
-            passed: true,
-            points: 100.0,
-            evidence: 'Optimal word count fitting standard 1-page ATS layout.',
-            fix: 'No action needed. Content volume fits standard 1-page ATS expectations.',
-          },
-          {
-            rule_id: 'keyword_coverage',
-            category: 'keywords',
-            passed: true,
-            points: 80.0,
-            evidence: 'Core technical domain skills verified across resume.',
-            fix: 'Paste a target Job Description to compare specific keyword coverage.',
-          },
-        ],
-        top_fixes: [
-          'Paste a target Job Description to compare specific keyword coverage.',
-          'Quantify metrics by replacing [X] placeholders with exact percentages or throughput numbers.',
-        ],
-        limits_note:
-          "This readiness score is an automated estimation based on standard ATS parsing heuristics and keyword alignment. It does not reflect any proprietary or specific employer's internal ATS algorithm.",
-      });
-      setAtsLoading(false);
-      return;
-    }
-
+    // The readiness engine is deterministic (no LLM), so it runs against the
+    // real backend even in demo mode. If it is unreachable, say so honestly.
     try {
       const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(
         /\/$/,
@@ -297,76 +230,14 @@ export default function TemplatePage() {
         throw new Error('ATS scoring failed');
       }
     } catch {
-      // Graceful offline fallback when backend is unreachable
-      setAtsReport({
-        overall: 85.0,
-        categories: { structure: 90.0, formatting: 85.0, keywords: 80.0, semantic: 85.0 },
-        items: [
-          {
-            rule_id: 'headings_present',
-            category: 'structure',
-            passed: true,
-            points: 100.0,
-            evidence: 'All 5 standard sections populated in order.',
-            fix: 'No action needed. Standard headings are clearly recognizable.',
-          },
-          {
-            rule_id: 'contact_info_body',
-            category: 'structure',
-            passed: true,
-            points: 100.0,
-            evidence: 'Contact details accessible in text: email, phone, professional URL/link.',
-            fix: 'No action needed. Contact info is fully machine-readable.',
-          },
-          {
-            rule_id: 'bullet_style',
-            category: 'formatting',
-            passed: true,
-            points: 85.0,
-            evidence: 'All bullets begin with strong action verbs and satisfy 35-220 character lengths.',
-            fix: 'No action needed. Bullet points are concise and action-oriented.',
-          },
-          {
-            rule_id: 'consistent_dates',
-            category: 'formatting',
-            passed: true,
-            points: 100.0,
-            evidence: 'Consistent 4-digit years found across experience and education entries.',
-            fix: 'No action needed. Chronological dates are consistent.',
-          },
-          {
-            rule_id: 'length_fit',
-            category: 'structure',
-            passed: true,
-            points: 100.0,
-            evidence: 'Optimal word count fitting standard 1-page ATS layout.',
-            fix: 'No action needed. Content volume fits standard 1-page ATS expectations.',
-          },
-          {
-            rule_id: 'keyword_coverage',
-            category: 'keywords',
-            passed: true,
-            points: 80.0,
-            evidence: 'Core technical domain skills verified across resume.',
-            fix: 'Paste a target Job Description to compare specific keyword coverage.',
-          },
-        ],
-        top_fixes: [
-          'Paste a target Job Description to compare specific keyword coverage.',
-          'Quantify metrics by replacing [X] placeholders with exact percentages or throughput numbers.',
-        ],
-        limits_note:
-          "This readiness score is an automated estimation based on standard ATS parsing heuristics and keyword alignment. It does not reflect any proprietary or specific employer's internal ATS algorithm.",
-      });
+      setAtsReport(null);
+      setAtsError(
+        'ATS readiness service is unreachable. Start the backend and retry - no score was computed.'
+      );
     } finally {
       setAtsLoading(false);
     }
   };
-
-  // Run initial ATS score on mount
-  useEffect(() => {
-    runAtsScore(DEMO_PRESETS.default_sample);
-  }, []);
 
   const saveToHistory = (newResponse: GenerateResponse, userPrompt: string) => {
     const item = {
@@ -452,6 +323,27 @@ export default function TemplatePage() {
     setCurrentResponse(item.response);
     setPrompt(item.prompt);
   };
+
+  // Consume a prompt handed off from the global AI command bar (one real action).
+  const handoffRan = React.useRef(false);
+  useEffect(() => {
+    if (handoffRan.current) return;
+    handoffRan.current = true;
+    try {
+      const pending = window.localStorage.getItem(AI_PROMPT_HANDOFF_KEY);
+      if (pending && pending.trim()) {
+        window.localStorage.removeItem(AI_PROMPT_HANDOFF_KEY);
+        setPrompt(pending);
+        setTimeout(() => {
+          const btn = document.getElementById('generate-template-btn') as HTMLButtonElement | null;
+          btn?.click();
+        }, 50);
+      }
+    } catch {
+      // storage unavailable - nothing to consume
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AppShell showAiBar={false}>
@@ -614,21 +506,31 @@ export default function TemplatePage() {
         {/* ─── Status & Fallback Indicator Badge ─── */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            {currentResponse.source === 'fallback' ? (
+            {currentResponse.source === 'demo' ? (
+              <span
+                id="demo-badge"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/20 text-slate-300 border border-slate-500/30 font-semibold"
+                title="Offline sample preset - no model was run for this result"
+              >
+                <Info className="w-3.5 h-3.5 text-slate-400" />
+                <span>Sample preset (offline demo)</span>
+              </span>
+            ) : currentResponse.source === 'fallback' ? (
               <span
                 id="fallback-badge"
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold"
-                title="Local model output was preserved via verified fallback preset"
+                title="Model output was unavailable, so a verified preset layout was used"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>Preset Fallback (100% Parsable Schema)</span>
+                <span>Preset fallback layout</span>
               </span>
             ) : (
               <span
                 id="model-badge"
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold"
               >
-                <span>✨ Model Synthesized</span>
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Generated by model</span>
               </span>
             )}
 
@@ -730,7 +632,13 @@ export default function TemplatePage() {
               className="w-full"
             />
 
-            <div className="w-full max-w-[210mm] no-print">
+            <div className="w-full max-w-[210mm] no-print space-y-3">
+              {atsError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{atsError}</span>
+                </div>
+              )}
               <AtsReadinessPanel
                 report={atsReport}
                 loading={atsLoading}

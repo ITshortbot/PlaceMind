@@ -1,7 +1,8 @@
 import uuid
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Numeric, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Text, func, text
+from sqlalchemy import JSON, Uuid as GenericUuid
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -30,7 +31,7 @@ class Resume(Base):
     file_name = Column(String(255), nullable=False)
     r2_storage_key = Column(Text, nullable=True)
     raw_text = Column(Text, nullable=False)
-    parsed_metadata = Column(JSONB, default=dict, server_default="'{}'::jsonb")
+    parsed_metadata = Column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -46,7 +47,7 @@ class ResumeSection(Base):
     resume_id = Column(UUID(as_uuid=True), ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False)
     section_type = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
-    meta_info = Column(JSONB, default=dict, server_default="'{}'::jsonb")
+    meta_info = Column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
     embedding = Column(Vector(384), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -98,3 +99,40 @@ class ATSMatchScore(Base):
 
     resume = relationship("Resume", back_populates="match_scores")
     job = relationship("JobDescription", back_populates="match_scores")
+
+class InterviewSession(Base):
+    """A mock-interview practice session. Single-user demo: user_id optional."""
+
+    __tablename__ = "interview_sessions"
+
+    id = Column(GenericUuid, primary_key=True, default=uuid.uuid4)
+    user_id = Column(GenericUuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    target_role = Column(String(255), nullable=False)
+    company = Column(String(255), nullable=True)
+    interview_type = Column(String(20), nullable=False, default="practice")  # practice | real
+    question_count = Column(Integer, nullable=False, default=5)
+    status = Column(String(20), nullable=False, default="active")  # active | completed
+    planned_questions = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    turns = relationship("InterviewTurn", back_populates="session", cascade="all, delete-orphan")
+
+
+class InterviewTurn(Base):
+    """One question/answer exchange inside a session."""
+
+    __tablename__ = "interview_turns"
+
+    id = Column(GenericUuid, primary_key=True, default=uuid.uuid4)
+    session_id = Column(GenericUuid, ForeignKey("interview_sessions.id", ondelete="CASCADE"), nullable=False)
+    order = Column(Integer, nullable=False)
+    category = Column(String(50), nullable=False)
+    question_text = Column(Text, nullable=False)
+    focus = Column(String(255), nullable=True)
+    answer_text = Column(Text, nullable=True)
+    score = Column(Numeric(5, 1), nullable=True)
+    feedback = Column(JSON, nullable=True)
+    answered_at = Column(DateTime(timezone=True), nullable=True)
+
+    session = relationship("InterviewSession", back_populates="turns")

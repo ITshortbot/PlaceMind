@@ -1,0 +1,218 @@
+# ============================================================================
+# File: backend/app/api/v1/endpoints/interviews.py
+# Description: Mock-interview API - deterministic practice sessions.
+#   Create a session (question plan), answer turn by turn with heuristic
+#   feedback, then fetch an aggregate report. No LLM calls; the engine is
+#   rule-based and every score is reproducible.
+# ============================================================================
+
+from datetime import datetime, timezone
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database.models import InterviewSession, InterviewTurn
+from app.database.session import get_db
+from app.schemas.interviews import (
+    AnswerRequest,
+    AnswerResponse,
+    CreateSessionRequest,
+    FeedbackOut,
+    PlannedQuestionOut,
+    ReportOut,
+    SessionOut,
+    SessionSummaryOut,
+    TurnOut,
+)
+from app.services.interview_engine import build_report, evaluate_answer, generate_plan
+
+router = APIRouter(prefix="/interviews", tags=["interviews"])
+
+
+def _planned_out(q) -> PlannedQuestionOut:
+    return PlannedQuestionOut(order=q["order"], category=q["category"], prompt=q["prompt"], focus=q["focus"])
+
+
+async def _load_session(session_id: UUID, db: AsyncSession) -> InterviewSession:
+    result = await db.execute(select(InterviewSession).where(InterviewSession.id == session_id))
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found.")
+    return session
+
+
+async def _turns(session_id: UUID, db: AsyncSession) -> list[InterviewTurn]:
+    result = await db.execute(
+        select(InterviewTurn).where(InterviewTurn.session_id == session_id).order_by(InterviewTurn.order)
+    )
+    return list(result.scalars().all())
+
+
+def _next_unanswered(turns: list[InterviewTurn]) -> InterviewTurn | None:
+    return next((t for t in turns if t.answer_text is None), None)
+
+
+def _turn_out(t: InterviewTurn) -> TurnOut:
+    return TurnOut(
+        order=t.order,
+        category=t.category,
+        question_text=t.question_text,
+        focus=t.focus,
+        answer_text=t.answer_text,
+        score=float(t.score) if t.score is not None else None,
+        feedback=t.feedback,
+    )
+
+
+@router.post("/sessions", response_model=SessionOut, status_code=status.HTTP_201_CREATED)
+async def create_session(payload: CreateSessionRequest, db: AsyncSession = Depends(get_db)):
+    plan = generate_plan(
+        target_role=payload.target_role,
+        company=payload.company,
+        question_count=payload.question_count,
+        resume_text=payload.resume_text,
+        job_description=payload.job_description,
+        seed=None,
+    )
+    session = InterviewSession(
+        target_role=payload.target_role.strip(),
+        company=(payload.company or "").strip() or None,
+        interview_type=payload.interview_type,
+        question_count=len(plan),
+        status="active",
+        planned_questions=[{"order": q.order, "category": q.category, "prompt": q.prompt, "focus": q.focus} for q in plan],
+    )
+    db.add(session)
+    await db.flush()
+
+    for q in plan:
+        db.add(
+            InterviewTurn(
+                session_id=session.id,
+                order=q.order,
+                category=q.category,
+                question_text=q.prompt,
+                focus=q.focus,
+            )
+        )
+    await db.flush()
+
+    return SessionOut(
+        session_id=session.id,
+        target_role=session.target_role,
+        company=session.company,
+        interview_type=session.interview_type,
+        question_count=session.question_count,
+        status=session.status,
+        current_question=_planned_out(session.planned_questions[0]),
+        answered=0,
+        turns=[
+            TurnOut(order=q["order"], category=q["category"], question_text=q["prompt"], focus=q["focus"],
+                    answer_text=None, score=None, feedback=None)
+            for q in session.planned_questions
+        ],
+    )
+
+
+@router.get("/sessions", response_model=list[SessionSummaryOut])
+async def list_sessions(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(InterviewSession).order_by(InterviewSession.created_at.desc()))
+    sessions = list(result.scalars().all())
+    out: list[SessionSummaryOut] = []
+    for s in sessions:
+        turns = await _turns(s.id, db)
+        answered = [t for t in turns if t.answer_text is not None]
+        scores = [float(t.score) for t in answered if t.score is not None]
+        out.append(
+            SessionSummaryOut(
+                session_id=s.id,
+                target_role=s.target_role,
+                company=s.company,
+                status=s.status,
+                question_count=s.question_count,
+                answered=len(answered),
+                average_score=round(sum(scores) / len(scores), 1) if scores else None,
+                created_at=s.created_at.isoformat() if s.created_at else "",
+            )
+        )
+    return out
+
+
+@router.get("/sessions/{session_id}", response_model=SessionOut)
+async def get_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
+    session = await _load_session(session_id, db)
+    turns = await _turns(session_id, db)
+    nxt = _next_unanswered(turns)
+    answered = sum(1 for t in turns if t.answer_text is not None)
+    planned = {q["order"]: q for q in session.planned_questions}
+    return SessionOut(
+        session_id=session.id,
+        target_role=session.target_role,
+        company=session.company,
+        interview_type=session.interview_type,
+        question_count=session.question_count,
+        status=session.status,
+        current_question=_planned_out(planned[nxt.order]) if nxt else None,
+        answered=answered,
+        turns=[_turn_out(t) for t in turns],
+    )
+
+
+@router.post("/sessions/{session_id}/answer", response_model=AnswerResponse)
+async def answer_current(session_id: UUID, payload: AnswerRequest, db: AsyncSession = Depends(get_db)):
+    session = await _load_session(session_id, db)
+    if session.status == "completed":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Session already completed. Start a new one.")
+    turns = await _turns(session_id, db)
+    current = _next_unanswered(turns)
+    if current is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No unanswered question remains.")
+
+    fb = evaluate_answer(current.question_text, payload.answer)
+    current.answer_text = payload.answer.strip()
+    current.score = fb.score
+    current.feedback = {
+        "score": fb.score,
+        "strengths": fb.strengths,
+        "improvements": fb.improvements,
+        "signals": fb.signals,
+    }
+    current.answered_at = datetime.now(timezone.utc)
+    await db.flush()
+
+    turns = await _turns(session_id, db)
+    nxt = _next_unanswered(turns)
+    completed = nxt is None
+    if completed:
+        session.status = "completed"
+        await db.flush()
+
+    answered = sum(1 for t in turns if t.answer_text is not None)
+    planned = {q["order"]: q for q in session.planned_questions}
+    return AnswerResponse(
+        feedback=FeedbackOut(score=fb.score, strengths=fb.strengths, improvements=fb.improvements, signals=fb.signals),
+        progress=f"{answered}/{session.question_count}",
+        next_question=_planned_out(planned[nxt.order]) if nxt else None,
+        completed=completed,
+    )
+
+
+@router.get("/sessions/{session_id}/report", response_model=ReportOut)
+async def session_report(session_id: UUID, db: AsyncSession = Depends(get_db)):
+    session = await _load_session(session_id, db)
+    turns = await _turns(session_id, db)
+    shaped = []
+    for t in turns:
+        fb = None
+        if t.feedback:
+            class _FB:
+                score = float(t.feedback["score"])
+                strengths = list(t.feedback["strengths"])
+                improvements = list(t.feedback["improvements"])
+                signals = dict(t.feedback["signals"])
+            fb = _FB()
+        shaped.append({"category": t.category, "prompt": t.question_text, "answer": t.answer_text, "feedback": fb})
+    report = build_report(shaped)
+    return ReportOut(**report)

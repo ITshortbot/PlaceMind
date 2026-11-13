@@ -60,5 +60,5 @@ export interface GenerateResponse {
   content: ResumeContent;
   warnings: string[];
   latency_ms: number;
-  source: 'model' | 'fallback';
+  source: 'model' | 'fallback' | 'demo';
 }

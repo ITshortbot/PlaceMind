@@ -49,14 +49,14 @@ export function FeatureGrid() {
     {
       icon: ShieldCheck,
       title: 'Local Privacy Mode',
-      tag: '100% Zero Egress',
+      tag: 'Local Mode: Zero Egress',
       desc: 'Connect to your own local LM Studio instance at localhost:1234. Your PDF resume, PII, and company notes never leave your personal machine.',
     },
     {
       icon: Download,
       title: 'Instant ATS PDF Export',
       tag: 'Standard LaTeX',
-      desc: 'Generate clean, single-column, ATS-parseable PDF resumes structured to ensure 100% parsability across Workday, Greenhouse, and Lever.',
+      desc: 'Generate clean, single-column, ATS-parseable PDF resumes structured for reliable parsing by mainstream ATS software like Workday, Greenhouse, and Lever.',
     },
     {
       icon: BarChart3,

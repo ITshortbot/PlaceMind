@@ -53,7 +53,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
     category: 'AI & ML',
     role: 'Staff AI Systems Architect',
     atsScore: 99,
-    tags: ['Google XYZ Bullets', 'pgvector & RAG', '100% Parsable'],
+    tags: ['Google XYZ Bullets', 'pgvector & RAG', 'Single-Column Parseable'],
   },
   {
     id: 4,
@@ -231,19 +231,19 @@ export function ResumeGallery() {
         <div className="text-center max-w-3xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 dark:bg-[#1C1C21]/90 border border-black/[0.08] dark:border-[#2A2A30] text-[11px] font-mono uppercase tracking-[0.2em] text-[#6C5CE7] dark:text-[#7D6FF0] mb-4 shadow-sm backdrop-blur-md">
             <span className="w-2 h-0.5 rounded-full bg-[#6C5CE7]" />
-            <span>AUTHENTIC ATS TEMPLATE GALLERY &bull; 18 VERIFIED LAYOUTS</span>
+            <span>ATS TEMPLATE GALLERY &bull; 18 SINGLE-COLUMN LAYOUTS</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-tight text-[#1A1A1E] dark:text-[#F5F5F7]">
-            <span className="font-light">Battle-tested templates</span>{' '}
+            <span className="font-light">Single-column templates</span>{' '}
             <span className="font-extrabold bg-gradient-to-r from-[#6C5CE7] via-[#8F82FF] to-[#38BDF8] bg-clip-text text-transparent">
-              guaranteed
+              designed
             </span>{' '}
-            <span className="font-medium">to pass screening</span>
+            <span className="font-medium">for clean ATS parsing</span>
           </h2>
 
           <p className="text-base sm:text-lg text-[#5A5A63] dark:text-[#A1A1AA] mt-4 leading-relaxed">
-            Clean single-column technical resume architectures engineered for 100% parsability across Workday, Greenhouse, and Lever.
+            Clean single-column technical resume architectures engineered for reliable parsing by mainstream ATS software like Workday, Greenhouse, and Lever.
           </p>
         </div>
 

@@ -5,7 +5,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Placemind — AI Career Copilot | ATS Resume Scoring & Mock Interviews',
   description:
-    'The AI career copilot that parses, scores, rewrites, and rehearses — all in one place with dual Cloud (Gemini 2.5) and Local Privacy (LM Studio) AI.',
+    'Placement prep in one place: ATS gap analysis from your resume PDF, prompt-generated resume templates, and mock-interview practice with transparent feedback. Cloud (Gemini) or local (LM Studio) model routing.',
   keywords: [
     'ATS Resume Scorer',
     'pgvector',

@@ -2,235 +2,230 @@
 
 // ============================================================================
 // File: frontend/src/app/interview/[sessionId]/page.tsx
-// Description: Live Interview Session with minimal chrome (no persistent sidebar),
-//              token-by-token streaming AI probes, speech waveform visualizer, and progress pill.
+// Description: Live interview session wired to the real backend:
+//              GET session state, POST answers, heuristic per-answer feedback,
+//              completion routes to the real report.
 // ============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useParams } from 'next/navigation';
 import {
-  Mic,
-  MicOff,
   Send,
   Sparkles,
   AlertTriangle,
   ArrowRight,
   LogOut,
-  ChevronRight,
   ShieldCheck,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-
-interface Message {
-  id: string;
-  sender: 'ai' | 'user';
-  text: string;
-  timestamp: string;
-  feedback?: string;
-}
+import {
+  answerInterviewQuestion,
+  getInterviewSession,
+  type InterviewSessionState,
+  type InterviewTurn,
+} from '@/lib/api/interviews';
 
 export default function LiveInterviewSessionPage() {
   const params = useParams();
-  const router = useRouter();
   const sessionId = params.sessionId as string;
 
-  const [isRecording, setIsRecording] = useState(false);
+  const [session, setSession] = useState<InterviewSessionState | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(2); // Question 3 of 6
-  const [showEndModal, setShowEndModal] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: "Hello Rohan, I'm Aura from the Stripe Core Infrastructure team. Let's start with your Kafka streaming background: how do you manage consumer group rebalances during heavy traffic spikes without dropping event throughput?",
-      timestamp: '10:02 AM',
-      feedback: 'Good conversational opening',
-    },
-    {
-      id: '2',
-      sender: 'user',
-      text: 'We implemented cooperative sticky assigners to prevent stop-the-world partition revocations across 120 broker nodes, combined with static group membership to handle transient restarts smoothly.',
-      timestamp: '10:04 AM',
-      feedback: 'Excellent STAR structure & precision metrics (+94% score)',
-    },
-    {
-      id: '3',
-      sender: 'ai',
-      text: 'That makes sense. Now, describe a scenario where you had to perform live zero-downtime schema migrations on a PostgreSQL cluster handling 250M queries daily. What safeguards did you apply?',
-      timestamp: '10:05 AM',
-    },
-  ]);
-
-  const handleSendMessage = () => {
-    if (!inputText.trim()) return;
-
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: inputText.trim(),
-      timestamp: 'Just now',
+  useEffect(() => {
+    let cancelled = false;
+    getInterviewSession(sessionId)
+      .then((s) => {
+        if (!cancelled) setSession(s);
+      })
+      .catch((err) => {
+        if (!cancelled)
+          setLoadError(err instanceof Error ? err.message : 'Could not load this session.');
+      });
+    return () => {
+      cancelled = true;
     };
+  }, [sessionId]);
 
-    setMessages((prev) => [...prev, newMsg]);
-    setInputText('');
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [session?.turns, sending]);
 
-    // Simulate next AI question streaming response
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          sender: 'ai',
-          text: 'Great details on shadow writes. How do you monitor query degradation and rollback if p99 latency breaches 5ms?',
-          timestamp: 'Just now',
-        },
-      ]);
-      setCurrentQuestionIndex((prev) => Math.min(prev + 1, 6));
-    }, 1200);
+  const handleSend = async () => {
+    if (!inputText.trim() || sending || !session || session.status === 'completed') return;
+    setSending(true);
+    setSendError(null);
+    try {
+      const res = await answerInterviewQuestion(sessionId, inputText.trim());
+      setInputText('');
+      // Refresh authoritative state from the backend
+      const fresh = await getInterviewSession(sessionId);
+      setSession(fresh);
+      if (res.completed) {
+        // session.status flips to completed via the refresh above
+      }
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : 'Could not submit the answer.');
+    } finally {
+      setSending(false);
+    }
   };
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] flex flex-col items-center justify-center gap-4 p-8">
+        <AlertTriangle className="w-8 h-8 text-[#EF4444]" />
+        <p className="text-sm font-semibold">{loadError}</p>
+        <Link href="/interview/new" className="text-xs text-[#6C5CE7] hover:underline font-semibold">
+          Start a new practice session
+        </Link>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] flex items-center justify-center gap-2">
+        <Loader2 className="w-5 h-5 animate-spin text-[#6C5CE7]" />
+        <span className="text-xs text-[#8A8A92]">Loading session...</span>
+      </div>
+    );
+  }
+
+  const answeredTurns = session.turns.filter((t) => t.answer_text !== null);
+  const currentTurn: InterviewTurn | undefined = session.turns.find((t) => t.answer_text === null);
+  const completed = session.status === 'completed';
 
   return (
     <div className="min-h-screen bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] flex flex-col font-sans transition-colors duration-300">
-      {/* Minimal Top Header (Maximized immersion) */}
       <header className="h-14 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/80 dark:bg-[#121217]/90 backdrop-blur-xl px-4 sm:px-8 flex items-center justify-between z-20 sticky top-0">
-        <div className="flex items-center gap-3">
-          <span className="font-extrabold text-sm text-[#1A1A1E] dark:text-white">
-            Placemind Live Session
-          </span>
-          <div className="h-4 w-px bg-black/[0.1] dark:bg-white/[0.1]" />
-          <span className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] hidden sm:inline">
-            Staff Software Architect &bull; Stripe
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-bold">{session.target_role}</span>
+          {session.company && <span className="text-[#8A8A92]">@ {session.company}</span>}
+          <span className="px-2 py-0.5 rounded-full bg-[#6C5CE7]/10 text-[#6C5CE7] font-mono font-bold">
+            {session.answered}/{session.question_count}
           </span>
         </div>
-
-        {/* Question Progress Indicator */}
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-[#6C5CE7]/12 text-[#6C5CE7] dark:text-[#8F82FF] border border-[#6C5CE7]/20">
-            Question {currentQuestionIndex} of 6
-          </span>
-
-          <button
-            onClick={() => setShowEndModal(true)}
-            className="text-xs font-semibold text-[#EF4444] hover:text-[#DC2626] flex items-center gap-1 cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>End Session</span>
-          </button>
+        <div className="flex items-center gap-2">
+          {completed && (
+            <Link href={`/interview/${sessionId}/report`}>
+              <Button variant="primary" size="sm" icon={<ArrowRight className="w-3.5 h-3.5" />}>
+                View Report
+              </Button>
+            </Link>
+          )}
+          <Link href="/interview">
+            <Button variant="ghost" size="sm" icon={<LogOut className="w-3.5 h-3.5" />}>
+              Leave
+            </Button>
+          </Link>
         </div>
       </header>
 
-      {/* Centered Conversational Chat Column */}
-      <main className="flex-1 max-w-3xl mx-auto w-full p-4 sm:p-6 flex flex-col justify-between overflow-hidden">
-        {/* Messages Scroll Area */}
-        <div className="flex-1 overflow-y-auto space-y-4 pb-6">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`font-transcript flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
-            >
-              <div
-                className={`p-4 sm:p-5 rounded-3xl max-w-[85%] text-xs leading-relaxed ${
-                  msg.sender === 'user'
-                    ? 'bg-[#6C5CE7] text-white rounded-br-md shadow-md'
-                    : 'bg-white dark:bg-[#141417] text-[#1A1A1E] dark:text-white border border-black/[0.08] dark:border-white/[0.08] rounded-bl-md shadow-sm'
-                }`}
-              >
-                {msg.sender === 'ai' && (
-                  <div className="flex items-center gap-1.5 font-bold text-[#6C5CE7] dark:text-[#8F82FF] text-[10px] uppercase mb-1">
-                    <Sparkles className="w-3 h-3" /> Aura &bull; AI Interviewer
-                  </div>
-                )}
-                <p>{msg.text}</p>
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-4 max-w-3xl mx-auto w-full">
+        {answeredTurns.map((t) => (
+          <div key={t.order} className="space-y-3">
+            <div className="flex flex-col items-start">
+              <div className="p-4 rounded-2xl rounded-bl-none max-w-[85%] text-xs leading-relaxed bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.08] shadow-sm">
+                <div className="text-[10px] font-bold uppercase text-[#6C5CE7] dark:text-[#8F82FF] mb-1 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Question {t.order} &bull; {t.category.replace('_', ' ')}
+                </div>
+                <p>{t.question_text}</p>
               </div>
-
-              {/* Turn-by-Turn Clarity Feedback Chip */}
-              {msg.feedback && (
-                <span className="text-[10px] text-[#16A34A] dark:text-[#22C55E] font-semibold mt-1 px-2 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> {msg.feedback}
-                </span>
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="p-4 rounded-2xl rounded-br-none max-w-[85%] text-xs leading-relaxed bg-[#6C5CE7] text-white shadow-md">
+                <p>{t.answer_text}</p>
+              </div>
+              {t.feedback && (
+                <div className="mt-1.5 max-w-[85%] p-3 rounded-xl bg-white/80 dark:bg-[#141417]/90 border border-black/[0.06] dark:border-white/[0.08] text-[11px] space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-[#6C5CE7]">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Practice score: {t.score}/100
+                  </div>
+                  {t.feedback.strengths.map((str, i) => (
+                    <div key={i} className="flex items-start gap-1.5 text-[#16A34A] dark:text-[#22C55E]">
+                      <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      <span>{str}</span>
+                    </div>
+                  ))}
+                  {t.feedback.improvements.map((imp, i) => (
+                    <div key={i} className="flex items-start gap-1.5 text-[#854D0E] dark:text-[#FACC15]">
+                      <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      <span>{imp}</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          ))}
-        </div>
-
-        {/* Input Bar with Voice Toggle */}
-        <div className="p-3 rounded-2xl bg-white/90 dark:bg-[#141417]/95 border border-black/[0.08] dark:border-white/[0.08] shadow-2xl backdrop-blur-2xl space-y-3">
-          {isRecording && (
-            <div className="p-2.5 rounded-xl bg-[#6C5CE7]/10 flex items-center justify-between text-xs text-[#6C5CE7] font-semibold">
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#EF4444] animate-ping" />
-                Listening to your microphone...
-              </span>
-              <button
-                onClick={() => setIsRecording(false)}
-                className="text-[10px] uppercase font-bold text-[#EF4444]"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsRecording(!isRecording)}
-              className={`p-3 rounded-xl transition-all cursor-pointer ${
-                isRecording
-                  ? 'bg-[#EF4444] text-white shadow-md'
-                  : 'bg-black/[0.04] dark:bg-white/[0.06] text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#6C5CE7]'
-              }`}
-              title="Toggle Voice Input"
-            >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </button>
-
-            <input
-              type="text"
-              placeholder="Type your response here or speak..."
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1 p-2.5 text-xs bg-transparent focus:outline-none text-[#1A1A1E] dark:text-white"
-            />
-
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Send className="w-3.5 h-3.5" />}
-              onClick={handleSendMessage}
-            >
-              Send
-            </Button>
           </div>
-        </div>
+        ))}
+
+        {!completed && currentTurn && (
+          <div className="flex flex-col items-start">
+            <div className="p-4 rounded-2xl rounded-bl-none max-w-[85%] text-xs leading-relaxed bg-white dark:bg-[#141417] border-2 border-[#6C5CE7]/40 shadow-md">
+              <div className="text-[10px] font-bold uppercase text-[#6C5CE7] dark:text-[#8F82FF] mb-1 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Question {currentTurn.order} &bull; {currentTurn.category.replace('_', ' ')}
+              </div>
+              <p>{currentTurn.question_text}</p>
+              {currentTurn.focus && (
+                <p className="mt-2 text-[10px] text-[#8A8A92]">Assesses: {currentTurn.focus}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {completed && (
+          <div className="text-center p-6 rounded-2xl bg-[#16A34A]/10 border border-[#16A34A]/30 space-y-2">
+            <CheckCircle2 className="w-6 h-6 text-[#16A34A] mx-auto" />
+            <p className="text-sm font-bold">Session complete</p>
+            <Link
+              href={`/interview/${sessionId}/report`}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[#6C5CE7] hover:underline"
+            >
+              Open your practice report <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+        )}
+        <div ref={bottomRef} />
       </main>
 
-      {/* Confirmation Modal to End Session */}
-      {showEndModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="p-6 rounded-3xl bg-white dark:bg-[#141417] border border-black/[0.1] dark:border-white/[0.1] shadow-2xl max-w-sm w-full space-y-4">
-            <h3 className="text-base font-bold text-[#1A1A1E] dark:text-white">
-              End Interview Session?
-            </h3>
-            <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] leading-relaxed">
-              We will synthesize your response transcript and generate your comprehensive communication report.
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <Button variant="secondary" size="sm" onClick={() => setShowEndModal(false)}>
-                Continue Interview
-              </Button>
+      {!completed && (
+        <div className="p-4 sm:p-6 border-t border-black/[0.08] dark:border-white/[0.08] bg-white/80 dark:bg-[#121217]/90 backdrop-blur-xl">
+          <div className="max-w-3xl mx-auto space-y-2">
+            {sendError && (
+              <div className="flex items-center gap-2 text-xs text-[#DC2626] dark:text-[#F87171] font-semibold">
+                <AlertTriangle className="w-3.5 h-3.5" /> {sendError}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <textarea
+                rows={2}
+                placeholder="Type your answer (aim for 60-120 words with a concrete metric)..."
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                className="flex-1 p-3 rounded-xl bg-black/[0.02] dark:bg-black/30 border border-black/[0.08] dark:border-white/[0.08] text-xs leading-relaxed focus:outline-[#6C5CE7] resize-none"
+              />
               <Button
                 variant="primary"
-                size="sm"
-                onClick={() => router.push(`/interview/${sessionId}/report`)}
+                size="default"
+                icon={sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                onClick={handleSend}
+                disabled={!inputText.trim() || sending}
               >
-                View Final Report
+                {sending ? 'Scoring' : 'Answer'}
               </Button>
             </div>
+            <p className="text-[10px] text-[#8A8A92]">
+              Feedback is heuristic (STAR structure, metrics, action verbs) - practice guidance, not a recruiter verdict.
+            </p>
           </div>
         </div>
       )}
