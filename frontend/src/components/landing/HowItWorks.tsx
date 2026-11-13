@@ -189,8 +189,8 @@ export function HowItWorks() {
 
             <div className="flex items-center gap-3 text-xs font-mono text-[#5A5A63] dark:text-[#A1A1AA]">
               <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/[0.04] dark:bg-[#0A0A0C] border border-black/[0.08] dark:border-white/[0.08]">
-                <span className="w-2 h-2 rounded-full bg-[#16A34A] dark:bg-[#22C55E] animate-pulse" />
-                In-Memory Pipeline (0 Disk Egress)
+                <span className="w-2 h-2 rounded-full bg-[#D97706] dark:bg-[#F59E0B]" />
+                Illustrative Preview - Sample Data Only
               </span>
             </div>
           </div>
@@ -213,8 +213,8 @@ export function HowItWorks() {
                       </div>
                     </div>
                   </div>
-                  <Badge variant="success" size="sm">
-                    In-Memory Parsed
+                  <Badge variant="accent" size="sm">
+                    Sample File
                   </Badge>
                 </div>
 
@@ -237,7 +237,7 @@ export function HowItWorks() {
                     <div className="p-3 rounded-xl bg-white/85 dark:bg-[#0A0A0C] border border-black/[0.08] dark:border-white/[0.08] hover:border-[#6C5CE7]/40 transition-colors">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-[#6C5CE7] uppercase font-mono font-semibold">Chunk 01 &bull; Experience</span>
-                        <span className="text-[10px] text-[#16A34A] dark:text-[#22C55E] font-mono font-bold">100% Parsed</span>
+                        <span className="text-[10px] text-[#16A34A] dark:text-[#22C55E] font-mono font-bold">Sample Chunk</span>
                       </div>
                       <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7] mt-0.5">
                         Senior AI Systems Architect (Apex Labs)
@@ -250,7 +250,7 @@ export function HowItWorks() {
                     <div className="p-3 rounded-xl bg-white/85 dark:bg-[#0A0A0C] border border-black/[0.08] dark:border-white/[0.08] hover:border-[#38BDF8]/40 transition-colors">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-[#0284C7] dark:text-[#38BDF8] uppercase font-mono font-semibold">Chunk 02 &bull; Skills</span>
-                        <span className="text-[10px] text-[#16A34A] dark:text-[#22C55E] font-mono font-bold">24 Tokens</span>
+                        <span className="text-[10px] text-[#16A34A] dark:text-[#22C55E] font-mono font-bold">Sample Chunk</span>
                       </div>
                       <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7] mt-0.5">
                         Technical Skills Matrix
@@ -314,7 +314,7 @@ export function HowItWorks() {
                     </div>
                   </div>
                   <Badge variant="warning" size="sm">
-                    Weak Match
+                    Sample Gap
                   </Badge>
                 </div>
               </div>
@@ -352,10 +352,10 @@ export function HowItWorks() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">
-                        AI Staff Interviewer Probe
+                        Sample Interview Question
                       </span>
                       <Badge variant="accent" size="sm">
-                        Real-Time Audio
+                        Illustrative
                       </Badge>
                     </div>
                     <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] italic leading-[1.6]">
