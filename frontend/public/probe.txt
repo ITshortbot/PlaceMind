@@ -1,6 +1,0 @@
-]633;E;echo HTTP_$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/resume --max-time 10);b296bb1e-932c-4441-b93b-d6d0f6fb2400]633;CHTTP_200
-SKILLCOUNT_9
-PW5TAIL
-NODE=v22.23.5
-COUNTS={"Classic":"1","Modern":"1","Compact":"1","Academic":"1","Long":"2"}
-PDF_CHECK5_DONE

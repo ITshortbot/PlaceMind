@@ -1,6 +1,0 @@
-]633;E;gh workflow list 2>&1;b296bb1e-932c-4441-b93b-d6d0f6fb2400]633;C----
-----
-completed	failure	Merge pull request #1 from ITshortbot/backend/devops	.github/workflows/frontend.yml	main	push	31173084383	0s	2026-08-07T11:11:34Z
-completed	failure	Merge pull request #1 from ITshortbot/backend/devops	.github/workflows/deploy.yml	main	push	31173083416	0s	2026-08-07T11:11:33Z
-completed	failure	Merge pull request #1 from ITshortbot/backend/devops	.github/workflows/backend.yml	main	push	31173082864	0s	2026-08-07T11:11:33Z
-completed	failure	Upgrade in core architecture and first model and 50%mvp made	.github/workflows/backend.yml	backend/devops	push	31173051495	0s	2026-08-07T11:11:04Z

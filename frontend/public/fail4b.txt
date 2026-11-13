@@ -1,7 +1,0 @@
-      201 |
-        at /workspaces/PlaceMind/frontend/tests/internal-app.spec.ts:198:52
-
-    Error Context: test-results/internal-app-Placemind-Int-849f2-nswers-and-scores-after-one-Desktop-Chrome/error-context.md
-
-  2) [Desktop Chrome] › tests/internal-app.spec.ts:218:7 › Placemind Internal App & SaaS Navigation Suite › Settings renders AI engine controls and no fabricated profile 
-
