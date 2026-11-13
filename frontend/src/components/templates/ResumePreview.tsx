@@ -312,6 +312,11 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
             <p className="text-sm font-medium mt-1 opacity-90 select-text text-white/95">
               {content.headline}
             </p>
+            {content.contact && (
+              <p className="text-xs mt-1 opacity-80 select-text text-white/90">
+                {content.contact}
+              </p>
+            )}
           </div>
         ) : (
           /* ─── Header: Classic / Minimal / Centered (No Images, Pure Text) ─── */
