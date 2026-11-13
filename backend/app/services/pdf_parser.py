@@ -191,9 +191,9 @@ class PDFResumeParser:
         # (y0, x0, line_text, avg_font_size)
 
         for page in doc:
-            # get_text("rawdict") gives us blocks → lines → spans with font metadata
+            # get_text("dict") gives us blocks → lines → spans with font metadata
             try:
-                raw = page.get_text("rawdict")  # type: ignore[attr-defined]
+                raw = page.get_text("dict")  # type: ignore[attr-defined]
             except Exception:
                 raw = {"blocks": []}
 
