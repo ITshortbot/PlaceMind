@@ -107,7 +107,7 @@ test.describe('Placemind App Flow Suite (Onboarding + Core Tabs)', () => {
     await expect(
       page.getByRole('heading', { name: 'Analyze Resume vs. Job Description' })
     ).toBeVisible();
-    await expect(page.getByText('1-PASS AI SCORING PIPELINE')).toBeVisible();
+    await expect(page.getByText('1-PASS SCORING PIPELINE')).toBeVisible();
     await expect(page.getByText('Resume PDF')).toBeVisible();
     await expect(page.getByText('Job Title')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Gemini Cloud' })).toBeVisible();
