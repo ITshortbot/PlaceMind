@@ -125,7 +125,7 @@ export default function DashboardPage() {
                   Auto-Generate for a Job
                 </h3>
                 <p className="text-[11px] text-[#4A4A52] dark:text-[#A1A1AA] mt-0.5 leading-relaxed">
-                  Paste any job description and let AI synthesize an ATS-tailored draft in one pass.
+                  Paste a job description and generate an ATS-friendly draft from transparent rules - no black-box AI.
                 </p>
               </div>
             </div>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                   Practice Interview
                 </h3>
                 <p className="text-[11px] text-[#4A4A52] dark:text-[#A1A1AA] mt-0.5 leading-relaxed">
-                  Run realistic technical and STAR behavioral simulations with live speech feedback.
+                  Run technical and STAR behavioral practice sessions with transparent, heuristic answer feedback.
                 </p>
               </div>
             </div>

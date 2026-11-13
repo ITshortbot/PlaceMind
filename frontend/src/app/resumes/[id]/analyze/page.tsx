@@ -46,7 +46,9 @@ export default function ResumeAnalyzePage() {
     setRunning(true);
     setRunError(null);
     try {
-      setReport(await analyzeResume(id, { job_title: jobTitle || 'Untitled role', job_description: jobDescription }));
+      const result = await analyzeResume(id, { job_title: jobTitle || 'Untitled role', job_description: jobDescription });
+      setReport(result);
+      setResume((prev) => (prev ? { ...prev, latest_ats_score: result.overall } : prev));
     } catch (e) {
       setRunError(e instanceof Error ? e.message : 'Analysis failed.');
     } finally {

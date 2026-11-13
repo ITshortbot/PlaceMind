@@ -51,14 +51,14 @@ export function HowItWorks() {
       title: '3. XYZ Bullet Rewrite',
       tag: 'Google Formula',
       icon: Sparkles,
-      desc: 'AI synthesizes quantifiable bullet points: Accomplished [X], measured by [Y], by doing [Z] — closing identified gaps with surgical precision.',
+      desc: 'Deterministic rewrite rules shape quantifiable bullet points: Accomplished [X], measured by [Y], by doing [Z] - every suggestion is inspectable before you accept it.',
     },
     {
       id: 4,
       title: '4. Adaptive Rehearsal',
-      tag: 'Voice & Video AI',
+      tag: 'JD-Tailored Practice',
       icon: Mic,
-      desc: 'Practice role-specific technical phone screens and system design probes generated dynamically from your resume weak spots.',
+      desc: 'Practice role-specific technical screens and STAR behavioral probes tailored to your resume and the job description, with transparent heuristic feedback.',
     },
   ];
 
