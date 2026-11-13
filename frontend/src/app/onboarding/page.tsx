@@ -112,7 +112,7 @@ export default function OnboardingPage() {
               className="space-y-6"
             >
               <div className="space-y-1.5 text-center">
-                <Badge variant="accent" size="sm">Step 01 &bull; Account Creation</Badge>
+                <Badge variant="accent" size="sm">Step 01 &bull; Demo Setup</Badge>
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                   Welcome to Placemind
                 </h1>
@@ -127,7 +127,8 @@ export default function OnboardingPage() {
                     without authenticating - removed instead of faking OAuth. */}
                 <p className="text-[11px] text-center text-[#8A8A92] leading-relaxed">
                   LinkedIn, Google and GitHub sign-in are not connected in this
-                  build. Continue with email to explore the product.
+                  build. This is a single-user demo: no account is created and
+                  nothing you enter is verified. Continue with email to explore.
                 </p>
 
                 {/* 4. Inline Email Expander */}
