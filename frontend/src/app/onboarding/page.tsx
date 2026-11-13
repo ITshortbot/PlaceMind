@@ -43,15 +43,15 @@ export default function OnboardingPage() {
 
   // Form State
   const [formData, setFormData] = useState({
-    authMethod: 'linkedin',
-    email: 'rohan.patel@email.com',
+    authMethod: 'email',
+    email: '',
     password: '',
-    name: 'Rohan K. Patel',
-    phone: '+1 (555) 349-2049',
-    university: 'Stanford University',
-    specialization: 'Computer Science & Distributed Systems',
-    targetRole: 'Staff Software Architect',
-    targetCompany: 'Stripe Core Infrastructure',
+    name: '',
+    phone: '',
+    university: '',
+    specialization: '',
+    targetRole: '',
+    targetCompany: '',
     selectedTemplateId: 'classic',
     autoSelectTemplate: true,
   });
@@ -117,58 +117,22 @@ export default function OnboardingPage() {
                   Welcome to Placemind
                 </h1>
                 <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-                  Choose your high-signal sign-in method to get personalized ATS intelligence.
+                  Enter your work email to start building your resume.
                 </p>
               </div>
 
               <Card className="p-6 space-y-3 shadow-xl">
-                {/* 1. LinkedIn Auth */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, authMethod: 'linkedin' }));
-                    setCurrentStep(2);
-                  }}
-                  className="w-full p-3 rounded-xl border border-black/[0.1] dark:border-white/[0.1] hover:border-[#0A66C2] bg-white dark:bg-[#1A1A22] hover:bg-[#0A66C2]/5 font-bold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="w-5 h-5 rounded-md bg-[#0A66C2] text-white flex items-center justify-center text-[10px] font-black">
-                    in
-                  </span>
-                  <span>Continue with LinkedIn (Recommended)</span>
-                </button>
-
-                {/* 2. Google Auth */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, authMethod: 'google' }));
-                    setCurrentStep(2);
-                  }}
-                  className="w-full p-3 rounded-xl border border-black/[0.1] dark:border-white/[0.1] hover:border-[#EA4335] bg-white dark:bg-[#1A1A22] hover:bg-[#EA4335]/5 font-bold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="w-5 h-5 rounded-full bg-[#EA4335] text-white flex items-center justify-center text-[10px] font-black">
-                    G
-                  </span>
-                  <span>Continue with Google</span>
-                </button>
-
-                {/* 3. GitHub Auth */}
-                <button
-                  onClick={() => {
-                    setFormData({ ...formData, authMethod: 'github' });
-                    nextStep();
-                  }}
-                  className="w-full p-3 rounded-xl border border-black/[0.1] dark:border-white/[0.1] hover:border-black dark:hover:border-white bg-white dark:bg-[#1A1A22] hover:bg-black/5 font-bold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] font-black">
-                    gh
-                  </span>
-                  <span>Continue with GitHub</span>
-                </button>
+                {/* Provider sign-in is not wired in this build. The previous
+                    LinkedIn/Google/GitHub buttons only advanced the wizard
+                    without authenticating - removed instead of faking OAuth. */}
+                <p className="text-[11px] text-center text-[#8A8A92] leading-relaxed">
+                  LinkedIn, Google and GitHub sign-in are not connected in this
+                  build. Continue with email to explore the product.
+                </p>
 
                 {/* 4. Inline Email Expander */}
                 <div className="pt-2 space-y-2">
-                  <Label>Or use standard work email</Label>
+                  <Label>Work email</Label>
                   <Input
                     type="email"
                     placeholder="name@company.com"
@@ -207,6 +171,7 @@ export default function OnboardingPage() {
                   <Label>Full Name</Label>
                   <Input
                     type="text"
+                    placeholder="Your full name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
@@ -216,6 +181,7 @@ export default function OnboardingPage() {
                   <Label>Phone Number</Label>
                   <Input
                     type="text"
+                    placeholder="Optional"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
@@ -225,6 +191,7 @@ export default function OnboardingPage() {
                   <Label>College / University</Label>
                   <Input
                     type="text"
+                    placeholder="e.g. Your university"
                     value={formData.university}
                     onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                   />
@@ -234,6 +201,7 @@ export default function OnboardingPage() {
                   <Label>Field of Study / Specialization</Label>
                   <Input
                     type="text"
+                    placeholder="e.g. Computer Science"
                     value={formData.specialization}
                     onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                   />
@@ -400,7 +368,7 @@ export default function OnboardingPage() {
 
       {/* Footer Disclaimer */}
       <footer className="py-4 text-center text-[11px] text-[#8A8A92] border-t border-black/[0.06] dark:border-white/[0.06]">
-        Placemind Privacy Sandbox &bull; 100% In-Memory Processing &bull; Zero Telemetry
+        Placemind demo build
       </footer>
     </div>
   );
