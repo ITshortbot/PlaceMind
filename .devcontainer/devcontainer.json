@@ -1,0 +1,21 @@
+{
+  "name": "PlaceMind Dev",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [3000, 8000, 5432],
+  "portsAttributes": {
+    "3000": { "label": "Frontend (Next.js)", "visibility": "private" },
+    "8000": { "label": "Backend (FastAPI)", "visibility": "private" },
+    "5432": { "label": "Postgres", "visibility": "private" }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "bradlc.vscode-tailwindcss"]
+    }
+  }
+}

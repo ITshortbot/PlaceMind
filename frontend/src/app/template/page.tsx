@@ -521,10 +521,10 @@ export default function TemplatePage() {
               <span
                 id="fallback-badge"
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold"
-                title="Model output was unavailable, so a verified preset layout was used"
+                title="No live model is configured, so a keyword-matched preset layout with sample placeholder content was used - edit before use"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Preset fallback layout</span>
+                <span>Preset layout - sample content</span>
               </span>
             ) : (
               <span
