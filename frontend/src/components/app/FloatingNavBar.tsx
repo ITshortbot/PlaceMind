@@ -60,7 +60,7 @@ export function FloatingNavBar() {
 
   return (
     <>
-      <aside className="fixed left-3 sm:left-4 top-1/2 -translate-y-1/2 z-50 hidden md:block select-none">
+      <aside className="fixed left-3 sm:left-4 top-1/2 -translate-y-1/2 z-50 hidden md:block select-none no-print">
         <div
           className="w-[48px] glass-frosted-dark rounded-2xl p-1 flex flex-col justify-between items-center shadow-xl border border-white/10 dark:border-white/15 text-white backdrop-blur-3xl"
           style={{ height: 'calc(100vh - 240px)', maxHeight: '440px' }}

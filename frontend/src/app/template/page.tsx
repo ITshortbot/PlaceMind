@@ -12,6 +12,7 @@
 // ============================================================================
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppShell, AI_PROMPT_HANDOFF_KEY } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { ColorPicker } from '@/components/color/ColorPicker';
@@ -19,6 +20,7 @@ import { ResumePreview } from '@/components/templates/ResumePreview';
 import { AtsReadinessPanel, type ScoreDocResponse } from '@/components/ats/AtsReadinessPanel';
 import { buildPalette, type Mood, type Palette } from '@/lib/color/engine';
 import { TEMPLATE_FAMILIES } from '@/lib/templates/registry';
+import { generateTemplate } from '@/lib/api/templates';
 import {
   GenerateRequest,
   GenerateResponse,
@@ -27,6 +29,7 @@ import {
 } from '@/types/templates';
 import {
   AlertCircle,
+  ArrowRight,
   Clock,
   History,
   Info,
@@ -149,6 +152,7 @@ const DEMO_PRESETS: Record<string, GenerateResponse> = {
 };
 
 export default function TemplatePage() {
+  const router = useRouter();
   const [prompt, setPrompt] = useState(
     'clean dark-teal resume for a fresher data analyst, projects first'
   );
@@ -157,6 +161,7 @@ export default function TemplatePage() {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warningsDismissed, setWarningsDismissed] = useState(false);
 
   // Active generation output
   const [currentResponse, setCurrentResponse] = useState<GenerateResponse>(
@@ -258,6 +263,44 @@ export default function TemplatePage() {
     });
   };
 
+  const canApply = useMemo(() => {
+    const c = currentResponse.content;
+    if (!c) return false;
+    const hasFacts = Boolean(
+      (c.name && c.name.trim()) ||
+      (c.contact && c.contact.trim()) ||
+      (c.headline && c.headline.trim()) ||
+      (c.summary && c.summary.trim()) ||
+      (c.skills && c.skills.length > 0 && c.skills.some((s) => s.trim())) ||
+      (c.experience && c.experience.length > 0) ||
+      (c.projects && c.projects.length > 0) ||
+      (c.education && c.education.length > 0)
+    );
+    // EMPTY generated content (facts_used false or all sections empty) must never be applied
+    if (!hasFacts) return false;
+    if (currentResponse.source === 'fallback' && !currentResponse.facts_used) return false;
+    return true;
+  }, [currentResponse]);
+
+  const handleUseInBuilder = () => {
+    if (!canApply) return;
+    try {
+      const hasUnsaved =
+        window.localStorage.getItem('placemind.builderDirty') === 'true' ||
+        window.localStorage.getItem('placemind.unsavedNotice') === 'true';
+      if (hasUnsaved) {
+        const confirmed = window.confirm(
+          'You have unsaved changes in your resume builder draft. Replace them with this generated content?'
+        );
+        if (!confirmed) return;
+      }
+      window.localStorage.setItem('placemind.builderHandoff', JSON.stringify(currentResponse.content));
+      router.push('/resume');
+    } catch {
+      router.push('/resume');
+    }
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
 
@@ -273,48 +316,37 @@ export default function TemplatePage() {
 
       setCurrentResponse(selectedDemo);
       setBrandHex('');
+      setWarningsDismissed(false);
       saveToHistory(selectedDemo, prompt);
       setLoading(false);
       runAtsScore(selectedDemo);
       return;
     }
 
-    // BACKEND API CALL
-    const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(
-      /\/$/,
-      ''
-    );
-
     try {
+      let activeResumeId: string | null = null;
+      try {
+        activeResumeId = window.localStorage.getItem('placemind.activeResumeId');
+      } catch {}
+
       const reqPayload: GenerateRequest = {
         prompt: prompt.slice(0, 500),
         jd_text: jdText.trim() ? jdText.slice(0, 4000) : null,
+        resume_id: activeResumeId || undefined,
       };
 
-      const res = await fetch(`${backendUrl}/api/v1/templates/generate`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(reqPayload),
-      });
-
-      if (!res.ok) {
-        if (res.status === 429) {
-          throw new Error('Template generation is currently busy. Please wait 5 seconds and retry.');
-        }
-        const errJson = await res.json().catch(() => null);
-        const detail = errJson?.detail || `Server returned error (${res.status})`;
-        throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
-      }
-
-      const data: GenerateResponse = await res.json();
+      const data = await generateTemplate(reqPayload);
       setCurrentResponse(data);
+      setWarningsDismissed(false);
       saveToHistory(data, prompt);
       runAtsScore(data);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to generate template.';
+      if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
+        try {
+          window.localStorage.removeItem('placemind.activeResumeId');
+        } catch {}
+      }
       setError(msg);
     } finally {
       setLoading(false);
@@ -521,10 +553,18 @@ export default function TemplatePage() {
               <span
                 id="fallback-badge"
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold"
-                title="No live model is configured, so a keyword-matched preset layout with sample placeholder content was used - edit before use"
+                title={
+                  currentResponse.facts_used
+                    ? 'Assembled from your saved facts, no AI wording'
+                    : 'No live model is configured, so a keyword-matched preset layout was used - edit before use'
+                }
               >
                 <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Preset layout - sample content</span>
+                <span>
+                  {currentResponse.facts_used
+                    ? 'assembled from your saved facts, no AI wording'
+                    : 'Preset layout - sample content'}
+                </span>
               </span>
             ) : (
               <span
@@ -533,6 +573,17 @@ export default function TemplatePage() {
               >
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Generated by model</span>
+              </span>
+            )}
+
+            {currentResponse.facts_used && (
+              <span
+                id="facts-used-badge"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-semibold"
+                title="Candidate facts from your saved resume were used"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>based on your saved resume</span>
               </span>
             )}
 
@@ -626,7 +677,65 @@ export default function TemplatePage() {
           </div>
 
           {/* Right Column: Live Printable ResumePreview + ATS Readiness Report (8 cols) */}
-          <div className="lg:col-span-8 flex flex-col items-center space-y-8">
+          <div className="lg:col-span-8 flex flex-col items-center space-y-4">
+            {/* ─── Dismissible Warnings Notice ─── */}
+            {currentResponse.warnings && currentResponse.warnings.length > 0 && !warningsDismissed && (
+              <div
+                id="generation-warnings-notice"
+                className="w-full max-w-[500px] p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs flex items-start justify-between gap-3 shadow-sm no-print"
+              >
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    {currentResponse.warnings.map((w, idx) => (
+                      <p key={idx} className="leading-relaxed font-medium">
+                        {w}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWarningsDismissed(true)}
+                  className="text-[11px] underline hover:opacity-80 shrink-0 ml-2 cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            {/* ─── Header Action Row above Sheet ─── */}
+            <div className="w-full max-w-[500px] flex items-center justify-between no-print px-1 py-1">
+              <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <span>Layout Preview</span>
+                {currentResponse.facts_used && (
+                  <span className="text-[10px] bg-blue-500/15 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/25 font-bold">
+                    Grounded facts
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                id="use-in-builder-btn"
+                disabled={!canApply}
+                onClick={handleUseInBuilder}
+                title={
+                  !canApply
+                    ? 'Apply disabled: generated content is empty or has no candidate facts'
+                    : 'Transfer this generated layout and content to the Resume Builder'
+                }
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  canApply
+                    ? 'bg-[#6C5CE7] hover:bg-[#5b4ec7] text-white shadow-md shadow-[#6C5CE7]/25 active:scale-95 cursor-pointer'
+                    : 'bg-slate-700/50 text-slate-400 border border-white/5 cursor-not-allowed opacity-60'
+                }`}
+              >
+                <span>Use in builder</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             <ResumePreview
               style={currentResponse.style}
               content={currentResponse.content}

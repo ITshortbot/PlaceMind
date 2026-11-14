@@ -77,7 +77,7 @@ export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellP
 
       {/* Mobile Bottom Tab Bar */}
       {!hideSidebar && (
-        <div className="md:hidden fixed bottom-0 inset-x-0 h-16 border-t border-black/[0.08] dark:border-white/[0.08] bg-white/90 dark:bg-[#121217]/95 backdrop-blur-2xl px-2 flex items-center justify-around z-40">
+        <div className="md:hidden fixed bottom-0 inset-x-0 h-16 border-t border-black/[0.08] dark:border-white/[0.08] bg-white/90 dark:bg-[#121217]/95 backdrop-blur-2xl px-2 flex items-center justify-around z-40 no-print">
           {MOBILE_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');

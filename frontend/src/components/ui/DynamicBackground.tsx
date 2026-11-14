@@ -41,7 +41,7 @@ export function DynamicBackground() {
   if (reduced) {
     return (
       <div
-        className="fixed inset-0 pointer-events-none z-0 select-none"
+        className="fixed inset-0 pointer-events-none z-0 select-none no-print"
         style={{
           background:
             'radial-gradient(ellipse at 20% 20%, rgba(250,204,21,0.12) 0%, transparent 60%), ' +
@@ -52,7 +52,7 @@ export function DynamicBackground() {
   }
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none no-print">
       {/* Orb 1: Top-left pop-yellow sunbeam
           GPU: compositor layer via will-change:transform (set in globals.css) */}
       <div

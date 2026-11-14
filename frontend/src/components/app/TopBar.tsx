@@ -21,7 +21,7 @@ export function TopBar({ title, breadcrumbs, actionButton }: TopBarProps) {
   const pathname = usePathname();
 
   return (
-    <header className="h-16 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/70 dark:bg-[#121217]/80 backdrop-blur-xl px-2.5 sm:px-8 flex items-center justify-between sticky top-0 z-20 gap-2 min-w-0">
+    <header className="h-16 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/70 dark:bg-[#121217]/80 backdrop-blur-xl px-2.5 sm:px-8 flex items-center justify-between sticky top-0 z-20 gap-2 min-w-0 no-print">
       {/* Left: Breadcrumbs / Page Title */}
       <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0 overflow-hidden flex-shrink">
         {breadcrumbs && breadcrumbs.length > 0 ? (
