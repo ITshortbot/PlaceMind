@@ -53,3 +53,18 @@ def test_meta_info_draft_skills_and_education_exact():
     assert content.education[0].degree == "B.Tech CSE"
     assert content.education[0].institution == "Synth Institute"
     assert content.education[0].year == "2024"
+
+
+def test_meta_info_experience_dates_preserved_and_legacy_none():
+    resume = _resume([
+        _sec("experience", "ignored", {"version": 1, "draft": {"items": [
+            {"role": "Backend Engineer", "company": "SynthCorp", "start": "2022-06", "end": "2024-03", "bullets": []},
+        ]}}),
+        _sec("experience", "Support Engineer\nResolved tickets"),
+    ])
+    content = content_from_resume(resume)
+    assert content.experience[0].start == "2022-06"
+    assert content.experience[0].end == "2024-03"
+    assert content.experience[1].role == "Support Engineer"
+    assert content.experience[1].start is None
+    assert content.experience[1].end is None

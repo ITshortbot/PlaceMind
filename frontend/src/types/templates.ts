@@ -23,6 +23,8 @@ export interface StyleSpec {
 
 export interface ExperienceItem {
   role: string;
+  start?: string | null;
+  end?: string | null;
   company?: string | null;
   bullets: string[];
 }

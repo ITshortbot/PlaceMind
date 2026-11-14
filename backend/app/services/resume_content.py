@@ -68,6 +68,8 @@ def content_from_resume(resume: Resume) -> ResumeContent:
                 experience.append(ExperienceItem(
                     role=clip_text(_s(it.get("role")), 60) or "Experience",
                     company=clip_text(_s(it.get("company")), 60) or None,
+                    start=clip_text(_s(it.get("start")), 40) or None,
+                    end=clip_text(_s(it.get("end")), 40) or None,
                     bullets=[clip_text(b, 220) for b in (_s(v) for v in (it.get("bullets") or [])) if b][:5],
                 ))
         else:

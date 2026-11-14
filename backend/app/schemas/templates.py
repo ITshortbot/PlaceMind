@@ -96,6 +96,8 @@ class StyleSpec(StrictBaseModel):
 class ExperienceItem(StrictBaseModel):
     role: str = Field(..., min_length=1)
     company: Optional[str] = Field(default=None)
+    start: Optional[str] = Field(default=None)
+    end: Optional[str] = Field(default=None)
     bullets: List[str] = Field(default_factory=list, max_length=5)
 
     @field_validator("bullets")
