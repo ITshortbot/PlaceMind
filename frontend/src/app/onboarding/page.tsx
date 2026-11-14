@@ -2,11 +2,11 @@
 
 // ============================================================================
 // File: frontend/src/app/onboarding/page.tsx
-// Description: 4-Step Interactive Onboarding Wizard from Wireframe v1
-//              Step 1: Auth (LinkedIn/Google/GitHub/Email)
+// Description: 4-Step Interactive Onboarding Wizard
+//              Step 1: Auth (Email demo)
 //              Step 2: Profile Basics (Name, Phone, University, Specialization)
 //              Step 3: Personalize (Target Role, Target Company)
-//              Step 4: Template Preference (Manual Gallery vs Auto-Select by Company ATS)
+//              Step 4: Template Preference & Bootstrap Resume Creation
 // ============================================================================
 
 import React, { useState } from 'react';
@@ -25,6 +25,9 @@ import {
   Layers,
   Wand2,
   ShieldCheck,
+  AlertTriangle,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -34,12 +37,13 @@ import { Badge } from '@/components/ui/Badge';
 import { ResumePreview } from '@/components/templates/ResumePreview';
 import { BUILDER_TEMPLATES, SAMPLE_RESUME_CONTENT } from '@/lib/builderTemplates';
 import { buildPalette } from '@/lib/color/engine';
-import { bootstrapResume, OnboardingAnswers } from '@/lib/api/onboarding';
+import { bootstrapResume, type OnboardingAnswers } from '@/lib/api/onboarding';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isBootstrapping, setIsBootstrapping] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -58,15 +62,30 @@ export default function OnboardingPage() {
 
   const nextStep = async () => {
     if (currentStep < 4) {
+      // If moving from step 1 to 2, derive default name from email if not already typed
+      if (currentStep === 1 && !formData.name && formData.email) {
+        const derived = formData.email.split('@')[0].replace(/[._-]+/g, ' ').trim();
+        if (derived) {
+          setFormData((prev) => ({ ...prev, name: derived }));
+        }
+      }
       setCurrentStep((prev) => prev + 1);
     } else {
+      const trimmedName = formData.name.trim();
+      if (!trimmedName) {
+        return;
+      }
+
       setIsBootstrapping(true);
-      // Persist profile locally for client-side forms
+      setBootstrapError(null);
+
+      // Persist profile locally for client-side forms, including email
       try {
         window.localStorage.setItem(
           'placemind.profile',
           JSON.stringify({
-            fullName: formData.name.trim(),
+            fullName: trimmedName,
+            email: formData.email.trim(),
             phone: formData.phone.trim(),
             college: formData.university.trim(),
             specialization: formData.specialization.trim(),
@@ -76,10 +95,10 @@ export default function OnboardingPage() {
         // localStorage not available
       }
 
-      // Bootstrap backend resume record from real facts
+      // Bootstrap backend resume record strictly from user-typed facts (no invented facts)
       try {
         const answers: OnboardingAnswers = {
-          full_name: formData.name.trim() || 'Alex Morgan',
+          full_name: trimmedName,
           email: formData.email.trim() || undefined,
           phone: formData.phone.trim() || undefined,
           university: formData.university.trim() || undefined,
@@ -91,17 +110,22 @@ export default function OnboardingPage() {
         if (result?.resume?.id) {
           try {
             window.localStorage.setItem('placemind.activeResumeId', result.resume.id);
+            window.localStorage.removeItem('placemind.unsavedNotice');
             if (result.missing && result.missing.length > 0) {
               window.localStorage.setItem('placemind.missingFacts', JSON.stringify(result.missing));
+            } else {
+              window.localStorage.removeItem('placemind.missingFacts');
             }
           } catch {
             // ignore
           }
         }
-      } catch {
-        // Continue to builder even if bootstrap fails (offline/fallback mode)
-      } finally {
         router.push('/resume');
+      } catch (err) {
+        // On bootstrap failure, keep user answers visible on final step and show options
+        setBootstrapError("Couldn't save your setup");
+      } finally {
+        setIsBootstrapping(false);
       }
     }
   };
@@ -112,8 +136,15 @@ export default function OnboardingPage() {
     }
   };
 
+  const continueWithoutSaving = () => {
+    try {
+      window.localStorage.setItem('placemind.unsavedNotice', 'true');
+    } catch {}
+    router.push('/resume');
+  };
+
   return (
-    <div className="min-h-screen bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] flex flex-col justify-between font-sans selection:bg-[#6C5CE7] selection:text-white">
+    <div className="min-h-screen bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] flex flex-col justify-between font-sans selection:bg-[#6C5CE7] selection:text-white overflow-x-hidden">
       {/* Top Simple Header */}
       <header className="h-16 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/70 dark:bg-[#121217]/80 backdrop-blur-xl px-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
@@ -141,16 +172,16 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {/* Main Multi-Step Wizard Stage */}
-      <main className="flex-1 max-w-xl mx-auto w-full p-6 sm:p-10 flex flex-col justify-center">
+      {/* Main Multi-Step Form Stage */}
+      <main className="flex-1 max-w-xl mx-auto w-full p-6 flex flex-col justify-center">
         <AnimatePresence mode="wait">
-          {/* STEP 1: LOGIN / SIGN UP */}
+          {/* STEP 1: AUTHENTICATION */}
           {currentStep === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
               <div className="space-y-1.5 text-center">
@@ -159,33 +190,43 @@ export default function OnboardingPage() {
                   Welcome to Placemind
                 </h1>
                 <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-                  Enter your work email to start building your resume.
+                  This is a single-user demo: no account is created and nothing you enter is verified.
                 </p>
               </div>
 
-              <Card className="p-6 space-y-3 shadow-xl">
-                {/* Provider sign-in is not wired in this build. The previous
-                    LinkedIn/Google/GitHub buttons only advanced the wizard
-                    without authenticating - removed instead of faking OAuth. */}
-                <p className="text-[11px] text-center text-[#8A8A92] leading-relaxed">
-                  LinkedIn, Google and GitHub sign-in are not connected in this
-                  build. This is a single-user demo: no account is created and
-                  nothing you enter is verified. Continue with email to explore.
-                </p>
-
-                {/* 4. Inline Email Expander */}
-                <div className="pt-2 space-y-2">
-                  <Label>Work email</Label>
+              <Card className="p-6 space-y-4 shadow-xl">
+                <div className="space-y-2">
+                  <Label>Email</Label>
                   <Input
                     type="email"
                     placeholder="name@company.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
-                  <Button variant="default" size="default" className="w-full" onClick={nextStep}>
-                    Continue with Email
-                  </Button>
+                  <p className="text-[10px] text-[#8A8A92]">
+                    Used to label local demo exports; not sent to any auth provider.
+                  </p>
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <Input
+                    type="password"
+                    placeholder="Demo only (not stored)"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  />
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="default"
+                  onClick={nextStep}
+                  className="w-full mt-2"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                >
+                  Continue with Email
+                </Button>
               </Card>
             </motion.div>
           )}
@@ -194,9 +235,9 @@ export default function OnboardingPage() {
           {currentStep === 2 && (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
               <div className="space-y-1.5 text-center">
@@ -241,20 +282,20 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label>Field of Study / Specialization</Label>
+                  <Label>Degree & Specialization</Label>
                   <Input
                     type="text"
-                    placeholder="e.g. Computer Science"
+                    placeholder="e.g. B.Tech Computer Science"
                     value={formData.specialization}
                     onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-4">
                   <Button variant="ghost" size="sm" onClick={prevStep} icon={<ArrowLeft className="w-3.5 h-3.5" />}>
                     Back
                   </Button>
-                  <Button variant="default" size="default" onClick={nextStep} icon={<ArrowRight className="w-4 h-4" />}>
+                  <Button variant="primary" size="default" onClick={nextStep} icon={<ArrowRight className="w-4 h-4" />}>
                     Continue
                   </Button>
                 </div>
@@ -262,58 +303,59 @@ export default function OnboardingPage() {
             </motion.div>
           )}
 
-          {/* STEP 3: PERSONALIZATION & TARGETING */}
+          {/* STEP 3: PERSONALIZE */}
           {currentStep === 3 && (
             <motion.div
               key="step3"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
               <div className="space-y-1.5 text-center">
-                <Badge variant="accent" size="sm">Step 03 &bull; Target Context</Badge>
+                <Badge variant="accent" size="sm">Step 03 &bull; Target Goals</Badge>
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                   Personalize Your Track
                 </h1>
                 <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-                  What role and company are you targeting first?
+                  Tailors your starting template keywords and mock interview role context.
                 </p>
               </div>
 
               <Card className="p-6 space-y-4 shadow-xl">
                 <div className="space-y-1.5">
-                  <Label>Target Position / Role</Label>
-                  <Input
-                    type="text"
-                    placeholder="e.g. Staff Distributed Systems Engineer"
-                    value={formData.targetRole}
-                    onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
-                  />
+                  <Label>Target Job Title / Role</Label>
+                  <div className="relative">
+                    <Briefcase className="w-4 h-4 absolute left-3.5 top-3.5 text-[#8A8A92]" />
+                    <Input
+                      type="text"
+                      className="pl-10"
+                      placeholder="e.g. SDE-1, Full Stack Developer"
+                      value={formData.targetRole}
+                      onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label>Target Company (Optional)</Label>
-                  <Input
-                    type="text"
-                    placeholder="e.g. Stripe, OpenAI, Google"
-                    value={formData.targetCompany}
-                    onChange={(e) => setFormData({ ...formData, targetCompany: e.target.value })}
-                  />
+                  <div className="relative">
+                    <Building2 className="w-4 h-4 absolute left-3.5 top-3.5 text-[#8A8A92]" />
+                    <Input
+                      type="text"
+                      className="pl-10"
+                      placeholder="e.g. Google, Stripe, or Early Stage Startup"
+                      value={formData.targetCompany}
+                      onChange={(e) => setFormData({ ...formData, targetCompany: e.target.value })}
+                    />
+                  </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#6C5CE7]/10 border border-[#6C5CE7]/30 text-xs text-[#6C5CE7] dark:text-[#8F82FF] flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 flex-shrink-0" />
-                  <span>
-                    Dashboard will immediately customize recommended skills and interview probes for {formData.targetCompany || 'your target role'}.
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-4">
                   <Button variant="ghost" size="sm" onClick={prevStep} icon={<ArrowLeft className="w-3.5 h-3.5" />}>
                     Back
                   </Button>
-                  <Button variant="default" size="default" onClick={nextStep} icon={<ArrowRight className="w-4 h-4" />}>
+                  <Button variant="primary" size="default" onClick={nextStep} icon={<ArrowRight className="w-4 h-4" />}>
                     Select Template
                   </Button>
                 </div>
@@ -321,22 +363,22 @@ export default function OnboardingPage() {
             </motion.div>
           )}
 
-          {/* STEP 4: TEMPLATE PREFERENCE */}
+          {/* STEP 4: TEMPLATE PREFERENCE & BOOTSTRAP */}
           {currentStep === 4 && (
             <motion.div
               key="step4"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
               <div className="space-y-1.5 text-center">
-                <Badge variant="accent" size="sm">Step 04 &bull; Format Alignment</Badge>
+                <Badge variant="accent" size="sm">Step 04 &bull; Format Engine</Badge>
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                   Choose Starting Template
                 </h1>
                 <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-                  Pick a starting layout, or keep the default single-column layout that parses reliably in common ATS systems.
+                  Pick a layout to initialize your live resume editor.
                 </p>
               </div>
 
@@ -395,12 +437,57 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
+                {/* Bootstrap Failure Banner */}
+                {bootstrapError && (
+                  <div className="p-3.5 rounded-2xl bg-[#EF4444]/10 border border-[#EF4444]/30 space-y-2 text-xs">
+                    <div className="flex items-center gap-2 font-bold text-[#DC2626] dark:text-[#F87171]">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      <span>{bootstrapError}</span>
+                    </div>
+                    <p className="text-[11px] text-[#4A4A52] dark:text-[#A1A1AA] leading-relaxed">
+                      We could not create the initial resume record on the backend. Your answers are preserved above.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={nextStep}
+                        icon={<RefreshCw className="w-3.5 h-3.5" />}
+                        disabled={isBootstrapping}
+                      >
+                        {isBootstrapping ? 'Retrying...' : 'Try again'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={continueWithoutSaving}
+                      >
+                        Continue without saving
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Name Validation Hint */}
+                {!formData.name.trim() && (
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>Please enter your full name (Step 2) to build your starting resume draft.</span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-4">
-                  <Button variant="ghost" size="sm" onClick={prevStep} icon={<ArrowLeft className="w-3.5 h-3.5" />}>
+                  <Button variant="ghost" size="sm" onClick={prevStep} icon={<ArrowLeft className="w-3.5 h-3.5" />} disabled={isBootstrapping}>
                     Back
                   </Button>
-                  <Button variant="default" size="default" onClick={nextStep} icon={<Sparkles className="w-4 h-4" />}>
-                    Enter Dashboard
+                  <Button
+                    variant="default"
+                    size="default"
+                    onClick={nextStep}
+                    icon={isBootstrapping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    disabled={!formData.name.trim() || isBootstrapping}
+                  >
+                    {isBootstrapping ? 'Entering Dashboard...' : 'Enter Dashboard'}
                   </Button>
                 </div>
               </Card>

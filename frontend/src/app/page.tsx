@@ -34,7 +34,7 @@ export default function LandingPage() {
   };
 
   return (
-    <main className="min-h-screen text-[#1A1A1E] dark:text-[#F5F5F7] relative selection:bg-[#6C5CE7] selection:text-white">
+    <main className="min-h-screen text-[#1A1A1E] dark:text-[#F5F5F7] relative selection:bg-[#6C5CE7] selection:text-white overflow-x-hidden">
       {/* Continuous Animated Background */}
       <GlobalBackground />
 

@@ -18,8 +18,8 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Separator } from '@/components/ui/Separator';
 import { ResumePreview } from '@/components/templates/ResumePreview';
 import { buildPalette } from '@/lib/color/engine';
-import { createResume } from '@/lib/api/resumes';
-import { Download, Save, Gauge, UploadCloud, LayoutGrid } from 'lucide-react';
+import { createResume, getResume } from '@/lib/api/resumes';
+import { Download, Save, Gauge, UploadCloud, LayoutGrid, AlertTriangle } from 'lucide-react';
 import type { ResumeContent } from '@/types/templates';
 import { BUILDER_TEMPLATES } from '@/lib/builderTemplates';
 
@@ -60,39 +60,155 @@ export default function ResumePage() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [missingFacts, setMissingFacts] = useState<string[]>([]);
+  const [showUnsavedNotice, setShowUnsavedNotice] = useState<boolean>(false);
 
   const set = <K extends keyof DraftState>(key: K, value: DraftState[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
 
-  // Pre-fill contact/education details saved in Settings (this browser only).
-  // Fields the user already typed into are never overwritten.
+  // Hydrate from localStorage profile and backend active resume record.
+  // Never overwrites fields the user has already typed into.
   React.useEffect(() => {
+    let cancelled = false;
+
     try {
-      const raw = window.localStorage.getItem('placemind.profile');
-      if (raw) {
-        const profile = JSON.parse(raw) as {
-          fullName?: string;
-          phone?: string;
-          college?: string;
-          specialization?: string;
-        };
-        setDraft((prev) => ({
-          ...prev,
-          name: prev.name || profile.fullName || '',
-          phone: prev.phone || profile.phone || '',
-          institution: prev.institution || profile.college || '',
-          degree: prev.degree || profile.specialization || '',
-        }));
+      if (window.localStorage.getItem('placemind.unsavedNotice') === 'true') {
+        setShowUnsavedNotice(true);
       }
 
       const rawMissing = window.localStorage.getItem('placemind.missingFacts');
       if (rawMissing) {
         setMissingFacts(JSON.parse(rawMissing));
       }
+
+      const rawProfile = window.localStorage.getItem('placemind.profile');
+      let profile: {
+        fullName?: string;
+        email?: string;
+        phone?: string;
+        college?: string;
+        specialization?: string;
+      } = {};
+      if (rawProfile) {
+        profile = JSON.parse(rawProfile);
+        setDraft((prev) => ({
+          ...prev,
+          name: prev.name || profile.fullName || '',
+          email: prev.email || profile.email || '',
+          phone: prev.phone || profile.phone || '',
+          institution: prev.institution || profile.college || '',
+          degree: prev.degree || profile.specialization || '',
+        }));
+      }
+
+      const activeResumeId = window.localStorage.getItem('placemind.activeResumeId');
+      if (activeResumeId) {
+        getResume(activeResumeId)
+          .then((detail) => {
+            if (cancelled || !detail) return;
+            let hydName = '';
+            let hydEmail = '';
+            let hydPhone = '';
+            let hydDegree = '';
+            let hydInstitution = '';
+            let hydSummary = '';
+            let hydSkills = '';
+
+            for (const sec of detail.sections || []) {
+              const type = (sec.section_type || '').toLowerCase();
+              const text = sec.content || '';
+
+              if (type === 'contact') {
+                const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+                for (const line of lines) {
+                  if (line.includes('@') && !hydEmail) {
+                    hydEmail = line;
+                  } else if (/^[+0-9\s()\-]{7,}$/.test(line) && !hydPhone) {
+                    hydPhone = line;
+                  } else if (!hydName) {
+                    hydName = line;
+                  }
+                }
+              } else if (type === 'education') {
+                const parts = text.split(',').map((p) => p.trim()).filter(Boolean);
+                if (parts.length >= 2) {
+                  hydDegree = parts[0];
+                  hydInstitution = parts.slice(1).join(', ');
+                } else if (parts.length === 1) {
+                  const single = parts[0];
+                  if (/(univ|college|institute|school|academy)/i.test(single)) {
+                    hydInstitution = single;
+                  } else {
+                    hydDegree = single;
+                  }
+                }
+              } else if (type === 'objective' || type === 'summary') {
+                if (!hydSummary) hydSummary = text;
+              } else if (type === 'skills') {
+                if (!hydSkills) hydSkills = text;
+              }
+            }
+
+            setDraft((prev) => ({
+              ...prev,
+              name: prev.name || hydName || profile.fullName || '',
+              email: prev.email || hydEmail || profile.email || '',
+              phone: prev.phone || hydPhone || profile.phone || '',
+              summary: prev.summary || hydSummary || '',
+              skills: prev.skills || hydSkills || '',
+              degree: prev.degree || hydDegree || profile.specialization || '',
+              institution: prev.institution || hydInstitution || profile.college || '',
+            }));
+          })
+          .catch(() => {
+            // Backend resume lookup failed; profile fallback already applied
+          });
+      }
     } catch {
       // storage unavailable - start empty
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // Reactive missing-facts refresh: whenever user fills a listed gap in the builder,
+  // remove that key from state and localStorage. Hide banner when empty.
+  React.useEffect(() => {
+    if (missingFacts.length === 0) return;
+    const remaining = missingFacts.filter((fact) => {
+      switch (fact) {
+        case 'education.institution':
+          return !draft.institution.trim();
+        case 'education.dates':
+          return !draft.year.trim();
+        case 'skills':
+          return !draft.skills.trim();
+        case 'experience':
+          return !(draft.role.trim() || draft.bullets.trim() || draft.company.trim());
+        case 'contact.email':
+          return !draft.email.trim();
+        case 'contact.phone':
+          return !draft.phone.trim();
+        case 'contact.name':
+        case 'full_name':
+          return !draft.name.trim();
+        default:
+          return true;
+      }
+    });
+
+    if (remaining.length !== missingFacts.length) {
+      setMissingFacts(remaining);
+      try {
+        if (remaining.length > 0) {
+          window.localStorage.setItem('placemind.missingFacts', JSON.stringify(remaining));
+        } else {
+          window.localStorage.removeItem('placemind.missingFacts');
+        }
+      } catch {}
+    }
+  }, [draft, missingFacts]);
 
   // Map the form onto the typed ResumeContent the renderer consumes.
   const content: ResumeContent = useMemo(() => {
@@ -166,11 +282,18 @@ export default function ResumePage() {
     setSaveMessage('');
     try {
       const fileName = `${draft.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_')}_draft.txt`;
-      await createResume({
+      const saved = await createResume({
         file_name: fileName,
         raw_text: toPlainText(),
         parsed_metadata: { builder: true, template: selectedTemplate.id, contact: { email: draft.email, phone: draft.phone } },
       });
+      if (saved?.id) {
+        try {
+          window.localStorage.setItem('placemind.activeResumeId', saved.id);
+          window.localStorage.removeItem('placemind.unsavedNotice');
+        } catch {}
+        setShowUnsavedNotice(false);
+      }
       setSaveState('saved');
       setSaveMessage('Draft saved to your workspace.');
     } catch (err) {
@@ -220,6 +343,27 @@ export default function ResumePage() {
           }`}
         >
           {saveMessage}
+        </div>
+      )}
+
+      {showUnsavedNotice && (
+        <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3 no-print">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <span>
+              You are editing an unsaved local draft. Setup could not be saved to the backend during onboarding. Click &ldquo;Save Draft&rdquo; when ready.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowUnsavedNotice(false);
+              try { window.localStorage.removeItem('placemind.unsavedNotice'); } catch {}
+            }}
+            className="text-[11px] underline hover:opacity-80 flex-shrink-0 cursor-pointer"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 

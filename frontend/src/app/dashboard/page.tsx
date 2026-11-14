@@ -60,7 +60,7 @@ interface ChatMessage {
 }
 
 const STARTER_PROMPTS = [
-  'Build a resume tailored for a Frontend Engineer',
+  'Draft a tailored profile for a Frontend Engineer',
   'How do I format metrics using Google XYZ?',
   'Run an ATS scan on my target job description',
   'Start a behavioral mock interview',
@@ -83,9 +83,9 @@ export default function DashboardPage() {
       content:
         'Welcome to PlaceMind. What would you like to work on? I can guide your resume drafting, run local ATS checks, or prep you for interview practice.',
       actions: [
-        { id: 'act-resume', label: 'Build a Resume', kind: 'navigate', target: '/resume', payload: {} },
-        { id: 'act-ats', label: 'Auto-Generate for a Job', kind: 'navigate', target: '/ats', payload: {} },
-        { id: 'act-interview', label: 'Practice Interview', kind: 'navigate', target: '/interview', payload: {} },
+        { id: 'act-resume', label: 'Create New Resume', kind: 'navigate', target: '/resume', payload: {} },
+        { id: 'act-ats', label: 'Score with ATS Rules', kind: 'navigate', target: '/ats', payload: {} },
+        { id: 'act-interview', label: 'Start Mock Interview', kind: 'navigate', target: '/interview', payload: {} },
         { id: 'act-upload', label: 'Upload Existing PDF', kind: 'navigate', target: '/resumes/upload', payload: {} },
       ],
       modelUsed: 'Workspace Copilot',
