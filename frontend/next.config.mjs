@@ -27,6 +27,11 @@ const nextConfig = {
   // Strict React mode for robust WebGL and lifecycle safety
   reactStrictMode: true,
 
+  // Path-based dev proxies (e.g. code-server /proxy/PORT) serve the app under
+  // a subpath; without this the absolute /_next asset URLs bypass the proxy.
+  // Unset in normal local dev and Vercel - no behavior change.
+  assetPrefix: process.env.NEXT_ASSET_PREFIX || undefined,
+
   transpilePackages: ['three'],
 };
 
