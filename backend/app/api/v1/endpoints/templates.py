@@ -5,10 +5,29 @@
 
 import asyncio
 from typing import Any, Dict
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.templates import GenerateRequest, GenerateResponse
+from app.api.v1.endpoints.resumes import _load_resume, _local_user
+from app.database.session import get_db
+from app.schemas.templates import CandidateFacts, GenerateRequest, GenerateResponse, ResumeContent
+from app.services.resume_content import content_from_resume
 from app.services.template_generator import TemplateGenerator, _load_presets
+
+
+def _facts_to_content(facts: CandidateFacts) -> ResumeContent:
+    """Normalizes explicit candidate facts into the ResumeContent shape the
+    generator works with. Missing fields stay empty, never invented."""
+    return ResumeContent(
+        name=facts.name,
+        contact=facts.contact,
+        headline=facts.headline or "",
+        summary=facts.summary or "",
+        skills=facts.skills[:20],
+        experience=facts.experience[:4],
+        projects=facts.projects[:4],
+        education=facts.education[:3],
+    )
 
 router = APIRouter(prefix="/templates", tags=["Resume Templates"])
 
@@ -29,12 +48,26 @@ _generation_semaphore = asyncio.Semaphore(1)
         }
     },
 )
-async def generate_template(request: GenerateRequest) -> GenerateResponse:
+async def generate_template(
+    request: GenerateRequest,
+    db: AsyncSession = Depends(get_db),
+) -> GenerateResponse:
     """
     Generates tailored ATS resume template style and content using the local OSS model.
     Guarded by a concurrency semaphore allowing max 1 concurrent generation.
     Returns 429 with Retry-After header when busy.
     """
+    # Resolve candidate facts before taking the generation slot: explicit
+    # request facts win over resume_id. A missing resume 404s without ever
+    # touching the semaphore.
+    facts_content: ResumeContent | None = None
+    if request.facts is not None:
+        facts_content = _facts_to_content(request.facts)
+    elif request.resume_id is not None:
+        await _local_user(db)
+        resume = await _load_resume(request.resume_id, db)  # 404 when missing
+        facts_content = content_from_resume(resume)
+
     if _generation_semaphore.locked():
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -56,7 +89,7 @@ async def generate_template(request: GenerateRequest) -> GenerateResponse:
 
     try:
         generator = TemplateGenerator()
-        response = await generator.generate(request)
+        response = await generator.generate(request, facts=facts_content)
         return response
     finally:
         if acquired:

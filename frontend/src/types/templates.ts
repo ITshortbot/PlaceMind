@@ -52,9 +52,24 @@ export interface ResumeContent {
   education: EducationItem[];
 }
 
+export interface CandidateFacts {
+  name?: string | null;
+  contact?: string | null;
+  headline?: string | null;
+  summary?: string | null;
+  skills?: string[];
+  experience?: ExperienceItem[];
+  projects?: ProjectItem[];
+  education?: EducationItem[];
+}
+
 export interface GenerateRequest {
   prompt: string;
   jd_text?: string | null;
+  /** Saved resume to derive candidate facts from, server-side. */
+  resume_id?: string | null;
+  /** Explicit candidate facts. Wins over resume_id when both are sent. */
+  facts?: CandidateFacts | null;
 }
 
 export interface GenerateResponse {
@@ -63,4 +78,6 @@ export interface GenerateResponse {
   warnings: string[];
   latency_ms: number;
   source: 'model' | 'fallback' | 'demo';
+  /** True when candidate facts (request or saved resume) shaped the content. */
+  facts_used?: boolean;
 }

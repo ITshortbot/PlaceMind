@@ -24,6 +24,7 @@ from app.schemas.resumes import (
     ResumeSummaryOut,
     ResumeUpdate,
 )
+from app.services.resume_content import clip_text as _clip, content_from_resume as _content_from_resume
 from app.schemas.templates import (
     DensityEnum,
     EducationItem,
@@ -176,54 +177,6 @@ ATS_SAFE_STYLE = StyleSpec(
     ],
     mood=MoodEnum.CORPORATE,
 )
-
-
-def _clip(text: str, limit: int) -> str:
-    return text.strip()[:limit]
-
-
-def _content_from_resume(resume: Resume) -> ResumeContent:
-    """Best-effort structured view of a stored plain-text resume. Sections
-    were saved by type; anything missing simply stays empty, which the
-    readiness rules score honestly as gaps."""
-    by_type: dict[str, list[str]] = {}
-    for section in resume.sections:
-        by_type.setdefault(section.section_type.lower(), []).append(section.content)
-
-    lines = [ln.strip() for ln in resume.raw_text.splitlines() if ln.strip()]
-    headline = _clip(lines[0] if lines else resume.file_name, 120) or "Untitled resume"
-    summary = _clip(by_type.get("summary", [headline])[0], 400) or headline
-
-    skills: list[str] = []
-    for chunk in by_type.get("skills", []):
-        skills.extend(p.strip() for p in chunk.replace("\n", ",").split(",") if p.strip())
-
-    experience = [
-        ExperienceItem(
-            role=_clip(c.splitlines()[0] if c.splitlines() else "Experience", 60) or "Experience",
-            bullets=[_clip(b, 220) for b in c.splitlines()[1:] if b.strip()][:5],
-        )
-        for c in by_type.get("experience", [])[:4]
-    ]
-    projects = [
-        ProjectItem(
-            name=_clip(c.splitlines()[0] if c.splitlines() else "Project", 60) or "Project",
-            bullets=[_clip(b, 220) for b in c.splitlines()[1:] if b.strip()][:5],
-        )
-        for c in by_type.get("projects", [])[:4]
-    ]
-    education = [
-        EducationItem(degree=_clip(c.splitlines()[0] if c.splitlines() else "Education", 120) or "Education")
-        for c in by_type.get("education", [])[:3]
-    ]
-    return ResumeContent(
-        headline=headline,
-        summary=summary,
-        skills=skills[:20],
-        experience=experience,
-        projects=projects,
-        education=education,
-    )
 
 
 @router.post("/{resume_id}/analyze", response_model=ScoreDocResponse)

@@ -6,6 +6,7 @@
 
 from enum import Enum
 from typing import List, Literal, Optional
+from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -141,9 +142,32 @@ class ResumeContent(StrictBaseModel):
 
 # ─── Request & Response ──────────────────────────────────────────────────────
 
+class CandidateFacts(StrictBaseModel):
+    """Structured facts about the candidate, supplied by the client or derived
+    server-side from a saved resume. Every field is optional; generation must
+    leave fact-less sections empty rather than invent content."""
+
+    name: Optional[str] = Field(default=None, max_length=120)
+    contact: Optional[str] = Field(default=None, max_length=200)
+    headline: Optional[str] = Field(default=None, max_length=120)
+    summary: Optional[str] = Field(default=None, max_length=400)
+    skills: List[str] = Field(default_factory=list, max_length=20)
+    experience: List[ExperienceItem] = Field(default_factory=list, max_length=4)
+    projects: List[ProjectItem] = Field(default_factory=list, max_length=4)
+    education: List[EducationItem] = Field(default_factory=list, max_length=3)
+
+
 class GenerateRequest(StrictBaseModel):
     prompt: str = Field(..., max_length=500)
     jd_text: Optional[str] = Field(default=None, max_length=4000)
+    resume_id: Optional[UUID] = Field(
+        default=None,
+        description="Saved resume to derive candidate facts from, server-side.",
+    )
+    facts: Optional[CandidateFacts] = Field(
+        default=None,
+        description="Explicit candidate facts. Wins over resume_id when both are sent.",
+    )
 
 
 class GenerateResponse(StrictBaseModel):
@@ -152,3 +176,7 @@ class GenerateResponse(StrictBaseModel):
     warnings: List[str] = Field(default_factory=list)
     latency_ms: float = Field(default=0.0)
     source: Literal["model", "fallback"]
+    facts_used: bool = Field(
+        default=False,
+        description="True when candidate facts (request or saved resume) shaped the content.",
+    )

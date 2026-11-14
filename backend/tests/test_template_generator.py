@@ -14,7 +14,13 @@ import json
 from types import SimpleNamespace
 import pytest
 
-from app.schemas.templates import GenerateRequest
+from app.schemas.templates import (
+    EducationItem,
+    ExperienceItem,
+    GenerateRequest,
+    ProjectItem,
+    ResumeContent,
+)
 from app.services.ai_router import RoutingMode
 from app.services.template_generator import TemplateGenerator
 
@@ -258,3 +264,98 @@ async def test_preset_selection_keywords(prompt, expected_preset):
 
     assert response.source == "fallback"
     assert any(expected_preset in w for w in response.warnings)
+
+
+# ─── Candidate-facts pathway (grounded generation) ───────────────────────────
+
+FACTS = ResumeContent(
+    name="Jordan Vale",
+    headline="Junior Data Analyst",
+    summary="Recent graduate focused on retail analytics.",
+    skills=["SQL", "Excel", "Tableau"],
+    experience=[
+        ExperienceItem(
+            role="Analytics Intern",
+            company="Zypher Analytics",
+            bullets=["Cleaned weekly sales extracts for 3 regions."],
+        )
+    ],
+    projects=[
+        ProjectItem(name="Quant Widget Toolkit", bullets=["Built a pricing notebook."])
+    ],
+    education=[
+        EducationItem(degree="B.Sc. Statistics", institution="Northwind University", year="2025")
+    ],
+)
+
+
+@pytest.mark.asyncio
+async def test_fallback_assembles_facts_verbatim_without_placeholders():
+    """Keyless fallback returns the candidate's facts verbatim - never canned preset copy."""
+    router = FakeLLMRouter(exception_to_raise=RuntimeError("no model"))
+    generator = TemplateGenerator(ai_router=router)
+
+    res = await generator.generate(GenerateRequest(prompt="data analyst resume"), facts=FACTS)
+
+    assert res.source == "fallback"
+    assert res.facts_used is True
+    blob = json.dumps(res.content.model_dump())
+    assert "Zypher Analytics" in blob
+    assert "Quant Widget Toolkit" in blob
+    assert "B.Sc. Statistics" in blob
+    assert "[X" not in blob
+    assert "Enterprise Corp" not in blob
+    assert "Senior Software Engineer" not in blob
+
+
+@pytest.mark.asyncio
+async def test_fallback_without_facts_returns_empty_content():
+    """Keyless fallback with no facts returns empty content, not invented placeholders."""
+    router = FakeLLMRouter(exception_to_raise=RuntimeError("no model"))
+    generator = TemplateGenerator(ai_router=router)
+
+    res = await generator.generate(GenerateRequest(prompt="software engineer resume"))
+
+    assert res.source == "fallback"
+    assert res.facts_used is False
+    assert res.content.headline == ""
+    assert res.content.summary == ""
+    assert res.content.skills == []
+    assert res.content.experience == []
+    assert res.content.projects == []
+    assert res.content.education == []
+    blob = json.dumps(res.content.model_dump())
+    assert "[X" not in blob
+    assert "Enterprise Corp" not in blob
+    assert any("empty content" in w for w in res.warnings)
+
+
+@pytest.mark.asyncio
+async def test_model_receives_candidate_facts_block():
+    """The model prompt carries facts as data and forbids fabrication."""
+    router = FakeLLMRouter(responses=[_sample_valid_json()])
+    generator = TemplateGenerator(ai_router=router)
+
+    res = await generator.generate(GenerateRequest(prompt="tailor my resume"), facts=FACTS)
+
+    assert res.source == "model"
+    assert res.facts_used is True
+    user_msg = router.calls[0]["messages"][1]["content"]
+    assert "<candidate_facts>" in user_msg
+    assert "Zypher Analytics" in user_msg
+    system_msg = router.calls[0]["messages"][0]["content"]
+    assert "ONLY source of truth" in system_msg
+
+
+@pytest.mark.asyncio
+async def test_empty_facts_object_treated_as_no_facts():
+    """A facts payload with no usable content behaves like no facts at all."""
+    router = FakeLLMRouter(exception_to_raise=RuntimeError("no model"))
+    generator = TemplateGenerator(ai_router=router)
+
+    res = await generator.generate(
+        GenerateRequest(prompt="resume"), facts=ResumeContent(headline="", summary="")
+    )
+
+    assert res.facts_used is False
+    assert res.content.headline == ""

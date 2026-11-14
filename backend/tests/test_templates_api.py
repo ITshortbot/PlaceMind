@@ -23,7 +23,7 @@ def mock_template_generator():
     with patch("app.api.v1.endpoints.templates.TemplateGenerator") as mock_cls:
         instance = mock_cls.return_value
 
-        async def _mock_gen(req):
+        async def _mock_gen(req, facts=None):
             return GenerateResponse(
                 style=StyleSpec(
                     layout="single_column",
@@ -125,7 +125,7 @@ async def test_concurrency_semaphore_returns_429():
 
     # Once released, generation succeeds
     with patch("app.api.v1.endpoints.templates.TemplateGenerator") as mock_cls:
-        async def _mock_gen2(req):
+        async def _mock_gen2(req, facts=None):
             return GenerateResponse(
                 style=StyleSpec(
                     layout="single_column",
@@ -183,3 +183,177 @@ async def test_cors_restricted_to_localhost_3000():
             },
         )
         assert res_disallowed.headers.get("access-control-allow-origin") != "https://unauthorized-domain.com"
+
+
+# ─── Candidate-facts pathway (API level, DB-backed) ──────────────────────────
+
+import json as _json
+import uuid as _uuid
+
+from unittest.mock import AsyncMock
+
+from sqlalchemy.dialects.sqlite.base import SQLiteTypeCompiler as _SQLiteTypeCompiler
+from sqlalchemy.ext.asyncio import async_sessionmaker as _async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine as _create_async_engine
+
+from app.database.models import ATSMatchScore, JobDescription, Resume, ResumeSection, User
+from app.database.session import get_db
+from app.services.ai_router import HybridLLMRouter
+
+_SQLiteTypeCompiler.visit_JSONB = lambda self, type_, **kw: "JSON"
+_SQLiteTypeCompiler.visit_vector = lambda self, type_, **kw: "BLOB"
+for _table in (User.__table__, Resume.__table__, ResumeSection.__table__, JobDescription.__table__, ATSMatchScore.__table__):
+    for _col in _table.c:
+        if _col.server_default is not None and str(_col.server_default.arg).endswith("::jsonb"):
+            _col.server_default = None
+
+
+@pytest.fixture
+async def facts_db():
+    engine = _create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        for t in (User.__table__, Resume.__table__, ResumeSection.__table__, JobDescription.__table__, ATSMatchScore.__table__):
+            await conn.run_sync(t.create, checkfirst=True)
+    maker = _async_sessionmaker(bind=engine, expire_on_commit=False)
+
+    async def _get_db():
+        async with maker() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+    app.dependency_overrides[get_db] = _get_db
+    yield
+    app.dependency_overrides.pop(get_db, None)
+    await engine.dispose()
+
+
+@pytest.fixture
+async def facts_client(facts_db):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+
+RESUME_A = {
+    "file_name": "alpha.pdf",
+    "raw_text": "Alpha Person\nData analyst at Aardvark Systems.",
+    "parsed_metadata": {},
+    "sections": [
+        {"section_type": "summary", "content": "Data analyst at Aardvark Systems."},
+        {"section_type": "skills", "content": "SQL, AardvarkQL"},
+    ],
+}
+RESUME_B = {
+    "file_name": "beta.pdf",
+    "raw_text": "Beta Person\nDesigner at Bison Labs.",
+    "parsed_metadata": {},
+    "sections": [
+        {"section_type": "summary", "content": "Designer at Bison Labs."},
+        {"section_type": "skills", "content": "Figma, BisonScript"},
+    ],
+}
+
+
+async def _create_resume(client, payload):
+    res = await client.post("/api/v1/resumes", json=payload)
+    assert res.status_code in (200, 201), res.text
+    return res.json()["id"]
+
+
+def _no_model():
+    return patch.object(
+        HybridLLMRouter, "complete", new=AsyncMock(side_effect=RuntimeError("no model"))
+    )
+
+
+@pytest.mark.asyncio
+async def test_generate_with_resume_id_uses_only_that_resumes_facts(facts_client):
+    """resume_id derives facts server-side; no cross-resume leakage."""
+    id_a = await _create_resume(facts_client, RESUME_A)
+    await _create_resume(facts_client, RESUME_B)
+
+    with _no_model():
+        res = await facts_client.post(
+            "/api/v1/templates/generate",
+            json={"prompt": "data analyst resume", "resume_id": id_a},
+        )
+
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["facts_used"] is True
+    blob = _json.dumps(data["content"])
+    assert "Aardvark" in blob
+    assert "Bison" not in blob
+    assert "[X" not in blob
+    assert "Enterprise Corp" not in blob
+
+
+@pytest.mark.asyncio
+async def test_generate_missing_resume_id_returns_404(facts_client):
+    with _no_model():
+        res = await facts_client.post(
+            "/api/v1/templates/generate",
+            json={"prompt": "resume", "resume_id": str(_uuid.uuid4())},
+        )
+    assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_generate_prompt_only_returns_empty_not_canned(facts_client):
+    """No facts + no model: empty content with a clear warning, never preset filler."""
+    with _no_model():
+        res = await facts_client.post(
+            "/api/v1/templates/generate", json={"prompt": "software engineer resume"}
+        )
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["facts_used"] is False
+    blob = _json.dumps(data["content"])
+    assert "Enterprise Corp" not in blob
+    assert "Senior Software Engineer" not in blob
+    assert "[X" not in blob
+    assert data["content"]["skills"] == []
+    assert data["content"]["experience"] == []
+
+
+@pytest.mark.asyncio
+async def test_generate_explicit_facts_win_over_resume_id(facts_client):
+    id_a = await _create_resume(facts_client, RESUME_A)
+
+    with _no_model():
+        res = await facts_client.post(
+            "/api/v1/templates/generate",
+            json={
+                "prompt": "tailor my resume",
+                "resume_id": id_a,
+                "facts": {
+                    "headline": "Explicit Headline",
+                    "experience": [
+                        {"role": "Engineer", "company": "Explicit Co", "bullets": ["Shipped things."]}
+                    ],
+                },
+            },
+        )
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["facts_used"] is True
+    blob = _json.dumps(data["content"])
+    assert "Explicit Co" in blob
+    assert "Aardvark" not in blob
+
+
+@pytest.mark.asyncio
+async def test_generate_empty_facts_object_returns_empty(facts_client):
+    with _no_model():
+        res = await facts_client.post(
+            "/api/v1/templates/generate", json={"prompt": "resume", "facts": {}}
+        )
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["facts_used"] is False
+    assert data["content"]["headline"] == ""
+    assert data["content"]["skills"] == []
