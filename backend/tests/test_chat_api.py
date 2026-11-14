@@ -13,6 +13,15 @@ from app.main import app
 from app.services import openrouter
 
 
+@pytest.fixture(autouse=True)
+def _no_openrouter_key(monkeypatch):
+    # Hermetic: never pick up a real OPENROUTER_API_KEY from the shell env;
+    # the fallback contract tests must never make live provider calls.
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "OPENROUTER_API_KEY", "")
+
+
 @pytest.fixture
 async def client():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
