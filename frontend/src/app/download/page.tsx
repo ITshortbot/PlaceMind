@@ -67,24 +67,24 @@ export default function DownloadPage() {
   const [copiedCmd, setCopiedCmd] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] flex flex-col font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] flex flex-col font-sans transition-colors duration-300 overflow-x-hidden">
       {/* Top Header */}
-      <header className="h-14 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/80 dark:bg-[#121217]/90 backdrop-blur-xl px-4 flex items-center justify-between z-30 sticky top-0">
-        <div className="flex items-center gap-3">
+      <header className="h-14 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/80 dark:bg-[#121217]/90 backdrop-blur-xl px-3 sm:px-4 flex items-center justify-between z-30 sticky top-0 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             href="/"
-            className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
+            className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Home</span>
           </Link>
-          <div className="h-4 w-px bg-black/[0.1] dark:bg-white/[0.1]" />
-          <span className="font-bold text-sm">Universal Cross-Platform Download Hub</span>
+          <div className="h-4 w-px bg-black/[0.1] dark:bg-white/[0.1] flex-shrink-0" />
+          <span className="font-bold text-xs sm:text-sm truncate">Universal Download Hub</span>
         </div>
 
-        <Link href="/studio">
+        <Link href="/resume" className="flex-shrink-0">
           <Button variant="primary" size="sm" icon={<ArrowRight className="w-3.5 h-3.5" />}>
-            Open Web Studio
+            Open Studio
           </Button>
         </Link>
       </header>
@@ -95,7 +95,7 @@ export default function DownloadPage() {
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 dark:bg-[#1C1C21]/90 border border-white/60 dark:border-white/10 text-xs font-semibold text-[#6C5CE7] dark:text-[#7D6FF0] shadow-sm backdrop-blur-xl">
             <Cpu className="w-3.5 h-3.5" />
-            <span>TAURI V2 NATIVE &bull; 100% OFFLINE PRIVACY</span>
+            <span>BROWSER-FIRST ARCHITECTURE &bull; 100% OFFLINE PRIVACY</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight text-[#1A1A1E] dark:text-white">
@@ -106,7 +106,7 @@ export default function DownloadPage() {
           </h1>
 
           <p className="text-base text-[#5A5A63] dark:text-[#A1A1AA] leading-relaxed">
-            Run complete ATS parsing and voice interview simulations locally on your machine with zero data egress. Powered by Tauri v2 and local LLM connectors.
+            Placemind runs directly in your web browser with local data processing. Native desktop client builds are in development; you can use the web app on any platform to build and export PDF resumes immediately.
           </p>
         </div>
 
@@ -142,15 +142,16 @@ export default function DownloadPage() {
                   </div>
                 </div>
 
-                <Button
-                  variant={p.isPrimary ? 'primary' : 'secondary'}
-                  size="md"
-                  icon={<Download className="w-4 h-4" />}
-                  className="w-full"
-                  onClick={() => alert(`Starting download for ${p.file}`)}
-                >
-                  Download {p.name}
-                </Button>
+                <Link href="/resume" className="w-full">
+                  <Button
+                    variant={p.isPrimary ? 'primary' : 'secondary'}
+                    size="md"
+                    icon={<Download className="w-4 h-4" />}
+                    className="w-full"
+                  >
+                    Open Web Exporter
+                  </Button>
+                </Link>
               </div>
             );
           })}

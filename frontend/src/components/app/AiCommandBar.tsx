@@ -20,16 +20,29 @@ import {
   Pencil,
   Send,
   Check,
+  Sparkles,
+  X,
+  ArrowRight,
 } from 'lucide-react';
 
 interface AiCommandBarProps {
   placeholder?: string;
   onExecute?: (command: string) => void;
+  response?: {
+    reply: string;
+    actions?: Array<{ id: string; label: string; kind: string; target: string }>;
+    modelUsed?: string;
+  } | null;
+  onActionClick?: (target: string) => void;
+  onCloseResponse?: () => void;
 }
 
 export function AiCommandBar({
   placeholder = "Describe the resume you want - opens the Template Studio with your prompt...",
   onExecute,
+  response,
+  onActionClick,
+  onCloseResponse,
 }: AiCommandBarProps) {
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -72,8 +85,56 @@ export function AiCommandBar({
   };
 
   return (
-    <div className="sticky bottom-3 sm:bottom-4 inset-x-0 px-4 sm:px-8 z-30 pointer-events-none select-none">
+    <div className="sticky bottom-3 sm:bottom-4 inset-x-0 px-2 sm:px-4 md:px-8 z-30 pointer-events-none select-none">
       <div className="max-w-4xl mx-auto pointer-events-auto relative">
+        {/* Assistant Response Bubble (Page-aware actions dock) */}
+        {response && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            className="mb-2 p-3 sm:p-4 rounded-2xl bg-[#0A0A0C]/95 dark:bg-[#121217]/95 border border-[#FACC15]/40 text-white shadow-2xl backdrop-blur-3xl text-xs space-y-2.5 max-w-full"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[#FACC15] font-black text-[11px]">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>PlaceMind Assistant</span>
+                {response.modelUsed && (
+                  <span className="text-[9px] font-mono text-white/50 font-normal">
+                    &bull; {response.modelUsed}
+                  </span>
+                )}
+              </div>
+              {onCloseResponse && (
+                <button
+                  type="button"
+                  onClick={onCloseResponse}
+                  className="p-1 text-white/50 hover:text-white rounded-lg hover:bg-white/10"
+                  aria-label="Close assistant response"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <p className="leading-relaxed text-white/90 break-words">{response.reply}</p>
+            {response.actions && response.actions.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {response.actions.map((act) => (
+                  <button
+                    key={act.id}
+                    type="button"
+                    onClick={() => onActionClick ? onActionClick(act.target) : undefined}
+                    className="px-2.5 py-1 rounded-xl bg-[#FACC15] text-[#0A0A0C] font-black text-[10px] hover:bg-[#FACC15]/90 transition-all flex items-center gap-1 shadow-xs"
+                  >
+                    <span>{act.label}</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* Rotating Yellow Aura Beam — unmounted in reduced-motion mode */}
         {!reducedMotion && (
           <div className="absolute -inset-0.5 rounded-full overflow-hidden pointer-events-none opacity-60 dark:opacity-75 blur-xs">
@@ -101,7 +162,7 @@ export function AiCommandBar({
               : '0 20px 45px -12px rgba(0, 0, 0, 0.45)',
           }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="relative h-13 sm:h-14 rounded-full glass-frosted-dark bg-[#0A0A0C]/90 dark:bg-[#0A0A0C]/95 border border-white/20 text-white p-1 sm:p-1.5 flex items-center justify-between gap-1 sm:gap-2 backdrop-blur-3xl"
+          className="relative h-12 sm:h-14 rounded-full glass-frosted-dark bg-[#0A0A0C]/90 dark:bg-[#0A0A0C]/95 border border-white/20 text-white p-1 sm:p-1.5 flex items-center justify-between gap-1 sm:gap-2 backdrop-blur-3xl"
         >
           {/* Left Action Buttons: Star (Presets), Archive/Download, Attachment */}
           <div className="flex items-center gap-0.5 sm:gap-1 pl-2 sm:pl-2.5 flex-shrink-0 text-white/70">

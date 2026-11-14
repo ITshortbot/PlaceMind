@@ -16,13 +16,9 @@ import { useTheme } from 'next-themes';
 import {
   Search,
   LayoutDashboard,
-  LayoutGrid,
   FileText,
   FileCheck2,
-  UploadCloud,
   Mic,
-  BarChart3,
-  History,
   Settings,
   Sun,
   Moon,
@@ -30,14 +26,10 @@ import {
 import { CommandPaletteModal } from '@/components/app/CommandPaletteModal';
 
 const NAV_ITEMS = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Templates', href: '/template', icon: LayoutGrid },
-  { name: 'Resume Builder', href: '/resume', icon: FileText },
-  { name: 'ATS 1-Pass', href: '/ats', icon: FileCheck2 },
-  { name: 'Upload & Parse', href: '/resumes/upload', icon: UploadCloud },
-  { name: 'Live Interview', href: '/interview', icon: Mic },
-  { name: 'Score Reports', href: '/report', icon: BarChart3 },
-  { name: 'File History', href: '/history', icon: History },
+  { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Resume', href: '/resume', icon: FileText },
+  { name: 'ATS', href: '/ats', icon: FileCheck2 },
+  { name: 'Interview', href: '/interview', icon: Mic },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

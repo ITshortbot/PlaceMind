@@ -14,12 +14,9 @@ import { AiCommandBar } from '@/components/app/AiCommandBar';
 import { DynamicBackground } from '@/components/ui/DynamicBackground';
 import {
   LayoutDashboard,
-  LayoutGrid,
   FileText,
   FileCheck2,
   Mic,
-  BarChart3,
-  History,
   Settings,
 } from 'lucide-react';
 
@@ -30,12 +27,11 @@ interface AppShellProps {
 }
 
 const MOBILE_NAV_ITEMS = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Templates', href: '/template', icon: LayoutGrid },
+  { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Resume', href: '/resume', icon: FileText },
   { name: 'ATS', href: '/ats', icon: FileCheck2 },
   { name: 'Interview', href: '/interview', icon: Mic },
-  { name: 'Report', href: '/report', icon: BarChart3 },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export const AI_PROMPT_HANDOFF_KEY = 'placemind.pendingPrompt';

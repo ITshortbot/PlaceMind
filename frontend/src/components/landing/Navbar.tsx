@@ -19,6 +19,7 @@ import {
   X,
   Laptop,
   Layers,
+  FileText,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -84,11 +85,11 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
             Guide
           </a>
           <Link
-            href="/download"
+            href="/resume"
             className="hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7] transition-colors font-medium flex items-center gap-1 hover:scale-105"
           >
-            <Laptop className="w-3.5 h-3.5" />
-            <span>Download</span>
+            <FileText className="w-3.5 h-3.5" />
+            <span>Resume Builder</span>
           </Link>
           <a
             href="/#pricing"
@@ -179,12 +180,12 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/download"
+              href="/resume"
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-between"
             >
-              <span>Download Desktop / Mobile App</span>
-              <Laptop className="w-4 h-4 text-[#8A8A92]" />
+              <span>Resume Builder</span>
+              <FileText className="w-4 h-4 text-[#8A8A92]" />
             </Link>
             <a
               href="/#templates"

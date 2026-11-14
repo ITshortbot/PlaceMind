@@ -33,17 +33,16 @@ interface CommandPaletteModalProps {
 }
 
 const SEARCH_ITEMS = [
-  { name: 'Dashboard', category: 'Navigation', href: '/dashboard', icon: LayoutDashboard, desc: 'Overview & daily ATS health' },
-  { name: 'Templates Gallery', category: 'Resume', href: '/template', icon: LayoutGrid, desc: '10 verified enterprise formats' },
-  { name: 'Resume Builder', category: 'Resume', href: '/resume', icon: FileText, desc: '3-panel document canvas & AI rewrites' },
-  { name: 'Resume Builder', category: 'Resume', href: '/resume', icon: FileEdit, desc: 'Enter your content, pick a layout, export' },
-  { name: 'ATS 1-Pass Auto-Gen', category: 'Intelligence', href: '/ats', icon: FileCheck2, desc: 'Synthesize resume from JD in one pass' },
-  { name: 'Upload & Parse Resume', category: 'Quick Action', href: '/resumes/upload', icon: UploadCloud, desc: 'Extract in-memory 0-egress signals' },
-  { name: 'Live Mock Interview', category: 'Interview', href: '/interview', icon: Mic, desc: 'Recruiter speech & STAR probes' },
-  { name: 'New Interview Setup', category: 'Interview', href: '/interview/new', icon: Zap, desc: 'Customize role & question count' },
-  { name: 'Analytical Reports', category: 'Analytics', href: '/report', icon: BarChart3, desc: 'ATS sub-scores & radar charts' },
-  { name: 'Artifacts & File History', category: 'Library', href: '/history', icon: History, desc: 'Manage created documents & exports' },
-  { name: 'Account & AI Settings', category: 'Configuration', href: '/settings', icon: Settings, desc: 'Gemini Cloud vs Local LM Studio' },
+  { name: 'Home / Dashboard', category: 'Navigation', href: '/dashboard', icon: LayoutDashboard, desc: 'Conversational assistant, recent records & workspace status' },
+  { name: 'Resume Builder', category: 'Resume', href: '/resume', icon: FileText, desc: 'Real-time resume editor, layout selector & print PDF export' },
+  { name: 'Templates Gallery', category: 'Resume', href: '/template', icon: LayoutGrid, desc: 'Explore AI resume template designs & prompt-to-template' },
+  { name: 'Upload & Parse Resume', category: 'Resume', href: '/resumes/upload', icon: UploadCloud, desc: 'Upload PDF and extract sections with PyMuPDF' },
+  { name: 'ATS 1-Pass Analysis', category: 'ATS Intelligence', href: '/ats', icon: FileCheck2, desc: '1-pass deterministic scoring & local gap analysis' },
+  { name: 'Mock Interview Practice', category: 'Interview', href: '/interview', icon: Mic, desc: 'Practice technical & STAR behavioral sessions' },
+  { name: 'New Interview Session', category: 'Interview', href: '/interview/new', icon: Zap, desc: 'Start tailored practice for your target role' },
+  { name: 'Performance Reports', category: 'Analytics', href: '/report', icon: BarChart3, desc: 'ATS alignment & interview radar charts' },
+  { name: 'Resume File History', category: 'Library', href: '/history', icon: History, desc: 'All saved resumes, versions & export drafts' },
+  { name: 'Settings & Privacy', category: 'Configuration', href: '/settings', icon: Settings, desc: 'Profile details, AI engine preference & local storage' },
 ];
 
 export function CommandPaletteModal({ isOpen, onClose }: CommandPaletteModalProps) {

@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { AppShell } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
@@ -18,7 +19,7 @@ import { Separator } from '@/components/ui/Separator';
 import { ResumePreview } from '@/components/templates/ResumePreview';
 import { buildPalette } from '@/lib/color/engine';
 import { createResume } from '@/lib/api/resumes';
-import { Download, Save, Gauge } from 'lucide-react';
+import { Download, Save, Gauge, UploadCloud, LayoutGrid } from 'lucide-react';
 import type { ResumeContent } from '@/types/templates';
 import { BUILDER_TEMPLATES } from '@/lib/builderTemplates';
 
@@ -180,7 +181,17 @@ export default function ResumePage() {
           { label: 'Resume Builder' },
         ]}
         actionButton={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Link href="/resumes/upload" className="hidden sm:inline-flex">
+              <Button variant="ghost" size="sm" icon={<UploadCloud className="w-3.5 h-3.5" />}>
+                Upload
+              </Button>
+            </Link>
+            <Link href="/template" className="hidden sm:inline-flex">
+              <Button variant="ghost" size="sm" icon={<LayoutGrid className="w-3.5 h-3.5" />}>
+                Templates
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" onClick={handleSave} disabled={saveState === 'saving'}>
               <Save className="w-3.5 h-3.5" />
               <span>{saveState === 'saving' ? 'Saving...' : 'Save Draft'}</span>
