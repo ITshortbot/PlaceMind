@@ -49,7 +49,13 @@ export interface AnswerFeedback {
 }
 
 export interface AnswerResponse {
-  feedback: AnswerFeedback;
+  // Conversational contract: no per-answer scorecard. feedback stays null
+  // during the session; full heuristic feedback lives in the end-of-session
+  // report (getInterviewReport). `acknowledgment` is the interviewer's short
+  // reply; a gap in the answer returns next_question with category
+  // 'follow-up' (same order as the planned question it probes).
+  feedback: AnswerFeedback | null;
+  acknowledgment: string;
   progress: string;
   next_question: PlannedQuestion | null;
   completed: boolean;

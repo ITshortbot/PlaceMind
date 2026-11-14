@@ -70,7 +70,8 @@ class FeedbackOut(BaseModel):
 
 
 class AnswerResponse(BaseModel):
-    feedback: FeedbackOut
+    feedback: Optional[FeedbackOut] = None  # deferred to the end-of-session report
+    acknowledgment: str = ""  # interviewer's short conversational reply
     progress: str
     next_question: Optional[PlannedQuestionOut]
     completed: bool

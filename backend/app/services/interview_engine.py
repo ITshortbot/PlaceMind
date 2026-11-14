@@ -176,6 +176,72 @@ def generate_plan(
     return plan
 
 
+# ---------------------------------------------------------------------------
+# Conversational follow-ups (deterministic, no LLM). The interview reads as a
+# conversation: the interviewer listens, asks one targeted follow-up when an
+# answer leaves a gap, and only then moves on. Rich answers skip the probe so
+# the conversation keeps moving.
+# ---------------------------------------------------------------------------
+
+_FOLLOWUP_EXAMPLE = (
+    "Can you walk me through one concrete example? Set the scene: what was "
+    "happening, and what did you do first?"
+)
+_FOLLOWUP_METRIC = (
+    "What was the measurable result? Share any numbers, percentages or scale "
+    "that show the impact."
+)
+_FOLLOWUP_OWNERSHIP = (
+    "What was your specific role in that - what did you personally own versus "
+    "the rest of the team?"
+)
+_FOLLOWUP_DEEPEN = {
+    "behavioral": "How did the other people involved react, and what did you take away from it?",
+    "technical": "What trade-offs did you consider, and why did you land on that approach?",
+    "situational": "What would you do differently if that situation came up again?",
+    "resume_deep_dive": "If you rebuilt that today, what would you change first?",
+    "jd_alignment": "How would you apply that same approach in this role?",
+    "jd_gap": "How would you show progress on that in your first 30 days?",
+}
+
+
+def generate_follow_up(category: str, answer: str) -> Optional[str]:
+    """One targeted follow-up probe, or None when the answer is already rich.
+
+    Priority: too short -> concrete example; no numbers -> measurable result;
+    no ownership verbs -> personal role; otherwise a category-deepening probe.
+    """
+    text = (answer or "").strip()
+    lowered = text.lower()
+    words = re.findall(r"[a-zA-Z']+", lowered)
+    numbers = re.findall(r"\d+(?:\.\d+)?%?", text)
+    action_hits = [v for v in ACTION_VERBS if re.search(rf"\b{re.escape(v)}\b", lowered)]
+    star_hits = [name for name, markers in STAR_MARKERS.items() if any(m in lowered for m in markers)]
+    if len(words) >= 40 and len(numbers) >= 2 and len(action_hits) >= 2 and len(star_hits) >= 2:
+        return None
+    if len(words) < 40:
+        return _FOLLOWUP_EXAMPLE
+    if not numbers:
+        return _FOLLOWUP_METRIC
+    if not action_hits:
+        return _FOLLOWUP_OWNERSHIP
+    return _FOLLOWUP_DEEPEN.get(category, _FOLLOWUP_DEEPEN["behavioral"])
+
+
+def acknowledge_answer(answer: str) -> str:
+    """Short interviewer-style acknowledgment citing one concrete signal."""
+    text = answer or ""
+    numbers = re.findall(r"\d+(?:\.\d+)?%?", text)
+    action_hits = sorted({v for v in ACTION_VERBS if re.search(rf"\b{re.escape(v)}\b", text.lower())})
+    if numbers and action_hits:
+        return f"Got it - noted that you {action_hits[0]}, and the {numbers[0]} result."
+    if numbers:
+        return f"Got it - the {numbers[0]} figure helps make that concrete."
+    if action_hits:
+        return f"Got it - noted that you {action_hits[0]}."
+    return "Got it, thanks."
+
+
 def evaluate_answer(question: PlannedQuestion | str, answer: str) -> AnswerFeedback:
     text = (answer or "").strip()
     words = re.findall(r"[a-zA-Z']+", text.lower())

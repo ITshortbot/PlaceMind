@@ -26,7 +26,13 @@ from app.schemas.interviews import (
     SessionSummaryOut,
     TurnOut,
 )
-from app.services.interview_engine import build_report, evaluate_answer, generate_plan
+from app.services.interview_engine import (
+    acknowledge_answer,
+    build_report,
+    evaluate_answer,
+    generate_follow_up,
+    generate_plan,
+)
 
 router = APIRouter(prefix="/interviews", tags=["interviews"])
 
@@ -52,6 +58,26 @@ async def _turns(session_id: UUID, db: AsyncSession) -> list[InterviewTurn]:
 
 def _next_unanswered(turns: list[InterviewTurn]) -> InterviewTurn | None:
     return next((t for t in turns if t.answer_text is None), None)
+
+
+def _answered_planned(turns: list[InterviewTurn]) -> int:
+    """Planned questions fully answered; a pending follow-up keeps its parent open."""
+    pending_followups = {t.order for t in turns if t.category == "follow-up" and t.answer_text is None}
+    return sum(
+        1
+        for t in turns
+        if t.category != "follow-up" and t.answer_text is not None and t.order not in pending_followups
+    )
+
+
+def _question_out_for(turn: InterviewTurn, planned: dict) -> PlannedQuestionOut:
+    """Planned questions come from the session plan; follow-up turns carry
+    their own prompt (category 'follow-up', same order as their parent)."""
+    if turn.category == "follow-up":
+        return PlannedQuestionOut(
+            order=turn.order, category="follow-up", prompt=turn.question_text, focus=turn.focus or ""
+        )
+    return _planned_out(planned[turn.order])
 
 
 def _turn_out(t: InterviewTurn) -> TurnOut:
@@ -145,7 +171,7 @@ async def get_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
     session = await _load_session(session_id, db)
     turns = await _turns(session_id, db)
     nxt = _next_unanswered(turns)
-    answered = sum(1 for t in turns if t.answer_text is not None)
+    answered = _answered_planned(turns)
     planned = {q["order"]: q for q in session.planned_questions}
     return SessionOut(
         session_id=session.id,
@@ -154,7 +180,7 @@ async def get_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
         interview_type=session.interview_type,
         question_count=session.question_count,
         status=session.status,
-        current_question=_planned_out(planned[nxt.order]) if nxt else None,
+        current_question=_question_out_for(nxt, planned) if nxt else None,
         answered=answered,
         turns=[_turn_out(t) for t in turns],
     )
@@ -180,6 +206,22 @@ async def answer_current(session_id: UUID, payload: AnswerRequest, db: AsyncSess
         "signals": fb.signals,
     }
     current.answered_at = datetime.now(timezone.utc)
+
+    # Conversational flow: a planned answer that leaves a gap earns one
+    # targeted follow-up before moving on. The score is stored silently and
+    # surfaced in the end-of-session report, not as a per-answer scorecard.
+    if current.category != "follow-up":
+        follow_up_text = generate_follow_up(current.category, payload.answer)
+        if follow_up_text:
+            db.add(
+                InterviewTurn(
+                    session_id=session.id,
+                    order=current.order,
+                    category="follow-up",
+                    question_text=follow_up_text,
+                    focus=current.focus,
+                )
+            )
     await db.flush()
 
     turns = await _turns(session_id, db)
@@ -189,12 +231,18 @@ async def answer_current(session_id: UUID, payload: AnswerRequest, db: AsyncSess
         session.status = "completed"
         await db.flush()
 
-    answered = sum(1 for t in turns if t.answer_text is not None)
+    answered = _answered_planned(turns)
     planned = {q["order"]: q for q in session.planned_questions}
+    acknowledgment = (
+        "That completes the set - your full practice report is ready."
+        if completed
+        else acknowledge_answer(payload.answer)
+    )
     return AnswerResponse(
-        feedback=FeedbackOut(score=fb.score, strengths=fb.strengths, improvements=fb.improvements, signals=fb.signals),
+        feedback=None,
+        acknowledgment=acknowledgment,
         progress=f"{answered}/{session.question_count}",
-        next_question=_planned_out(planned[nxt.order]) if nxt else None,
+        next_question=_question_out_for(nxt, planned) if nxt else None,
         completed=completed,
     )
 
