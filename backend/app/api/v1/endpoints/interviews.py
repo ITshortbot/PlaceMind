@@ -196,6 +196,20 @@ async def answer_current(session_id: UUID, payload: AnswerRequest, db: AsyncSess
     if current is None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No unanswered question remains.")
 
+    if payload.question_category is not None and payload.question_category != current.category:
+        # Stale retry: this answer was already consumed and the session moved
+        # on. Replay the current state idempotently instead of consuming the
+        # answer against the wrong turn. The acknowledgment is deterministic.
+        answered = _answered_planned(turns)
+        planned = {q["order"]: q for q in session.planned_questions}
+        return AnswerResponse(
+            feedback=None,
+            acknowledgment=acknowledge_answer(payload.answer),
+            progress=f"{answered}/{session.question_count}",
+            next_question=_question_out_for(current, planned),
+            completed=False,
+        )
+
     fb = evaluate_answer(current.question_text, payload.answer)
     current.answer_text = payload.answer.strip()
     current.score = fb.score

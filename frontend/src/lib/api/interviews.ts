@@ -128,10 +128,17 @@ export function listInterviewSessions(): Promise<SessionSummary[]> {
   return request<SessionSummary[]>('/api/v1/interviews/sessions');
 }
 
-export function answerInterviewQuestion(sessionId: string, answer: string): Promise<AnswerResponse> {
+export function answerInterviewQuestion(
+  sessionId: string,
+  answer: string,
+  // Idempotency guard: pass the category of the question being answered
+  // (from current_question/next_question). If the session already moved on,
+  // the server replays state instead of consuming a retry against the wrong turn.
+  questionCategory?: string,
+): Promise<AnswerResponse> {
   return request<AnswerResponse>(`/api/v1/interviews/sessions/${sessionId}/answer`, {
     method: 'POST',
-    body: JSON.stringify({ answer }),
+    body: JSON.stringify(questionCategory ? { answer, question_category: questionCategory } : { answer }),
   });
 }
 

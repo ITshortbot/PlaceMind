@@ -195,3 +195,58 @@ async def test_question_count_validation(client):
         json={"target_role": "Backend Engineer", "question_count": 99},
     )
     assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_duplicate_answer_retry_lands_on_pending_follow_up(client):
+    """Characterize retry behavior: a double-submitted answer is applied to the
+    pending follow-up turn (no crash, progress/report integrity preserved)."""
+    sid = await _create(client)
+    res = await client.post(f"/api/v1/interviews/sessions/{sid}/answer", json={"answer": THIN_ANSWER})
+    assert res.json()["next_question"]["category"] == "follow-up"
+
+    # client retry of the SAME answer text (e.g. double click / network retry)
+    res = await client.post(f"/api/v1/interviews/sessions/{sid}/answer", json={"answer": THIN_ANSWER})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    # the duplicate was consumed as the follow-up's answer; session stays coherent
+    assert body["progress"] == "1/4"
+    assert body["next_question"]["category"] != "follow-up"
+    assert body["next_question"]["order"] == 2
+
+    state = await client.get(f"/api/v1/interviews/sessions/{sid}")
+    assert state.json()["answered"] == 1
+    report = await client.get(f"/api/v1/interviews/sessions/{sid}/report")
+    assert report.status_code == 200
+    assert len(report.json()["per_question"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_retry_with_question_category_does_not_consume_follow_up(client):
+    """Idempotent retry: client sends the category of the question it answered;
+    once the session has moved to the follow-up, the retry replays state."""
+    sid = await _create(client)
+    state = await client.get(f"/api/v1/interviews/sessions/{sid}")
+    asked_category = state.json()["current_question"]["category"]
+
+    first = await client.post(
+        f"/api/v1/interviews/sessions/{sid}/answer",
+        json={"answer": THIN_ANSWER, "question_category": asked_category},
+    )
+    assert first.status_code == 200
+    assert first.json()["next_question"]["category"] == "follow-up"
+
+    retry = await client.post(
+        f"/api/v1/interviews/sessions/{sid}/answer",
+        json={"answer": THIN_ANSWER, "question_category": asked_category},
+    )
+    assert retry.status_code == 200, retry.text
+    body = retry.json()
+    # not consumed: follow-up still pending, progress unchanged
+    assert body["next_question"]["category"] == "follow-up"
+    assert body["progress"] == "0/4"
+
+    state = await client.get(f"/api/v1/interviews/sessions/{sid}")
+    assert state.json()["answered"] == 0
+    report = await client.get(f"/api/v1/interviews/sessions/{sid}/report")
+    assert len(report.json()["per_question"]) == 1  # only the real answer scored
