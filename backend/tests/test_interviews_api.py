@@ -189,6 +189,24 @@ async def test_list_sessions_and_404(client):
 
 
 @pytest.mark.asyncio
+async def test_list_sessions_counts_completed_planned_not_raw_turns(client):
+    """Dashboard summary must match progress semantics: a planned question with a
+    pending follow-up is not yet answered, and follow-up turns never inflate the
+    count beyond question_count (the '6/3 Questions Answered' bug)."""
+    sid = await _create(client)
+    await client.post(f"/api/v1/interviews/sessions/{sid}/answer", json={"answer": THIN_ANSWER})
+    sessions = (await client.get("/api/v1/interviews/sessions")).json()
+    s = next(x for x in sessions if x["session_id"] == sid)
+    assert s["answered"] == 0  # planned Q1 answered but its follow-up is pending
+    assert s["question_count"] == 4
+
+    await client.post(f"/api/v1/interviews/sessions/{sid}/answer", json={"answer": RICH_ANSWER})
+    sessions = (await client.get("/api/v1/interviews/sessions")).json()
+    s = next(x for x in sessions if x["session_id"] == sid)
+    assert s["answered"] == 1
+
+
+@pytest.mark.asyncio
 async def test_question_count_validation(client):
     res = await client.post(
         "/api/v1/interviews/sessions",

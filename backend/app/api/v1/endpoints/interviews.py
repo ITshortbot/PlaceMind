@@ -150,8 +150,8 @@ async def list_sessions(db: AsyncSession = Depends(get_db)):
     out: list[SessionSummaryOut] = []
     for s in sessions:
         turns = await _turns(s.id, db)
-        answered = [t for t in turns if t.answer_text is not None]
-        scores = [float(t.score) for t in answered if t.score is not None]
+        answered = _answered_planned(turns)
+        scores = [float(t.score) for t in turns if t.score is not None]
         out.append(
             SessionSummaryOut(
                 session_id=s.id,
@@ -159,7 +159,7 @@ async def list_sessions(db: AsyncSession = Depends(get_db)):
                 company=s.company,
                 status=s.status,
                 question_count=s.question_count,
-                answered=len(answered),
+                answered=answered,
                 average_score=round(sum(scores) / len(scores), 1) if scores else None,
                 created_at=s.created_at.isoformat() if s.created_at else "",
             )
