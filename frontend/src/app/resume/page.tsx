@@ -189,6 +189,7 @@ export default function ResumePage() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [missingFacts, setMissingFacts] = useState<string[]>([]);
+  const [mobileTab, setMobileTab] = useState<'editor' | 'preview' | 'templates'>('editor');
   const [showUnsavedNotice, setShowUnsavedNotice] = useState<boolean>(false);
   const [clearedSections, setClearedSections] = useState<Set<string>>(new Set());
 
@@ -1144,10 +1145,49 @@ export default function ResumePage() {
           </div>
         )}
 
+        {/* Mobile View Selector: switches between Editor, Preview, and Templates on screens < lg */}
+        <div className="lg:hidden flex items-center justify-around px-4 py-2 bg-white/90 dark:bg-[#121217]/95 border-b border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-black/[0.05] dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.08] w-full max-w-sm justify-center">
+            <button
+              type="button"
+              onClick={() => setMobileTab('editor')}
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center ${
+                mobileTab === 'editor'
+                  ? 'bg-white dark:bg-[#202028] text-[#0A0A0C] dark:text-white shadow-xs'
+                  : 'text-[#6B7280] hover:text-[#0A0A0C] dark:hover:text-white'
+              }`}
+            >
+              Content Editor
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('preview')}
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center ${
+                mobileTab === 'preview'
+                  ? 'bg-white dark:bg-[#202028] text-[#0A0A0C] dark:text-white shadow-xs'
+                  : 'text-[#6B7280] hover:text-[#0A0A0C] dark:hover:text-white'
+              }`}
+            >
+              A4 Preview
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('templates')}
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center ${
+                mobileTab === 'templates'
+                  ? 'bg-white dark:bg-[#202028] text-[#0A0A0C] dark:text-white shadow-xs'
+                  : 'text-[#6B7280] hover:text-[#0A0A0C] dark:hover:text-white'
+              }`}
+            >
+              Templates
+            </button>
+          </div>
+        </div>
+
         {/* 3-Column Workspace: Fills exactly remaining height without whole-window scroll */}
         <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
           {/* LEFT COLUMN: your real content */}
-          <aside className="w-full lg:w-80 p-4 sm:p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-r border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print pb-28">
+          <aside className={`w-full lg:w-80 p-4 sm:p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-r border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print pb-36 ${mobileTab === 'editor' ? 'flex-1' : 'hidden lg:block'}`}>
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1E] dark:text-white">
               Your Information
             </h3>
@@ -1529,10 +1569,13 @@ export default function ResumePage() {
                 </div>
               ))}
             </div>
+
+            {/* Dock clearance spacer: ensures the last education field and add buttons are fully above the floating capsule */}
+            <div className="h-28 sm:h-36 flex-shrink-0" aria-hidden="true" />
           </aside>
 
           {/* CENTER COLUMN: live render of YOUR content in the selected layout */}
-          <main className="flex-1 p-4 lg:p-6 bg-black/[0.03] dark:bg-black/40 overflow-y-auto flex flex-col items-center justify-start pb-28">
+          <main className={`flex-1 p-4 lg:p-6 bg-black/[0.03] dark:bg-black/40 overflow-y-auto flex flex-col items-center justify-start pb-36 print:flex print:p-0 print:m-0 print:overflow-visible print:bg-white ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex'}`}>
             {draft.name ||
             draft.summary ||
             draft.role ||
@@ -1558,10 +1601,13 @@ export default function ResumePage() {
                 </p>
               </div>
             )}
+
+            {/* Dock clearance spacer: ensures the bottom of the A4 preview sheet is completely visible above the floating capsule */}
+            <div className="h-28 sm:h-36 flex-shrink-0" aria-hidden="true" />
           </main>
 
           {/* RIGHT COLUMN: template picker (renders, not thumbnails) */}
-          <aside className="w-full lg:w-72 p-4 sm:p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-l border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print pb-28">
+          <aside className={`w-full lg:w-72 p-4 sm:p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-l border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print pb-36 ${mobileTab === 'templates' ? 'flex-1' : 'hidden lg:block'}`}>
             <div className="space-y-2">
               <Label>Template Layout</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -1588,6 +1634,9 @@ export default function ResumePage() {
                 resume against a job description.
               </p>
             </div>
+
+            {/* Dock clearance spacer: ensures all template choices and notes are fully above the floating capsule */}
+            <div className="h-28 sm:h-36 flex-shrink-0" aria-hidden="true" />
           </aside>
         </div>
       </div>

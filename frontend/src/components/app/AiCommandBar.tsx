@@ -49,6 +49,13 @@ export interface AiCommandBarProps {
   } | null;
   onActionClick?: (target: string) => void;
   onCloseResponse?: () => void;
+
+  // Controlled composer contract (used by /dashboard or custom hosts)
+  value?: string;
+  onChange?: (val: string) => void;
+  onSubmit?: (message: string) => void | Promise<void>;
+  isSending?: boolean;
+  hideFloatingResponse?: boolean;
 }
 
 function getPageLabel(pathname: string): string {
@@ -68,13 +75,23 @@ export function AiCommandBar({
   response,
   onActionClick,
   onCloseResponse,
+  value,
+  onChange,
+  onSubmit,
+  isSending: isSendingProp,
+  hideFloatingResponse = false,
 }: AiCommandBarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const isControlled = value !== undefined;
   const [input, setInput] = useState('');
+  const currentInput = isControlled ? value : input;
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const currentSending = isSendingProp ?? isSending;
+
   const [isFocused, setIsFocused] = useState(false);
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -96,8 +113,8 @@ export function AiCommandBar({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || isProcessing || isSending) return;
+    const trimmed = currentInput.trim();
+    if (!trimmed || isProcessing || currentSending) return;
 
     // Backward-compatibility: hand off template styling requests to Template Studio
     const isTemplateHandoff =
@@ -110,9 +127,19 @@ export function AiCommandBar({
       onExecute(trimmed);
       setTimeout(() => {
         setIsProcessing(false);
-        setInput('');
+        if (isControlled) {
+          onChange?.('');
+        } else {
+          setInput('');
+        }
         setTimeout(() => setLastAction(null), 1500);
       }, 400);
+      return;
+    }
+
+    // Host controlled submission (e.g. DashboardPage main conversation)
+    if (onSubmit) {
+      onSubmit(trimmed);
       return;
     }
 
@@ -170,7 +197,11 @@ export function AiCommandBar({
 
   const handleToolClick = (toolName: string, presetText: string) => {
     setActiveTool(toolName);
-    setInput(presetText);
+    if (isControlled) {
+      onChange?.(presetText);
+    } else {
+      setInput(presetText);
+    }
     setTimeout(() => setActiveTool(null), 1500);
   };
 
@@ -193,7 +224,11 @@ export function AiCommandBar({
     if (act.kind === 'prefill') {
       const text = (act.payload?.text as string) || '';
       if (text) {
-        setInput(text);
+        if (isControlled) {
+          onChange?.(text);
+        } else {
+          setInput(text);
+        }
       }
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
@@ -255,7 +290,7 @@ export function AiCommandBar({
     <div className="fixed bottom-20 md:bottom-3 sm:bottom-4 inset-x-0 md:left-20 lg:left-24 px-2 sm:px-4 md:px-8 z-30 pointer-events-none select-none no-print">
       <div className="max-w-4xl mx-auto pointer-events-auto relative">
         {/* Chat Error Notice */}
-        {chatError && (
+        {chatError && !hideFloatingResponse && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -277,12 +312,12 @@ export function AiCommandBar({
         )}
 
         {/* ATS Scorecard Modal / Panel */}
-        {atsReport && (
+        {atsReport && !hideFloatingResponse && (
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            className="mb-2 p-3 sm:p-4 rounded-2xl bg-[#0A0A0C]/95 dark:bg-[#121217]/95 border border-[#FACC15]/40 text-white shadow-2xl backdrop-blur-3xl text-xs space-y-3 max-w-full"
+            className="mb-2 p-3 sm:p-4 rounded-2xl bg-[#0A0A0C]/95 dark:bg-[#121217]/95 border border-[#FACC15]/40 text-white shadow-2xl backdrop-blur-3xl text-xs space-y-3 max-w-full max-h-[min(420px,50vh)] overflow-y-auto"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -336,12 +371,12 @@ export function AiCommandBar({
         )}
 
         {/* Assistant Response Bubble (Page-aware actions dock) */}
-        {activeResponse && !atsReport && (
+        {activeResponse && !atsReport && !hideFloatingResponse && (
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            className="mb-2 p-3 sm:p-4 rounded-2xl bg-[#0A0A0C]/95 dark:bg-[#121217]/95 border border-[#FACC15]/40 text-white shadow-2xl backdrop-blur-3xl text-xs space-y-2.5 max-w-full"
+            className="mb-2 p-3 sm:p-4 rounded-2xl bg-[#0A0A0C]/95 dark:bg-[#121217]/95 border border-[#FACC15]/40 text-white shadow-2xl backdrop-blur-3xl text-xs space-y-2.5 max-w-full max-h-[min(420px,50vh)] overflow-y-auto"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-[#FACC15] font-black text-[11px]">
@@ -464,12 +499,19 @@ export function AiCommandBar({
             {/* Text Input */}
             <input
               type="text"
-              value={input}
+              value={currentInput}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                if (isControlled) {
+                  onChange?.(e.target.value);
+                } else {
+                  setInput(e.target.value);
+                }
+              }}
+              disabled={currentSending}
               placeholder={placeholder}
-              className="flex-1 bg-transparent border-none text-xs sm:text-sm font-semibold text-white placeholder:text-white/40 focus:outline-none min-w-0"
+              className="flex-1 bg-transparent border-none text-xs sm:text-sm font-semibold text-white placeholder:text-white/40 focus:outline-none min-w-0 disabled:opacity-60"
             />
 
             {/* Quick Status Pill */}
@@ -497,16 +539,16 @@ export function AiCommandBar({
             {/* 2. Execute / Send Trigger */}
             <button
               type="submit"
-              disabled={!input.trim() || isProcessing || isSending}
+              disabled={!currentInput.trim() || isProcessing || currentSending}
               className={`p-1.5 sm:p-2 rounded-full transition-all flex items-center justify-center ${
-                input.trim() && !isProcessing && !isSending
+                currentInput.trim() && !isProcessing && !currentSending
                   ? 'bg-[#FACC15] text-[#0A0A0C] font-black shadow-md shadow-[#FACC15]/30 active:scale-95 cursor-pointer'
                   : 'text-white/30 cursor-not-allowed'
               }`}
               title="Run AI Command"
               aria-label="Run Prompt"
             >
-              {isSending ? (
+              {currentSending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0A0A0C]" />
               ) : (
                 <Send className="w-3.5 h-3.5" />

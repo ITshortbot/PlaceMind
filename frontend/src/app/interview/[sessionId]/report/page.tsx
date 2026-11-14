@@ -69,7 +69,7 @@ export default function InterviewReportPage() {
         }
       />
 
-      <main className="p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-6">
+      <main className="p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-6 pb-36 sm:pb-40">
         {error && (
           <div className="flex items-center gap-2 p-4 rounded-2xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-xs text-[#DC2626] dark:text-[#F87171] font-semibold">
             <AlertTriangle className="w-4 h-4" /> {error}

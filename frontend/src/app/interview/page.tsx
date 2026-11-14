@@ -58,7 +58,7 @@ export default function InterviewTab() {
         }
       />
 
-      <main className="p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-6">
+      <main className="p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-6 pb-36 sm:pb-40">
         <div className="space-y-1">
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1E] dark:text-white tracking-tight flex items-center gap-2">
             <Mic className="w-5 h-5 text-[#6C5CE7]" /> Mock Interview Practice

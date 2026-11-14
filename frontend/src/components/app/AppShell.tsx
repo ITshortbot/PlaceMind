@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { FloatingNavBar } from '@/components/app/FloatingNavBar';
-import { AiCommandBar } from '@/components/app/AiCommandBar';
+import { AiCommandBar, type AiCommandBarProps } from '@/components/app/AiCommandBar';
 import { DynamicBackground } from '@/components/ui/DynamicBackground';
 import {
   LayoutDashboard,
@@ -24,6 +24,7 @@ interface AppShellProps {
   children: React.ReactNode;
   hideSidebar?: boolean;
   showAiBar?: boolean;
+  aiBarProps?: Partial<AiCommandBarProps>;
 }
 
 const MOBILE_NAV_ITEMS = [
@@ -36,7 +37,7 @@ const MOBILE_NAV_ITEMS = [
 
 export const AI_PROMPT_HANDOFF_KEY = 'placemind.pendingPrompt';
 
-export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellProps) {
+export function AppShell({ children, hideSidebar = false, showAiBar, aiBarProps }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -55,7 +56,7 @@ export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellP
   const isWorkingTab =
     showAiBar !== undefined
       ? showAiBar
-      : ['/resume', '/ats', '/interview'].some(
+      : ['/dashboard', '/resume', '/ats', '/interview'].some(
           (route) => pathname === route || pathname.startsWith(route + '/')
         );
 
@@ -72,7 +73,7 @@ export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellP
         {children}
 
         {/* Persistent Bottom AI Command Bar */}
-        {isWorkingTab && <AiCommandBar onExecute={handleAiCommand} />}
+        {isWorkingTab && <AiCommandBar onExecute={handleAiCommand} {...aiBarProps} />}
       </div>
 
       {/* Mobile Bottom Tab Bar */}
