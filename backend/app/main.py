@@ -20,10 +20,12 @@ logger = logging.getLogger("placemind.main")
 
 async def initialize_database(engine, metadata):
     try:
+        if engine.url.get_backend_name() == "postgresql":
+            async with engine.begin() as conn:
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         async with engine.begin() as conn:
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             await conn.run_sync(metadata.create_all)
-        logger.info("Database tables and pgvector extension ensured.")
+        logger.info("Database tables ensured (pgvector extension on PostgreSQL only).")
     except Exception as exc:
         logger.warning("Database initialization failed; continuing without database features: %s", exc)
 
