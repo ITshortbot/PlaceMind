@@ -59,6 +59,7 @@ export default function ResumePage() {
   const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
+  const [missingFacts, setMissingFacts] = useState<string[]>([]);
 
   const set = <K extends keyof DraftState>(key: K, value: DraftState[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -68,20 +69,26 @@ export default function ResumePage() {
   React.useEffect(() => {
     try {
       const raw = window.localStorage.getItem('placemind.profile');
-      if (!raw) return;
-      const profile = JSON.parse(raw) as {
-        fullName?: string;
-        phone?: string;
-        college?: string;
-        specialization?: string;
-      };
-      setDraft((prev) => ({
-        ...prev,
-        name: prev.name || profile.fullName || '',
-        phone: prev.phone || profile.phone || '',
-        institution: prev.institution || profile.college || '',
-        degree: prev.degree || profile.specialization || '',
-      }));
+      if (raw) {
+        const profile = JSON.parse(raw) as {
+          fullName?: string;
+          phone?: string;
+          college?: string;
+          specialization?: string;
+        };
+        setDraft((prev) => ({
+          ...prev,
+          name: prev.name || profile.fullName || '',
+          phone: prev.phone || profile.phone || '',
+          institution: prev.institution || profile.college || '',
+          degree: prev.degree || profile.specialization || '',
+        }));
+      }
+
+      const rawMissing = window.localStorage.getItem('placemind.missingFacts');
+      if (rawMissing) {
+        setMissingFacts(JSON.parse(rawMissing));
+      }
     } catch {
       // storage unavailable - start empty
     }
@@ -213,6 +220,24 @@ export default function ResumePage() {
           }`}
         >
           {saveMessage}
+        </div>
+      )}
+
+      {missingFacts.length > 0 && (
+        <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-2xl bg-[#FACC15]/10 border border-[#FACC15]/30 text-xs font-semibold text-[#854D0E] dark:text-[#FACC15] flex items-center justify-between gap-3 no-print">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#FACC15] flex-shrink-0" />
+            <span>Missing facts from setup: {missingFacts.join(', ')}</span>
+          </div>
+          <button
+            onClick={() => {
+              setMissingFacts([]);
+              try { window.localStorage.removeItem('placemind.missingFacts'); } catch {}
+            }}
+            className="text-[11px] underline hover:opacity-80 flex-shrink-0"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 

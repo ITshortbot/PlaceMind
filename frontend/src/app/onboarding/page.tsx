@@ -34,12 +34,12 @@ import { Badge } from '@/components/ui/Badge';
 import { ResumePreview } from '@/components/templates/ResumePreview';
 import { BUILDER_TEMPLATES, SAMPLE_RESUME_CONTENT } from '@/lib/builderTemplates';
 import { buildPalette } from '@/lib/color/engine';
-
-
+import { bootstrapResume, OnboardingAnswers } from '@/lib/api/onboarding';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isBootstrapping, setIsBootstrapping] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -56,11 +56,53 @@ export default function OnboardingPage() {
     autoSelectTemplate: true,
   });
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < 4) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      router.push('/resume');
+      setIsBootstrapping(true);
+      // Persist profile locally for client-side forms
+      try {
+        window.localStorage.setItem(
+          'placemind.profile',
+          JSON.stringify({
+            fullName: formData.name.trim(),
+            phone: formData.phone.trim(),
+            college: formData.university.trim(),
+            specialization: formData.specialization.trim(),
+          })
+        );
+      } catch {
+        // localStorage not available
+      }
+
+      // Bootstrap backend resume record from real facts
+      try {
+        const answers: OnboardingAnswers = {
+          full_name: formData.name.trim() || 'Alex Morgan',
+          email: formData.email.trim() || undefined,
+          phone: formData.phone.trim() || undefined,
+          university: formData.university.trim() || undefined,
+          specialization: formData.specialization.trim() || undefined,
+          target_role: formData.targetRole.trim() || undefined,
+          target_company: formData.targetCompany.trim() || undefined,
+        };
+        const result = await bootstrapResume(answers);
+        if (result?.resume?.id) {
+          try {
+            window.localStorage.setItem('placemind.activeResumeId', result.resume.id);
+            if (result.missing && result.missing.length > 0) {
+              window.localStorage.setItem('placemind.missingFacts', JSON.stringify(result.missing));
+            }
+          } catch {
+            // ignore
+          }
+        }
+      } catch {
+        // Continue to builder even if bootstrap fails (offline/fallback mode)
+      } finally {
+        router.push('/resume');
+      }
     }
   };
 
