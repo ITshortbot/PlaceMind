@@ -60,11 +60,13 @@ class SessionSummaryOut(BaseModel):
 
 class AnswerRequest(BaseModel):
     answer: str = Field(..., min_length=1, max_length=10000)
-    # Idempotency guard: the category of the question the client believes it is
-    # answering (from next_question.category). When it does not match the
-    # current unanswered turn, the answer was already consumed (retry) and the
-    # server returns the current state without writing again.
-    question_category: Optional[str] = Field(default=None, max_length=50)
+    # Idempotency guard: the identity of the question the client believes it
+    # is answering (order + category from current_question / next_question).
+    # Categories repeat across turns, so order+category together identify the
+    # turn. On mismatch the answer was already consumed (stale retry) and the
+    # server replays the current state without writing again.
+    expected_order: Optional[int] = Field(default=None, ge=1)
+    expected_category: Optional[str] = Field(default=None, max_length=50)
 
 
 class FeedbackOut(BaseModel):

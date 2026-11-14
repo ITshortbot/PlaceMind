@@ -131,14 +131,21 @@ export function listInterviewSessions(): Promise<SessionSummary[]> {
 export function answerInterviewQuestion(
   sessionId: string,
   answer: string,
-  // Idempotency guard: pass the category of the question being answered
-  // (from current_question/next_question). If the session already moved on,
-  // the server replays state instead of consuming a retry against the wrong turn.
-  questionCategory?: string,
+  // Idempotency guard: pass the identity of the question being answered
+  // (order + category from current_question/next_question). If the session
+  // already moved on, the server replays state instead of consuming a retry
+  // against the wrong turn. Categories repeat across turns; order+category
+  // together identify the turn.
+  expectedTurn?: { order: number; category: string },
 ): Promise<AnswerResponse> {
+  const body: Record<string, unknown> = { answer };
+  if (expectedTurn) {
+    body.expected_order = expectedTurn.order;
+    body.expected_category = expectedTurn.category;
+  }
   return request<AnswerResponse>(`/api/v1/interviews/sessions/${sessionId}/answer`, {
     method: 'POST',
-    body: JSON.stringify(questionCategory ? { answer, question_category: questionCategory } : { answer }),
+    body: JSON.stringify(body),
   });
 }
 

@@ -222,31 +222,84 @@ async def test_duplicate_answer_retry_lands_on_pending_follow_up(client):
 
 
 @pytest.mark.asyncio
-async def test_retry_with_question_category_does_not_consume_follow_up(client):
-    """Idempotent retry: client sends the category of the question it answered;
-    once the session has moved to the follow-up, the retry replays state."""
+async def test_stale_retry_same_category_different_turn_replays(client):
+    """Category alone is not identity: after advancing to another planned
+    question of the SAME category, a delayed retry of the old answer must not
+    be consumed against the new turn."""
     sid = await _create(client)
     state = await client.get(f"/api/v1/interviews/sessions/{sid}")
-    asked_category = state.json()["current_question"]["category"]
+    q1 = state.json()["current_question"]
 
     first = await client.post(
         f"/api/v1/interviews/sessions/{sid}/answer",
-        json={"answer": THIN_ANSWER, "question_category": asked_category},
+        json={"answer": RICH_ANSWER, "expected_order": q1["order"], "expected_category": q1["category"]},
     )
     assert first.status_code == 200
-    assert first.json()["next_question"]["category"] == "follow-up"
+    nxt = first.json()["next_question"]
+    assert nxt["order"] != q1["order"] or nxt["category"] != q1["category"]  # rich answer moves on
+    before = await client.get(f"/api/v1/interviews/sessions/{sid}/report")
+    before_count = len(before.json()["per_question"])
 
+    # delayed retry of the Q1 answer, carrying Q1's identity, while the
+    # session now serves a different turn - possibly the same category
     retry = await client.post(
         f"/api/v1/interviews/sessions/{sid}/answer",
-        json={"answer": THIN_ANSWER, "question_category": asked_category},
+        json={"answer": RICH_ANSWER, "expected_order": q1["order"], "expected_category": q1["category"]},
     )
     assert retry.status_code == 200, retry.text
     body = retry.json()
-    # not consumed: follow-up still pending, progress unchanged
-    assert body["next_question"]["category"] == "follow-up"
-    assert body["progress"] == "0/4"
+    assert body["progress"] == "1/4"  # unchanged: nothing consumed
+    assert body["next_question"]["order"] == nxt["order"]
+    after = await client.get(f"/api/v1/interviews/sessions/{sid}/report")
+    assert len(after.json()["per_question"]) == before_count
+
+
+@pytest.mark.asyncio
+async def test_duplicate_concurrent_requests_consume_once(client):
+    """Two in-flight submissions of the same answer: exactly one is consumed,
+    exactly one follow-up turn is created."""
+    import asyncio as _asyncio
+
+    sid = await _create(client)
+    state = await client.get(f"/api/v1/interviews/sessions/{sid}")
+    q1 = state.json()["current_question"]
+    payload = {"answer": THIN_ANSWER, "expected_order": q1["order"], "expected_category": q1["category"]}
+
+    r1, r2 = await _asyncio.gather(
+        client.post(f"/api/v1/interviews/sessions/{sid}/answer", json=payload),
+        client.post(f"/api/v1/interviews/sessions/{sid}/answer", json=payload),
+    )
+    assert r1.status_code == 200 and r2.status_code == 200
+    bodies = sorted([r1.json(), r2.json()], key=lambda b: b["progress"])
+    assert bodies[0]["progress"] == "0/4"  # consumer: follow-up pending
+    assert bodies[1]["progress"] == "0/4"  # replay: same state, nothing extra consumed
 
     state = await client.get(f"/api/v1/interviews/sessions/{sid}")
-    assert state.json()["answered"] == 0
-    report = await client.get(f"/api/v1/interviews/sessions/{sid}/report")
-    assert len(report.json()["per_question"]) == 1  # only the real answer scored
+    turns = state.json()["turns"]
+    follow_ups = [t for t in turns if t["category"] == "follow-up"]
+    assert len(follow_ups) == 1
+    answered = [t for t in turns if t["answer_text"] is not None]
+    assert len(answered) == 1
+
+
+@pytest.mark.asyncio
+async def test_matching_identity_consumes_normally(client):
+    """A request whose expected identity matches the current turn is consumed,
+    even when the same answer text legitimately repeats."""
+    sid = await _create(client)
+    state = await client.get(f"/api/v1/interviews/sessions/{sid}")
+    q1 = state.json()["current_question"]
+    res = await client.post(
+        f"/api/v1/interviews/sessions/{sid}/answer",
+        json={"answer": THIN_ANSWER, "expected_order": q1["order"], "expected_category": q1["category"]},
+    )
+    assert res.status_code == 200
+    assert res.json()["next_question"]["category"] == "follow-up"
+
+    fu = res.json()["next_question"]
+    res = await client.post(
+        f"/api/v1/interviews/sessions/{sid}/answer",
+        json={"answer": THIN_ANSWER, "expected_order": fu["order"], "expected_category": "follow-up"},
+    )
+    assert res.status_code == 200
+    assert res.json()["progress"] == "1/4"  # same text, correct turn: consumed

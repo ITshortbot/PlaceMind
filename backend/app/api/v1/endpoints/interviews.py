@@ -6,6 +6,7 @@
 #   rule-based and every score is reproducible.
 # ============================================================================
 
+import asyncio
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -186,8 +187,19 @@ async def get_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
     )
 
 
+_ANSWER_LOCKS: dict[UUID, asyncio.Lock] = {}
+
+
 @router.post("/sessions/{session_id}/answer", response_model=AnswerResponse)
 async def answer_current(session_id: UUID, payload: AnswerRequest, db: AsyncSession = Depends(get_db)):
+    # Serialize concurrent submissions per session: a double-fired request must
+    # observe the state the first one left behind, not the state before it.
+    lock = _ANSWER_LOCKS.setdefault(session_id, asyncio.Lock())
+    async with lock:
+        return await _answer_locked(session_id, payload, db)
+
+
+async def _answer_locked(session_id: UUID, payload: AnswerRequest, db: AsyncSession) -> AnswerResponse:
     session = await _load_session(session_id, db)
     if session.status == "completed":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Session already completed. Start a new one.")
@@ -196,7 +208,11 @@ async def answer_current(session_id: UUID, payload: AnswerRequest, db: AsyncSess
     if current is None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No unanswered question remains.")
 
-    if payload.question_category is not None and payload.question_category != current.category:
+    stale = (
+        (payload.expected_order is not None and payload.expected_order != current.order)
+        or (payload.expected_category is not None and payload.expected_category != current.category)
+    )
+    if stale:
         # Stale retry: this answer was already consumed and the session moved
         # on. Replay the current state idempotently instead of consuming the
         # answer against the wrong turn. The acknowledgment is deterministic.
