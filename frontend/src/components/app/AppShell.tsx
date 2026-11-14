@@ -6,7 +6,7 @@
 //              Mobile Bottom Nav + Persistent AI Command Bar on Working Tabs)
 // ============================================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { FloatingNavBar } from '@/components/app/FloatingNavBar';
@@ -40,6 +40,16 @@ export const AI_PROMPT_HANDOFF_KEY = 'placemind.pendingPrompt';
 export function AppShell({ children, hideSidebar = false, showAiBar, aiBarProps }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
+  useEffect(() => {
+    const v = window.visualViewport;
+    if (!v) return;
+    const update = () => document.documentElement.style.setProperty('--keyboard-inset-bottom', `${Math.max(0, window.innerHeight - v.height - v.offsetTop)}px`);
+    v.addEventListener('resize', update);
+    v.addEventListener('scroll', update);
+    update();
+    return () => { v.removeEventListener('resize', update); v.removeEventListener('scroll', update); document.documentElement.style.removeProperty('--keyboard-inset-bottom'); };
+  }, []);
+
 
   // The bar's one real job: carry the typed prompt into the Template Studio,
   // which generates from it. No page-local fake responses.
@@ -69,8 +79,14 @@ export function AppShell({ children, hideSidebar = false, showAiBar, aiBarProps 
       {!hideSidebar && <FloatingNavBar />}
 
       {/* Main App Work Area */}
-      <div className={`flex-1 flex flex-col min-w-0 pb-16 md:pb-0 overflow-x-hidden relative z-10 ${!hideSidebar ? 'md:pl-20 lg:pl-24' : ''}`}>
-        {children}
+      <div className={`flex-1 flex flex-col min-w-0 ${['/dashboard', '/resume'].includes(pathname) ? '' : 'pb-16 md:pb-0'} overflow-x-hidden relative z-10 ${!hideSidebar ? 'md:pl-20 lg:pl-24' : ''}`}>
+        <style>{`
+:root { --dock-bottom: 12px; --dock-clearance: 92px; }
+@media (max-width: 767px) { :root { --dock-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); --dock-clearance: calc(144px + env(safe-area-inset-bottom, 0px)); } }
+.dock-scroll { padding-bottom: calc(var(--dock-clearance) + var(--keyboard-inset-bottom, 0px)); scroll-padding-bottom: calc(var(--dock-clearance) + var(--keyboard-inset-bottom, 0px)); }
+.dock-spacer { height: calc(var(--dock-clearance) + var(--keyboard-inset-bottom, 0px)); flex-shrink: 0; }
+@media print { .dock-spacer { display: none !important; } }
+`}</style>{children}
 
         {/* Persistent Bottom AI Command Bar */}
         {isWorkingTab && <AiCommandBar onExecute={handleAiCommand} {...aiBarProps} />}

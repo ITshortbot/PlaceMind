@@ -1187,7 +1187,7 @@ export default function ResumePage() {
         {/* 3-Column Workspace: Fills exactly remaining height without whole-window scroll */}
         <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
           {/* LEFT COLUMN: your real content */}
-          <aside className={`w-full lg:w-80 p-4 sm:p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-r border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print pb-36 ${mobileTab === 'editor' ? 'flex-1' : 'hidden lg:block'}`}>
+          <aside className={`w-full lg:w-80 p-4 sm:p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-r border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print dock-scroll ${mobileTab === 'editor' ? 'flex-1' : 'hidden lg:block'}`}>
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1E] dark:text-white">
               Your Information
             </h3>
@@ -1570,12 +1570,10 @@ export default function ResumePage() {
               ))}
             </div>
 
-            {/* Dock clearance spacer: ensures the last education field and add buttons are fully above the floating capsule */}
-            <div className="h-28 sm:h-36 flex-shrink-0" aria-hidden="true" />
           </aside>
 
           {/* CENTER COLUMN: live render of YOUR content in the selected layout */}
-          <main className={`flex-1 p-4 lg:p-6 bg-black/[0.03] dark:bg-black/40 overflow-y-auto flex flex-col items-center justify-start pb-36 print:flex print:p-0 print:m-0 print:overflow-visible print:bg-white ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex'}`}>
+          <main className={`flex-1 p-4 lg:p-6 bg-black/[0.03] dark:bg-black/40 overflow-y-auto flex flex-col items-center justify-start dock-scroll print:flex print:p-0 print:m-0 print:overflow-visible print:bg-white ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex'}`}>
             {draft.name ||
             draft.summary ||
             draft.role ||
@@ -1584,6 +1582,7 @@ export default function ResumePage() {
             (draft.additionalExperience && draft.additionalExperience.length > 0) ||
             draft.degree ? (
               <ResumePreview
+                className="w-full max-w-[500px] min-w-0 shrink-0"
                 style={selectedTemplate.style}
                 content={content}
                 palette={palette}
@@ -1602,12 +1601,10 @@ export default function ResumePage() {
               </div>
             )}
 
-            {/* Dock clearance spacer: ensures the bottom of the A4 preview sheet is completely visible above the floating capsule */}
-            <div className="h-28 sm:h-36 flex-shrink-0" aria-hidden="true" />
           </main>
 
           {/* RIGHT COLUMN: template picker (renders, not thumbnails) */}
-          <aside className={`w-full lg:w-72 p-4 sm:p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-l border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print pb-36 ${mobileTab === 'templates' ? 'flex-1' : 'hidden lg:block'}`}>
+          <aside className={`w-full lg:w-72 p-4 sm:p-5 space-y-4 overflow-y-auto bg-white/60 dark:bg-[#101015]/70 border-l border-black/[0.08] dark:border-white/[0.08] flex-shrink-0 no-print dock-scroll ${mobileTab === 'templates' ? 'flex-1' : 'hidden lg:block'}`}>
             <div className="space-y-2">
               <Label>Template Layout</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -1635,8 +1632,6 @@ export default function ResumePage() {
               </p>
             </div>
 
-            {/* Dock clearance spacer: ensures all template choices and notes are fully above the floating capsule */}
-            <div className="h-28 sm:h-36 flex-shrink-0" aria-hidden="true" />
           </aside>
         </div>
       </div>

@@ -287,7 +287,7 @@ export function AiCommandBar({
   const activeResponse = response || internalResponse;
 
   return (
-    <div className="fixed bottom-20 md:bottom-3 sm:bottom-4 inset-x-0 md:left-20 lg:left-24 px-2 sm:px-4 md:px-8 z-30 pointer-events-none select-none no-print">
+    <div style={{ bottom: 'calc(var(--dock-bottom, 12px) + var(--keyboard-inset-bottom, 0px))' }} className="fixed inset-x-0 md:left-20 lg:left-24 px-2 sm:px-4 md:px-8 z-30 pointer-events-none select-none no-print">
       <div className="max-w-4xl mx-auto pointer-events-auto relative">
         {/* Chat Error Notice */}
         {chatError && !hideFloatingResponse && (

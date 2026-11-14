@@ -107,29 +107,6 @@ export default function DashboardPage() {
     refreshData();
   }, [refreshData]);
 
-  // Mobile keyboard handling: ensure composer stays visible via visualViewport
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-    const vv = window.visualViewport;
-    const handler = () => {
-      // When the keyboard opens, the visual viewport height shrinks.
-      // We store a CSS variable the layout can react to.
-      const offsetBottom = window.innerHeight - vv.height - vv.offsetTop;
-      document.documentElement.style.setProperty(
-        '--keyboard-inset-bottom',
-        `${Math.max(0, offsetBottom)}px`
-      );
-    };
-    vv.addEventListener('resize', handler);
-    vv.addEventListener('scroll', handler);
-    handler();
-    return () => {
-      vv.removeEventListener('resize', handler);
-      vv.removeEventListener('scroll', handler);
-      document.documentElement.style.removeProperty('--keyboard-inset-bottom');
-    };
-  }, []);
-
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend ?? chatInput).trim();
     if (!text || isSending) return;
@@ -184,7 +161,7 @@ export default function DashboardPage() {
       ]);
     } finally {
       setIsSending(false);
-      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' }), 100);
     }
   };
 
@@ -559,9 +536,10 @@ export default function DashboardPage() {
                 <span>Thinking...</span>
               </div>
             )}
-            <div ref={chatBottomRef} />
+
             {/* Dock clearance spacer: ensures the conversation end is completely above the floating capsule */}
-            <div className="h-28 sm:h-32 flex-shrink-0" aria-hidden="true" />
+            <div className="dock-spacer" aria-hidden="true" />
+            <div ref={chatBottomRef} />
           </div>
         </div>
       </div>

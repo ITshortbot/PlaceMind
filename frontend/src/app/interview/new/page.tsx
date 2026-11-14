@@ -70,7 +70,7 @@ export default function InterviewSetupPage() {
         ]}
       />
 
-      <main className="p-4 sm:p-8 max-w-3xl mx-auto w-full space-y-8 pb-36 sm:pb-40">
+      <main className="p-4 sm:p-8 max-w-3xl mx-auto w-full space-y-8 dock-scroll">
         <div className="text-center max-w-xl mx-auto space-y-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/80 dark:bg-[#1C1C21]/90 border border-white/60 dark:border-white/10 text-xs font-semibold text-[#6C5CE7] dark:text-[#7D6FF0] shadow-sm">
             <Mic className="w-3.5 h-3.5" />

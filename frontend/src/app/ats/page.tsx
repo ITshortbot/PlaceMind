@@ -137,7 +137,7 @@ export default function AtsAutoGeneratePage() {
           }
         />
 
-        <main className="p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-8 pb-36 sm:pb-40">
+        <main className="p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-8 dock-scroll">
           {/* ── Overall Score Hero ── */}
           <Card className="p-6 sm:p-8 space-y-6 shadow-2xl border-2 border-black/[0.08] dark:border-white/[0.1] bg-white/90 dark:bg-[#121217]/90 backdrop-blur-2xl">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -303,7 +303,7 @@ export default function AtsAutoGeneratePage() {
         ]}
       />
 
-      <main className="p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-8 pb-36 sm:pb-40">
+      <main className="p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-8 dock-scroll">
         <div className="text-center max-w-xl mx-auto space-y-2">
           <Badge variant="accent" size="md" className="bg-[#FACC15] text-[#0A0A0C] border-none font-bold">
             <Wand2 className="w-3.5 h-3.5 mr-1" />
