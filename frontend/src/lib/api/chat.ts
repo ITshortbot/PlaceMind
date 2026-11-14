@@ -5,7 +5,8 @@
 //              Mirrors backend/app/schemas/chat.py; keep the two in sync.
 // ============================================================================
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+const backendUrl = () =>
+  (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 export interface PageContext {
   path: string;
@@ -44,13 +45,21 @@ export interface ChatResponse {
 }
 
 export async function sendChatMessage(req: ChatRequest): Promise<ChatResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/chat`, {
+  const res = await fetch(`${backendUrl()}/api/v1/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ history: [], ...req }),
   });
   if (!res.ok) {
-    throw new Error(`Chat request failed: ${res.status}`);
+    let detail = `Chat request failed (${res.status})`;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch {
+      /* keep default detail */
+    }
+    throw new Error(detail);
   }
   return (await res.json()) as ChatResponse;
 }
