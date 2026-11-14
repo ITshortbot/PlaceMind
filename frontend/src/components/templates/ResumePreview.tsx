@@ -289,10 +289,10 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
         </div>
       )}
 
-      {/* ─── Resume Document Sheet (A4 Dimensions) ─── */}
+      {/* ─── Resume Document Sheet (A4 Dimensions: 210mm x 297mm, ratio 1:1.414) ─── */}
       <div
         id="resume-preview-sheet"
-        className="w-full max-w-[210mm] min-h-[297mm] shadow-2xl rounded-sm transition-all overflow-hidden border border-black/5"
+        className="w-full max-w-[500px] min-h-[707px] aspect-[210/297] shadow-2xl rounded-sm transition-all border border-black/10 dark:border-white/10 select-text"
         style={{
           backgroundColor: palette.background,
           fontFamily: fontStack,

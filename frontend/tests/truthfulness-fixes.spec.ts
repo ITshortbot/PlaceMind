@@ -226,5 +226,45 @@ test.describe('UI Truthfulness Fixes Suite', () => {
       page.getByText('Missing facts from setup: Education dates, Skills, Experience')
     ).toBeVisible();
   });
+
+  test('Resume page is single-window without document scroll, shows bottom bar, and renders A4 preview format', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/resume');
+    await page.waitForLoadState('networkidle');
+
+    // Type a sample name to render the live preview sheet
+    await page.locator('input[placeholder="Your name"]').fill('Alex Morgan');
+    await page.waitForTimeout(300);
+
+    // Document itself must not scroll (100dvh layout)
+    const metrics = await page.evaluate(() => ({
+      scrollHeight: document.documentElement.scrollHeight,
+      clientHeight: document.documentElement.clientHeight,
+      scrollY: window.scrollY,
+    }));
+    expect(metrics.scrollHeight).toBe(metrics.clientHeight);
+    expect(metrics.scrollY).toBe(0);
+
+    // Bottom command bar is visible and positioned within the viewport
+    const barInput = page.locator('input[placeholder*="Describe the resume you want"]');
+    await expect(barInput).toBeVisible();
+    const barBox = await barInput.boundingBox();
+    expect(barBox).not.toBeNull();
+    expect(barBox!.y).toBeLessThan(900);
+    expect(barBox!.y).toBeGreaterThan(700);
+
+    // Resume preview sheet has authentic A4 format (ratio ~1:1.414, max width ~500px)
+    const sheet = page.locator('#resume-preview-sheet');
+    await expect(sheet).toBeVisible();
+    const sheetBox = await sheet.boundingBox();
+    expect(sheetBox).not.toBeNull();
+    expect(sheetBox!.width).toBeLessThanOrEqual(520);
+    expect(sheetBox!.height).toBeGreaterThanOrEqual(680);
+    const ratio = sheetBox!.height / sheetBox!.width;
+    expect(ratio).toBeGreaterThan(1.35);
+    expect(ratio).toBeLessThan(1.50);
+  });
 });
 

@@ -67,68 +67,69 @@ export default function ResumeEditorPage() {
 
   return (
     <AppShell>
-      <TopBar
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'History', href: '/history' },
-          { label: 'Resume Editor' },
-        ]}
-        actionButton={
-          <div className="flex items-center gap-2">
-            {resume && resume.latest_ats_score !== null && (
-              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-[#16A34A]/15 text-[#16A34A] dark:text-[#22C55E]">
-                Last analysis: {resume.latest_ats_score}%
-              </span>
-            )}
-            <Button
-              variant="primary"
-              size="sm"
-              icon={saveState === 'saved' ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-              onClick={onSave}
-              disabled={saveState === 'saving' || !resume}
-            >
-              {saveState === 'saving' ? 'Saving...' : saveState === 'saved' ? 'Saved' : 'Save Changes'}
-            </Button>
-          </div>
-        }
-      />
-
-      <main className="flex-1 flex flex-col lg:flex-row min-h-[calc(100vh-64px)]">
-        {loadError && (
-          <div className="p-6 text-sm text-[#EF4444]">{loadError}</div>
-        )}
-
-        {!resume && !loadError && (
-          <div className="p-6 text-sm text-[#8A8A92]">Loading resume...</div>
-        )}
-
-        {resume && (
-          <>
-            {/* Left Pane: rendered preview of the actual stored content */}
-            <div className="flex-1 p-6 lg:p-8 bg-black/[0.03] dark:bg-black/40 border-b lg:border-b-0 lg:border-r border-black/[0.08] dark:border-white/[0.08] overflow-y-auto">
-              <div className="w-full max-w-2xl mx-auto rounded-2xl shadow-2xl border border-black/15 dark:border-white/15 bg-white dark:bg-[#181820] p-8 space-y-4">
-                <div className="flex items-center gap-2 pb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
-                  <FileText className="w-4 h-4 text-[#8A8A92]" />
-                  <span className="text-xs font-bold text-[#1A1A1E] dark:text-white">{fileName}</span>
-                </div>
-                <p className="text-xs whitespace-pre-line text-[#1A1A1E] dark:text-[#E4E4E7] leading-relaxed">
-                  {rawText}
-                </p>
-                {sections.map((s, i) => (
-                  <div key={i}>
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-[#6C5CE7]">
-                      {s.section_type}
-                    </h4>
-                    <p className="text-xs whitespace-pre-line text-[#4A4A52] dark:text-[#A1A1AA] mt-1">
-                      {s.content}
-                    </p>
-                  </div>
-                ))}
-              </div>
+      <div className="h-[100dvh] flex flex-col overflow-hidden">
+        <TopBar
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'History', href: '/history' },
+            { label: 'Resume Editor' },
+          ]}
+          actionButton={
+            <div className="flex items-center gap-2">
+              {resume && resume.latest_ats_score !== null && (
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-[#16A34A]/15 text-[#16A34A] dark:text-[#22C55E]">
+                  Last analysis: {resume.latest_ats_score}%
+                </span>
+              )}
+              <Button
+                variant="primary"
+                size="sm"
+                icon={saveState === 'saved' ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                onClick={onSave}
+                disabled={saveState === 'saving' || !resume}
+              >
+                {saveState === 'saving' ? 'Saving...' : saveState === 'saved' ? 'Saved' : 'Save Changes'}
+              </Button>
             </div>
+          }
+        />
 
-            {/* Right Pane: real editing controls bound to the stored record */}
-            <div className="w-full lg:w-[480px] p-6 space-y-5 overflow-y-auto bg-white/70 dark:bg-[#121217]/90 backdrop-blur-xl">
+        <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+          {loadError && (
+            <div className="p-6 text-sm text-[#EF4444]">{loadError}</div>
+          )}
+
+          {!resume && !loadError && (
+            <div className="p-6 text-sm text-[#8A8A92]">Loading resume...</div>
+          )}
+
+          {resume && (
+            <>
+              {/* Left Pane: rendered preview of the actual stored content (A4 Format) */}
+              <div className="flex-1 p-4 lg:p-6 bg-black/[0.03] dark:bg-black/40 border-b lg:border-b-0 lg:border-r border-black/[0.08] dark:border-white/[0.08] overflow-y-auto flex flex-col items-center justify-start pb-28">
+                <div className="w-full max-w-[500px] rounded-2xl shadow-2xl border border-black/15 dark:border-white/15 bg-white dark:bg-[#181820] p-6 sm:p-8 space-y-4 aspect-[210/297] min-h-[707px]">
+                  <div className="flex items-center gap-2 pb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
+                    <FileText className="w-4 h-4 text-[#8A8A92]" />
+                    <span className="text-xs font-bold text-[#1A1A1E] dark:text-white">{fileName}</span>
+                  </div>
+                  <p className="text-xs whitespace-pre-line text-[#1A1A1E] dark:text-[#E4E4E7] leading-relaxed">
+                    {rawText}
+                  </p>
+                  {sections.map((s, i) => (
+                    <div key={i}>
+                      <h4 className="text-[10px] font-black uppercase tracking-wider text-[#6C5CE7]">
+                        {s.section_type}
+                      </h4>
+                      <p className="text-xs whitespace-pre-line text-[#4A4A52] dark:text-[#A1A1AA] mt-1">
+                        {s.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Pane: real editing controls bound to the stored record */}
+              <div className="w-full lg:w-[480px] p-5 sm:p-6 space-y-5 overflow-y-auto bg-white/70 dark:bg-[#121217]/90 backdrop-blur-xl pb-28">
               <div>
                 <h2 className="text-base font-bold text-[#1A1A1E] dark:text-white">Edit Resume</h2>
                 <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] mt-0.5">
@@ -212,6 +213,7 @@ export default function ResumeEditorPage() {
           </>
         )}
       </main>
+      </div>
     </AppShell>
   );
 }
