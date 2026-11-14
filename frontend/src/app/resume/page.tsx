@@ -54,6 +54,30 @@ const EMPTY_DRAFT: DraftState = {
   year: '',
 };
 
+function formatMissingFactLabel(key: string): string {
+  const KNOWN_LABELS: Record<string, string> = {
+    'education.institution': 'University / College',
+    'education.dates': 'Education dates',
+    'skills': 'Skills',
+    'experience': 'Experience',
+    'contact.email': 'Email',
+    'contact.phone': 'Phone',
+    'contact.name': 'Full name',
+    'full_name': 'Full name',
+    'objective': 'Target role / Objective',
+    'summary': 'Summary',
+  };
+
+  if (KNOWN_LABELS[key]) {
+    return KNOWN_LABELS[key];
+  }
+
+  return key
+    .replace(/[._]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
 export default function ResumePage() {
   const [selectedTemplate, setSelectedTemplate] = useState(BUILDER_TEMPLATES[0]);
   const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
@@ -311,7 +335,7 @@ export default function ResumePage() {
           { label: 'Resume Builder' },
         ]}
         actionButton={
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <Link href="/resumes/upload" className="hidden sm:inline-flex">
               <Button variant="ghost" size="sm" icon={<UploadCloud className="w-3.5 h-3.5" />}>
                 Upload
@@ -322,13 +346,28 @@ export default function ResumePage() {
                 Templates
               </Button>
             </Link>
-            <Button variant="outline" size="sm" onClick={handleSave} disabled={saveState === 'saving'}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSave}
+              disabled={saveState === 'saving'}
+              className="px-2 sm:px-3 text-xs flex-shrink-0"
+              aria-label="Save Draft"
+            >
               <Save className="w-3.5 h-3.5" />
-              <span>{saveState === 'saving' ? 'Saving...' : 'Save Draft'}</span>
+              <span className="hidden sm:inline">{saveState === 'saving' ? 'Saving...' : 'Save Draft'}</span>
+              <span aria-hidden="true" className="sm:hidden">{saveState === 'saving' ? 'Saving...' : 'Save'}</span>
             </Button>
-            <Button variant="default" size="sm" onClick={() => window.print()}>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => window.print()}
+              className="px-2 sm:px-3 text-xs flex-shrink-0"
+              aria-label="Export PDF"
+            >
               <Download className="w-3.5 h-3.5 text-[#0A0A0C]" />
-              <span>Export PDF</span>
+              <span className="hidden sm:inline">Export PDF</span>
+              <span aria-hidden="true" className="sm:hidden">Export</span>
             </Button>
           </div>
         }
@@ -371,7 +410,7 @@ export default function ResumePage() {
         <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-2xl bg-[#FACC15]/10 border border-[#FACC15]/30 text-xs font-semibold text-[#854D0E] dark:text-[#FACC15] flex items-center justify-between gap-3 no-print">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#FACC15] flex-shrink-0" />
-            <span>Missing facts from setup: {missingFacts.join(', ')}</span>
+            <span>Missing facts from setup: {missingFacts.map(formatMissingFactLabel).join(', ')}</span>
           </div>
           <button
             onClick={() => {

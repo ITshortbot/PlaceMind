@@ -50,6 +50,50 @@ interface TranscriptItem {
   isAcknowledgment?: boolean;
 }
 
+function buildTranscriptFromSession(s: InterviewSessionState): TranscriptItem[] {
+  const items: TranscriptItem[] = [];
+  // Include question and answer bubbles only for turns that were actually asked & answered
+  s.turns.forEach((t) => {
+    if (t.answer_text !== null) {
+      const isFollowUp = t.category === 'follow-up';
+      items.push({
+        id: `turn-q-${t.order}-${t.category}`,
+        sender: 'interviewer',
+        text: t.question_text,
+        category: t.category,
+        order: t.order,
+        focus: t.focus,
+        isFollowUp,
+      });
+      items.push({
+        id: `turn-a-${t.order}-${t.category}`,
+        sender: 'candidate',
+        text: t.answer_text,
+      });
+    }
+  });
+
+  // Append the current unanswered question exactly once if the session is not completed
+  if (s.status !== 'completed' && s.current_question) {
+    const cq = s.current_question;
+    const isFollowUp = cq.category === 'follow-up';
+    const last = items[items.length - 1];
+    if (!last || last.text !== cq.prompt) {
+      items.push({
+        id: `current-q-${cq.order}-${cq.category}`,
+        sender: 'interviewer',
+        text: cq.prompt,
+        category: cq.category,
+        order: cq.order,
+        focus: cq.focus,
+        isFollowUp,
+      });
+    }
+  }
+
+  return items;
+}
+
 export default function LiveInterviewSessionPage() {
   const params = useParams();
   const sessionId = params.sessionId as string;
@@ -74,49 +118,14 @@ export default function LiveInterviewSessionPage() {
       .then(async (s) => {
         if (cancelled) return;
         setSession(s);
-        setProgressLabel(`${s.answered}/${s.question_count}`);
-
-        // Build transcript from stored turns
-        const items: TranscriptItem[] = [];
-        s.turns.forEach((t) => {
-          const isFollowUp = t.category === 'follow-up';
-          items.push({
-            id: `turn-q-${t.order}-${t.category}`,
-            sender: 'interviewer',
-            text: t.question_text,
-            category: t.category,
-            order: t.order,
-            focus: t.focus,
-            isFollowUp,
-          });
-          if (t.answer_text !== null) {
-            items.push({
-              id: `turn-a-${t.order}-${t.category}`,
-              sender: 'candidate',
-              text: t.answer_text,
-            });
-          }
-        });
-
-        // If there's an active unanswered question, append it
-        if (s.status !== 'completed' && s.current_question) {
-          const cq = s.current_question;
-          const isFollowUp = cq.category === 'follow-up';
-          // Check if not already the last item
-          const last = items[items.length - 1];
-          if (!last || last.text !== cq.prompt) {
-            items.push({
-              id: `current-q-${cq.order}-${cq.category}`,
-              sender: 'interviewer',
-              text: cq.prompt,
-              category: cq.category,
-              order: cq.order,
-              focus: cq.focus,
-              isFollowUp,
-            });
-          }
+        if (s.status === 'completed') {
+          setProgressLabel(`${s.question_count}/${s.question_count}`);
+        } else {
+          setProgressLabel(`${s.answered}/${s.question_count}`);
         }
 
+        // Build transcript from stored turns (only answered turns + current unanswered question)
+        const items = buildTranscriptFromSession(s);
         setTranscript(items);
 
         if (s.status === 'completed') {
@@ -154,9 +163,15 @@ export default function LiveInterviewSessionPage() {
     setSending(true);
     setSendError(null);
 
-    // 1. Immediately append user's answer to transcript
+    const originalCurrentQuestion = session.current_question;
+    const expectedTurn = originalCurrentQuestion
+      ? { order: originalCurrentQuestion.order, category: originalCurrentQuestion.category }
+      : undefined;
+
+    // 1. Immediately append user's answer to transcript optimistically
+    const userItemId = `ans-${Date.now()}`;
     const userItem: TranscriptItem = {
-      id: `ans-${Date.now()}`,
+      id: userItemId,
       sender: 'candidate',
       text,
     };
@@ -164,9 +179,6 @@ export default function LiveInterviewSessionPage() {
     setInputText('');
 
     try {
-      const expectedTurn = session.current_question
-        ? { order: session.current_question.order, category: session.current_question.category }
-        : undefined;
       const res: AnswerResponse = await answerInterviewQuestion(sessionId, text, expectedTurn);
 
       const incoming: TranscriptItem[] = [];
@@ -206,18 +218,76 @@ export default function LiveInterviewSessionPage() {
       // 4. Handle completion
       if (res.completed) {
         setCompleted(true);
+        if (res.progress) {
+          setProgressLabel(res.progress);
+        } else if (session) {
+          setProgressLabel(`${session.question_count}/${session.question_count}`);
+        }
         setLoadingReport(true);
         try {
           const r = await getInterviewReport(sessionId);
           setReport(r);
-        } catch (rErr) {
+        } catch {
           setSendError('Session completed, but could not load the final report.');
         } finally {
           setLoadingReport(false);
         }
       }
     } catch (err) {
-      setSendError(err instanceof Error ? err.message : 'Could not submit your answer.');
+      // 4a. Ambiguous failure reconciliation: check if the answer was actually recorded
+      try {
+        const latestSession = await getInterviewSession(sessionId);
+        setSession(latestSession);
+
+        const wasRecorded =
+          latestSession.status === 'completed' ||
+          latestSession.turns.some((t) => t.answer_text === text) ||
+          (originalCurrentQuestion &&
+            (!latestSession.current_question ||
+              latestSession.current_question.order !== originalCurrentQuestion.order ||
+              latestSession.current_question.category !== originalCurrentQuestion.category));
+
+        if (wasRecorded) {
+          // Re-hydrate transcript from the actual server session state
+          const items = buildTranscriptFromSession(latestSession);
+          setTranscript(items);
+          setSendError(null);
+
+          if (latestSession.status === 'completed') {
+            setCompleted(true);
+            setProgressLabel(`${latestSession.question_count}/${latestSession.question_count}`);
+            setLoadingReport(true);
+            try {
+              const r = await getInterviewReport(sessionId);
+              setReport(r);
+            } catch {
+              setSendError('Session completed, but could not load the final report.');
+            } finally {
+              setLoadingReport(false);
+            }
+          } else {
+            setProgressLabel(`${latestSession.answered}/${latestSession.question_count}`);
+          }
+        } else {
+          // Not recorded: remove optimistic bubble and restore typed text to input for retry
+          setTranscript((prev) => prev.filter((item) => item.id !== userItemId));
+          setInputText(text);
+          const userFriendlyError =
+            err instanceof Error && err.message && !err.message.toLowerCase().includes('fetch')
+              ? err.message
+              : 'Could not submit your answer. You can retry sending.';
+          setSendError(userFriendlyError);
+        }
+      } catch {
+        // Re-fetch failed (offline network): restore typed text and remove optimistic bubble
+        setTranscript((prev) => prev.filter((item) => item.id !== userItemId));
+        setInputText(text);
+        const userFriendlyError =
+          err instanceof Error && err.message && !err.message.toLowerCase().includes('fetch')
+            ? err.message
+            : 'Could not submit your answer. You can retry sending.';
+        setSendError(userFriendlyError);
+      }
     } finally {
       setSending(false);
     }
@@ -273,6 +343,28 @@ export default function LiveInterviewSessionPage() {
 
       {/* Main Conversation Stream */}
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-4 max-w-3xl mx-auto w-full">
+        {/* Collapsed Question Plan (Clearly separate from conversation stream) */}
+        {session.turns.some((t) => t.answer_text === null) && (
+          <details className="p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.06] text-xs group">
+            <summary className="cursor-pointer font-bold text-[#8A8A92] hover:text-[#0A0A0C] dark:hover:text-white select-none list-none flex items-center justify-between">
+              <span>Question plan ({session.question_count} planned topics)</span>
+              <span className="text-[10px] text-[#8A8A92] group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <div className="mt-2.5 pt-2 border-t border-black/[0.06] dark:border-white/[0.06] space-y-1.5 text-[11px]">
+              {session.turns
+                .filter((t) => t.category !== 'follow-up')
+                .map((t, i) => (
+                  <div key={i} className="flex items-center justify-between text-[#6B7280] dark:text-[#9CA3AF]">
+                    <span>Topic {i + 1}: {t.category.replace('_', ' ')}</span>
+                    <span className="font-mono text-[10px]">
+                      {t.answer_text !== null ? '✓ Answered' : (session.current_question?.order === t.order ? '● Current' : 'Planned')}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </details>
+        )}
+
         {transcript.map((item) => {
           if (item.sender === 'interviewer') {
             const isFollowUp = item.isFollowUp || item.category === 'follow-up';
@@ -389,42 +481,63 @@ export default function LiveInterviewSessionPage() {
                     <h3 className="text-xs font-black uppercase text-[#4A4A52] dark:text-[#A1A1AA]">
                       Question Analysis
                     </h3>
-                    {report.per_question.map((pq, idx) => (
-                      <div
-                        key={idx}
-                        className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.06] space-y-2 text-xs"
-                      >
-                        <div className="flex items-center justify-between font-bold">
-                          <span className="text-[#854D0E] dark:text-[#FACC15]">
-                            Question {pq.order} &bull; {pq.category.replace('_', ' ')}
-                          </span>
-                          <span className="font-mono">{pq.score}/100</span>
-                        </div>
-                        <p className="text-[11px] text-[#4A4A52] dark:text-[#A1A1AA]">{pq.prompt}</p>
+                    {(() => {
+                      let plannedCounter = 0;
+                      return report.per_question.map((pq, idx) => {
+                        const isFollowUp = pq.category === 'follow-up';
+                        if (!isFollowUp) {
+                          plannedCounter += 1;
+                        }
+                        const currentCounter = plannedCounter;
 
-                        {pq.strengths && pq.strengths.length > 0 && (
-                          <div className="space-y-1 pt-1">
-                            {pq.strengths.map((s, sIdx) => (
-                              <div key={sIdx} className="flex items-start gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px]">
-                                <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                <span>{s}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-4 rounded-2xl border space-y-2 text-xs transition-all ${
+                              isFollowUp
+                                ? 'ml-4 sm:ml-6 bg-[#FACC15]/5 dark:bg-[#FACC15]/10 border-[#FACC15]/30'
+                                : 'bg-black/[0.02] dark:bg-white/[0.03] border-black/[0.06] dark:border-white/[0.06]'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between font-bold">
+                              <span className="text-[#854D0E] dark:text-[#FACC15]">
+                                {isFollowUp ? (
+                                  <span>Follow-up to Question {currentCounter}</span>
+                                ) : (
+                                  <span>
+                                    Question {currentCounter} &bull; {pq.category.replace('_', ' ')}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="font-mono">{pq.score}/100</span>
+                            </div>
+                            <p className="text-[11px] text-[#4A4A52] dark:text-[#A1A1AA]">{pq.prompt}</p>
 
-                        {pq.improvements && pq.improvements.length > 0 && (
-                          <div className="space-y-1">
-                            {pq.improvements.map((imp, impIdx) => (
-                              <div key={impIdx} className="flex items-start gap-1.5 text-amber-600 dark:text-amber-400 text-[11px]">
-                                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                <span>{imp}</span>
+                            {pq.strengths && pq.strengths.length > 0 && (
+                              <div className="space-y-1 pt-1">
+                                {pq.strengths.map((s, sIdx) => (
+                                  <div key={sIdx} className="flex items-start gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px]">
+                                    <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                    <span>{s}</span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
+
+                            {pq.improvements && pq.improvements.length > 0 && (
+                              <div className="space-y-1">
+                                {pq.improvements.map((imp, impIdx) => (
+                                  <div key={impIdx} className="flex items-start gap-1.5 text-amber-600 dark:text-amber-400 text-[11px]">
+                                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                    <span>{imp}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                        );
+                      });
+                    })()}
                   </div>
                 )}
 

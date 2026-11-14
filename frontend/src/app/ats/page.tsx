@@ -248,12 +248,12 @@ export default function AtsAutoGeneratePage() {
             </div>
           </Card>
 
-          {/* ── AI Bullet Rewrites ── */}
+          {/* ── Suggested Bullet Improvements ── */}
           {report.actionable_bullet_points.length > 0 && (
             <Card className="p-6 space-y-3 shadow-lg border-2 border-[#FACC15]/30">
               <div className="flex items-center gap-2 text-sm font-bold">
                 <Sparkles className="w-4 h-4 text-[#FACC15]" />
-                AI-Generated Actionable Rewrites
+                Suggested Resume Improvements
               </div>
               <ul className="space-y-2">
                 {report.actionable_bullet_points.map((bullet, idx) => (
