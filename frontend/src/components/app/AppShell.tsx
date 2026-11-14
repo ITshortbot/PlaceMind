@@ -55,7 +55,7 @@ export function AppShell({ children, hideSidebar = false, showAiBar }: AppShellP
   const isWorkingTab =
     showAiBar !== undefined
       ? showAiBar
-      : ['/dashboard', '/resume', '/ats', '/interview'].some(
+      : ['/resume', '/ats', '/interview'].some(
           (route) => pathname === route || pathname.startsWith(route + '/')
         );
 

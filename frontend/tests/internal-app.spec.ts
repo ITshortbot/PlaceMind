@@ -85,19 +85,34 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
     await expect(page.locator('h1')).toBeVisible();
   });
 
-  test('Dashboard loads greeting, quick action cards and real workspace stats', async ({
+  test('Dashboard loads greeting, conversation composer and action chips in the chat stream', async ({
     page,
   }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
-    await expect(
-      page.getByText('Your saved resumes and practice sessions, loaded from your workspace.')
-    ).toBeVisible();
-    await expect(page.getByText('Build a Resume')).toBeVisible();
-    await expect(page.getByText('Auto-Generate for a Job')).toBeVisible();
-    await expect(page.getByText('Practice Interview')).toBeVisible();
-    await expect(page.getByText('Practice sessions:')).toBeVisible();
+
+    // Compact greeting line still visible
+    await expect(page.getByText('Welcome back')).toBeVisible();
+
+    // Stat chips visible (inline in compact header)
+    await expect(page.getByText(/\d+ resumes/).first()).toBeVisible();
+    await expect(page.getByText(/\d+ sessions/).first()).toBeVisible();
+
+    // Exactly one visible text input composer on /dashboard (no duplicate AiCommandBar)
+    const visibleInputs = page.locator('input[type="text"]:visible');
+    await expect(visibleInputs).toHaveCount(1);
+
+    // Action chips from the welcome message are present in the conversation stream
+    await expect(page.getByText('Create New Resume')).toBeVisible();
+    await expect(page.getByText('Score with ATS Rules')).toBeVisible();
+    await expect(page.getByText('Start Mock Interview')).toBeVisible();
+
+    // The old 3-card quick-action row is gone (no "Build a Resume" card heading)
+    await expect(page.getByRole('heading', { name: 'Build a Resume' })).toHaveCount(0);
+
+    // History is collapsed by default — resume/session rows are not visible
+    const historyToggle = page.getByRole('button', { name: /Toggle workspace history/ });
+    await expect(historyToggle).toBeVisible();
   });
 
   test('Resume Upload Wizard supports in-memory parsing checklist', async ({ page }) => {
@@ -281,7 +296,8 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
   });
 
   test('AI command bar hands the prompt to Template Studio', async ({ page }) => {
-    await page.goto('/dashboard');
+    // AiCommandBar renders on working tabs (/resume, /ats, /interview) — not /dashboard
+    await page.goto('/resume');
     await page.waitForLoadState('networkidle');
     // No fake dictation control is rendered.
     await expect(page.getByRole('button', { name: 'Voice Input' })).toHaveCount(0);

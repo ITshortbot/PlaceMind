@@ -8,7 +8,7 @@
 //              - Command Search (Cmd+K) trigger & clean theme switcher.
 // ============================================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,21 +33,40 @@ const NAV_ITEMS = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
+// Quieter hover card animation: short 5px slide, <=150ms, gentler spring
+const HOVER_CARD_VARIANTS = {
+  initial: { opacity: 0, x: -5 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -5 },
+};
+
+const HOVER_TRANSITION = { type: 'tween' as const, duration: 0.12, ease: 'easeOut' as const };
+
 export function FloatingNavBar() {
   const pathname = usePathname();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
 
+  // Respect OS accessibility preference — fully disable hover motion
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const h = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+
   return (
     <>
       <aside className="fixed left-3 sm:left-4 top-1/2 -translate-y-1/2 z-50 hidden md:block select-none">
         <div
-          className="w-[52px] glass-frosted-dark rounded-2xl p-1.5 flex flex-col justify-between items-center shadow-xl border border-white/10 dark:border-white/15 text-white backdrop-blur-3xl"
-          style={{ height: 'calc(100vh - 240px)', maxHeight: '460px' }}
+          className="w-[48px] glass-frosted-dark rounded-2xl p-1 flex flex-col justify-between items-center shadow-xl border border-white/10 dark:border-white/15 text-white backdrop-blur-3xl"
+          style={{ height: 'calc(100vh - 240px)', maxHeight: '440px' }}
         >
           {/* Top Section: Brand + Search Trigger */}
-          <div className="w-full flex flex-col items-center gap-1.5 flex-shrink-0">
+          <div className="w-full flex flex-col items-center gap-1 flex-shrink-0">
             {/* Header Brand */}
             <Link href="/dashboard" className="flex items-center justify-center p-0.5">
               <div className="w-6 h-6 rounded-lg bg-[#FACC15] text-[#0A0A0C] font-black flex items-center justify-center text-[10px] shadow-sm shadow-[#FACC15]/30 flex-shrink-0">
@@ -73,18 +92,19 @@ export function FloatingNavBar() {
 
               {/* Search Hover Extended Card */}
               <AnimatePresence>
-                {hoveredItem === 'Search' && (
+                {hoveredItem === 'Search' && !reducedMotion && (
                   <motion.div
-                    initial={{ opacity: 0, x: -6, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, x: -6, scale: 0.95 }}
-                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                    variants={HOVER_CARD_VARIANTS}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={HOVER_TRANSITION}
                     className="absolute left-0 top-0 bottom-0 z-30 pointer-events-none flex items-center"
                     style={{ width: 'max-content' }}
                   >
                     <button
                       onClick={() => setIsSearchOpen(true)}
-                      className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FACC15] text-[#0A0A0C] font-black text-xs shadow-xl shadow-[#FACC15]/40 border border-[#FACC15] backdrop-blur-2xl"
+                      className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#FACC15] text-[#0A0A0C] font-black text-xs shadow-xl shadow-[#FACC15]/40 border border-[#FACC15] backdrop-blur-2xl"
                     >
                       <Search className="w-3.5 h-3.5 flex-shrink-0 text-[#0A0A0C]" />
                       <span className="whitespace-nowrap">Search Pages</span>
@@ -94,12 +114,30 @@ export function FloatingNavBar() {
                     </button>
                   </motion.div>
                 )}
+                {/* Static tooltip for reduced-motion */}
+                {hoveredItem === 'Search' && reducedMotion && (
+                  <div
+                    className="absolute left-0 top-0 bottom-0 z-30 pointer-events-none flex items-center"
+                    style={{ width: 'max-content' }}
+                  >
+                    <button
+                      onClick={() => setIsSearchOpen(true)}
+                      className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#FACC15] text-[#0A0A0C] font-black text-xs shadow-xl shadow-[#FACC15]/40 border border-[#FACC15] backdrop-blur-2xl"
+                    >
+                      <Search className="w-3.5 h-3.5 flex-shrink-0 text-[#0A0A0C]" />
+                      <span className="whitespace-nowrap">Search Pages</span>
+                      <kbd className="text-[9px] font-mono bg-black/20 px-1 py-0.2 rounded text-[#0A0A0C] font-bold">
+                        ⌘K
+                      </kbd>
+                    </button>
+                  </div>
+                )}
               </AnimatePresence>
             </div>
           </div>
 
           {/* Center Navigation: Compact High-Density Product Tabs */}
-          <nav className="w-full space-y-1 my-1 flex-1 flex flex-col items-center justify-evenly flex-shrink-0">
+          <nav className="w-full space-y-0.5 my-0.5 flex-1 flex flex-col items-center justify-evenly flex-shrink-0">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -130,23 +168,39 @@ export function FloatingNavBar() {
 
                   {/* Frosted Yellow Option Card Extending Outwards on Hover */}
                   <AnimatePresence>
-                    {isHovered && (
+                    {isHovered && !reducedMotion && (
                       <motion.div
-                        initial={{ opacity: 0, x: -6, scale: 0.95 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: -6, scale: 0.95 }}
-                        transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                        variants={HOVER_CARD_VARIANTS}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={HOVER_TRANSITION}
                         className="absolute left-0 top-0 bottom-0 z-30 pointer-events-none flex items-center"
                         style={{ width: 'max-content' }}
                       >
                         <Link
                           href={item.href}
-                          className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FACC15] text-[#0A0A0C] font-black text-xs shadow-xl shadow-[#FACC15]/40 border border-[#FACC15] backdrop-blur-2xl"
+                          className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#FACC15] text-[#0A0A0C] font-black text-xs shadow-xl shadow-[#FACC15]/40 border border-[#FACC15] backdrop-blur-2xl"
                         >
                           <Icon className="w-3.5 h-3.5 flex-shrink-0 text-[#0A0A0C]" />
-                          <span className="whitespace-nowrap pr-1">{item.name}</span>
+                          <span className="whitespace-nowrap pr-0.5">{item.name}</span>
                         </Link>
                       </motion.div>
+                    )}
+                    {/* Static tooltip for reduced-motion */}
+                    {isHovered && reducedMotion && (
+                      <div
+                        className="absolute left-0 top-0 bottom-0 z-30 pointer-events-none flex items-center"
+                        style={{ width: 'max-content' }}
+                      >
+                        <Link
+                          href={item.href}
+                          className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#FACC15] text-[#0A0A0C] font-black text-xs shadow-xl shadow-[#FACC15]/40 border border-[#FACC15] backdrop-blur-2xl"
+                        >
+                          <Icon className="w-3.5 h-3.5 flex-shrink-0 text-[#0A0A0C]" />
+                          <span className="whitespace-nowrap pr-0.5">{item.name}</span>
+                        </Link>
+                      </div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -155,7 +209,7 @@ export function FloatingNavBar() {
           </nav>
 
           {/* Bottom Section: Theme Switcher */}
-          <div className="w-full pt-1 border-t border-white/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-full pt-0.5 border-t border-white/10 flex items-center justify-center flex-shrink-0">
             <button
               onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
               className="p-1 rounded-lg text-white/60 hover:text-[#FACC15] hover:bg-white/10 transition-colors cursor-pointer"

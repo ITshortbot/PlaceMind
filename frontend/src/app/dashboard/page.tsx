@@ -2,9 +2,10 @@
 
 // ============================================================================
 // File: frontend/src/app/dashboard/page.tsx
-// Description: Tab 1 - Dashboard: Conversation-first AI Copilot hub plus the
-//              user's REAL saved resumes (folding file history) and practice
-//              sessions from the backend. Honest states only - no fake data.
+// Description: Tab 1 - Dashboard: Conversation-first AI Copilot hub.
+//              Full-viewport chat layout — the conversation IS the page.
+//              History (resumes & sessions) tucked into a collapsed disclosure.
+//              Honest states only — no fake data.
 // ============================================================================
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
@@ -32,6 +33,7 @@ import {
   ChevronRight,
   Settings,
   HelpCircle,
+  ChevronDown,
 } from 'lucide-react';
 import {
   listResumes,
@@ -72,6 +74,7 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
   const [busyResumeId, setBusyResumeId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Chat conversation state
   const [chatInput, setChatInput] = useState('');
@@ -94,6 +97,7 @@ export default function DashboardPage() {
   ]);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const refreshData = useCallback(async () => {
     listResumes().then(setResumes).catch(() => setResumes([]));
@@ -103,6 +107,29 @@ export default function DashboardPage() {
   useEffect(() => {
     refreshData();
   }, [refreshData]);
+
+  // Mobile keyboard handling: ensure composer stays visible via visualViewport
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const handler = () => {
+      // When the keyboard opens, the visual viewport height shrinks.
+      // We store a CSS variable the layout can react to.
+      const offsetBottom = window.innerHeight - vv.height - vv.offsetTop;
+      document.documentElement.style.setProperty(
+        '--keyboard-inset-bottom',
+        `${Math.max(0, offsetBottom)}px`
+      );
+    };
+    vv.addEventListener('resize', handler);
+    vv.addEventListener('scroll', handler);
+    handler();
+    return () => {
+      vv.removeEventListener('resize', handler);
+      vv.removeEventListener('scroll', handler);
+      document.documentElement.style.removeProperty('--keyboard-inset-bottom');
+    };
+  }, []);
 
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend ?? chatInput).trim();
@@ -204,6 +231,9 @@ export default function DashboardPage() {
       ? Math.round((scored.reduce((sum, r) => sum + (r.latest_ats_score ?? 0), 0) / scored.length) * 10) / 10
       : null;
 
+  const resumeCount = resumes === null ? '...' : resumes.length;
+  const sessionCount = sessions === null ? '...' : sessions.length;
+
   return (
     <AppShell>
       <TopBar
@@ -217,65 +247,44 @@ export default function DashboardPage() {
         }
       />
 
-      <main className="px-3 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto w-full space-y-6">
-        {/* Welcome Header - real workspace state only */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-3xl font-black text-[#0A0A0C] dark:text-[#F8F9FA] tracking-tight">
-              Welcome back
-            </h1>
-            <p className="text-xs text-[#4A4A52] dark:text-[#A1A1AA]">
-              Your saved resumes and practice sessions, loaded from your workspace.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="px-3 py-1 rounded-2xl bg-white dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-xs text-xs font-bold flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#FACC15] shadow-xs" />
-              <span>
-                Resumes saved: <strong>{resumes === null ? '...' : resumes.length}</strong>
-              </span>
-            </div>
-            <div className="px-3 py-1 rounded-2xl bg-white dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-xs text-xs font-bold flex items-center gap-2">
-              <Mic className="w-3.5 h-3.5 text-[#FACC15]" />
-              <span>
-                Practice sessions: <strong>{sessions === null ? '...' : sessions.length}</strong>
-              </span>
-            </div>
+      {/*
+        Full-viewport chat layout: height = 100dvh - TopBar (h-16).
+        The document itself does not scroll on /dashboard — only the
+        conversation stream scrolls internally.
+      */}
+      <div
+        className="flex flex-col min-w-0"
+        style={{
+          height: 'calc(100dvh - 4rem)',
+          /* Fallback for browsers without dvh */
+          minHeight: 'calc(100svh - 4rem)',
+        }}
+      >
+        {/* Compact greeting header + inline stat chips */}
+        <div className="px-3 sm:px-6 lg:px-8 pt-2.5 pb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 max-w-4xl mx-auto w-full">
+          <span className="text-sm font-bold text-[#0A0A0C] dark:text-[#F8F9FA] tracking-tight">
+            Welcome back
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded-full bg-white dark:bg-[#121217] border border-black/[0.08] dark:border-white/[0.1] text-[10px] font-bold text-[#4A4A52] dark:text-[#A1A1AA] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FACC15]" />
+              {resumeCount} resumes
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-white dark:bg-[#121217] border border-black/[0.08] dark:border-white/[0.1] text-[10px] font-bold text-[#4A4A52] dark:text-[#A1A1AA] flex items-center gap-1">
+              <Mic className="w-2.5 h-2.5 text-[#FACC15]" />
+              {sessionCount} sessions
+            </span>
             {avgAts !== null && (
-              <div className="px-3 py-1 rounded-2xl bg-white dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-xs text-xs font-bold flex items-center gap-2">
-                <span>
-                  Avg ATS: <strong>{avgAts}%</strong>
-                </span>
-              </div>
+              <span className="px-2 py-0.5 rounded-full bg-white dark:bg-[#121217] border border-black/[0.08] dark:border-white/[0.1] text-[10px] font-bold text-[#4A4A52] dark:text-[#A1A1AA]">
+                avg ATS {avgAts}%
+              </span>
             )}
           </div>
         </div>
 
-        {/* 1. Conversational Copilot Hub (Conversation First) */}
-        <section className="rounded-3xl bg-white/90 dark:bg-[#101015]/90 border border-black/[0.1] dark:border-white/[0.12] shadow-lg shadow-black/5 overflow-hidden flex flex-col backdrop-blur-xl">
-          {/* Copilot Header */}
-          <div className="px-4 sm:px-6 py-3 border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-xl bg-[#FACC15] text-[#0A0A0C] flex items-center justify-center font-black shadow-xs">
-                <Sparkles className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <h2 className="text-xs sm:text-sm font-black text-[#0A0A0C] dark:text-white">
-                  PlaceMind Assistant
-                </h2>
-                <p className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF]">
-                  Page-aware workspace copilot &bull; Zero data egress
-                </p>
-              </div>
-            </div>
-            <Badge variant="accent" size="sm" className="hidden sm:inline-flex">
-              Connected
-            </Badge>
-          </div>
-
-          {/* Conversation Stream */}
-          <div className="p-4 sm:p-6 space-y-4 max-h-[340px] overflow-y-auto">
+        {/* ── Conversation Stream (scrollable, flex-1) ── */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto w-full py-3 space-y-4">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -296,7 +305,7 @@ export default function DashboardPage() {
                 >
                   <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
 
-                  {/* Action Buttons */}
+                  {/* Action Buttons (these are the in-flow tools) */}
                   {msg.actions && msg.actions.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-3 pt-2.5 border-t border-black/[0.08] dark:border-white/[0.08]">
                       {msg.actions.map((act) => (
@@ -330,292 +339,266 @@ export default function DashboardPage() {
             )}
             <div ref={chatBottomRef} />
           </div>
-
-          {/* Starter Chips */}
-          <div className="px-4 sm:px-6 pb-2 pt-1 flex flex-wrap gap-1.5">
-            {STARTER_PROMPTS.map((prompt) => (
-              <button
-                key={prompt}
-                onClick={() => handleSendMessage(prompt)}
-                disabled={isSending}
-                className="px-2.5 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] hover:bg-[#FACC15]/15 hover:text-[#0A0A0C] dark:hover:text-[#FACC15] border border-black/[0.06] dark:border-white/[0.08] text-[10px] font-medium text-[#4A4A52] dark:text-[#9CA3AF] transition-colors truncate max-w-[280px]"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-
-          {/* Chat Input Bar */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-            className="p-3 sm:p-4 border-t border-black/[0.08] dark:border-white/[0.08] bg-black/[0.01] dark:bg-white/[0.01] flex items-center gap-2"
-          >
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Ask anything or request a focused action..."
-              disabled={isSending}
-              className="flex-1 bg-white dark:bg-[#16161C] border border-black/[0.1] dark:border-white/[0.1] rounded-2xl px-3.5 py-2 text-xs sm:text-sm text-[#0A0A0C] dark:text-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#FACC15]"
-            />
-            <button
-              type="submit"
-              disabled={!chatInput.trim() || isSending}
-              className={`p-2 rounded-2xl font-bold transition-all flex items-center justify-center flex-shrink-0 ${
-                chatInput.trim() && !isSending
-                  ? 'bg-[#FACC15] text-[#0A0A0C] shadow-sm hover:scale-105 active:scale-95'
-                  : 'bg-black/[0.05] dark:bg-white/[0.05] text-[#9CA3AF] cursor-not-allowed'
-              }`}
-              aria-label="Send message"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
-        </section>
-
-        {/* 2. 3-Card Quick-Action Row (Required for tests and focused workflows) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <Link
-            href="/resume"
-            className="md:col-span-4 p-4 sm:p-5 rounded-3xl bg-white/90 dark:bg-[#101015]/90 border border-black/[0.1] dark:border-white/[0.12] hover:border-[#FACC15] shadow-xs hover:shadow-xl hover:shadow-[#FACC15]/10 transition-all duration-300 hover:-translate-y-0.5 flex flex-col justify-between group cursor-pointer"
-          >
-            <div className="space-y-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#0A0A0C] text-[#FACC15] dark:bg-white/[0.08] flex items-center justify-center shadow-md group-hover:scale-105 group-hover:bg-[#FACC15] group-hover:text-[#0A0A0C] transition-all">
-                <FileText className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-[#0A0A0C] dark:text-white group-hover:text-[#FACC15] transition-colors">
-                  Build a Resume
-                </h3>
-                <p className="text-[11px] text-[#4A4A52] dark:text-[#A1A1AA] mt-0.5 leading-relaxed">
-                  Craft and edit your single-column ATS resume with certificates and real-time live preview.
-                </p>
-              </div>
-            </div>
-            <span className="text-[11px] font-bold text-[#854D0E] dark:text-[#FACC15] pt-2 flex items-center gap-1">
-              Open 3-Panel Editor &rarr;
-            </span>
-          </Link>
-
-          <Link
-            href="/ats"
-            className="md:col-span-4 p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#FACC15]/20 via-white dark:via-[#14141A] to-white dark:to-[#101015] border-2 border-[#FACC15] shadow-lg shadow-[#FACC15]/15 hover:shadow-2xl hover:shadow-[#FACC15]/25 transition-all duration-300 hover:-translate-y-0.5 flex flex-col justify-between group cursor-pointer"
-          >
-            <div className="space-y-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#FACC15] text-[#0A0A0C] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Wand2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-[#0A0A0C] dark:text-white transition-colors">
-                  Auto-Generate for a Job
-                </h3>
-                <p className="text-[11px] text-[#4A4A52] dark:text-[#A1A1AA] mt-0.5 leading-relaxed">
-                  Paste a job description and generate an ATS-friendly draft from transparent rules - no black-box AI.
-                </p>
-              </div>
-            </div>
-            <span className="text-[11px] font-black text-[#0A0A0C] dark:text-[#FACC15] pt-2 flex items-center gap-1">
-              Start 1-Pass Auto-Gen &rarr;
-            </span>
-          </Link>
-
-          <Link
-            href="/interview"
-            className="md:col-span-4 p-4 sm:p-5 rounded-3xl bg-white/90 dark:bg-[#101015]/90 border border-black/[0.1] dark:border-white/[0.12] hover:border-[#FACC15] shadow-xs hover:shadow-xl hover:shadow-[#FACC15]/10 transition-all duration-300 hover:-translate-y-0.5 flex flex-col justify-between group cursor-pointer"
-          >
-            <div className="space-y-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#0A0A0C] text-[#FACC15] dark:bg-white/[0.08] flex items-center justify-center shadow-md group-hover:scale-105 group-hover:bg-[#FACC15] group-hover:text-[#0A0A0C] transition-all">
-                <Mic className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-[#0A0A0C] dark:text-white group-hover:text-[#FACC15] transition-colors">
-                  Practice Interview
-                </h3>
-                <p className="text-[11px] text-[#4A4A52] dark:text-[#A1A1AA] mt-0.5 leading-relaxed">
-                  Run technical and STAR behavioral practice sessions with transparent, heuristic answer feedback.
-                </p>
-              </div>
-            </div>
-            <span className="text-[11px] font-bold text-[#854D0E] dark:text-[#FACC15] pt-2 flex items-center gap-1">
-              Start Rehearsal &rarr;
-            </span>
-          </Link>
         </div>
 
-        {/* 3. Section: Recent Resumes (Folded File History) */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xs font-black uppercase tracking-wider text-[#1A1A1E] dark:text-white">
-                Recent Resumes
-              </h2>
-              <p className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF]">
-                Manage saved documents, duplicates, and exports directly in your dashboard.
-              </p>
+        {/* ── Bottom composer area (pinned, never scrolled away) ── */}
+        {/*
+          On mobile: account for bottom tab bar (h-16 + safe-area) so
+          the composer sits above it. On desktop: no offset needed.
+          When the virtual keyboard is open, --keyboard-inset-bottom
+          provides the extra offset so the composer stays visible.
+        */}
+        <div
+          className="flex-shrink-0 border-t border-black/[0.06] dark:border-white/[0.06] bg-white/80 dark:bg-[#0A0A0C]/80 backdrop-blur-xl"
+          style={{
+            paddingBottom:
+              'max(env(safe-area-inset-bottom, 0px), var(--keyboard-inset-bottom, 0px))',
+          }}
+        >
+          <div className="max-w-4xl mx-auto w-full px-3 sm:px-6 lg:px-8">
+            {/* Starter Chips */}
+            <div className="pt-2 pb-1.5 flex flex-wrap gap-1.5">
+              {STARTER_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => handleSendMessage(prompt)}
+                  disabled={isSending}
+                  className="px-2.5 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] hover:bg-[#FACC15]/15 hover:text-[#0A0A0C] dark:hover:text-[#FACC15] border border-black/[0.06] dark:border-white/[0.08] text-[10px] font-medium text-[#4A4A52] dark:text-[#9CA3AF] transition-colors truncate max-w-[280px]"
+                >
+                  {prompt}
+                </button>
+              ))}
             </div>
-            <div className="flex items-center gap-3">
-              <Link href="/resumes/upload">
-                <Button variant="secondary" size="sm" icon={<UploadCloud className="w-3.5 h-3.5" />} className="h-7 text-[11px] px-2.5">
-                  Upload PDF
-                </Button>
-              </Link>
-              <Link href="/history" className="text-[11px] text-[#854D0E] dark:text-[#FACC15] hover:underline font-bold">
-                View All &rarr;
-              </Link>
-            </div>
-          </div>
 
-          {actionError && (
-            <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-600 dark:text-red-400">
-              {actionError}
-            </div>
-          )}
-
-          {resumes !== null && resumes.length === 0 && (
-            <div className="p-4 rounded-2xl bg-white/90 dark:bg-[#121217] border border-dashed border-black/[0.15] dark:border-white/[0.15] text-xs text-[#5A5A63] dark:text-[#A1A1AA] flex items-center justify-between gap-3">
-              <span>No resumes saved yet. Upload one to see it here.</span>
-              <Link href="/resumes/upload">
-                <Button variant="secondary" size="sm" className="h-7 text-[11px] px-2.5">
-                  Upload Resume
-                </Button>
-              </Link>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(resumes ?? []).map((res) => (
-              <div
-                key={res.id}
-                className="p-3.5 rounded-2xl bg-white/90 dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-xs flex items-center justify-between gap-3"
+            {/* Chat Input Bar */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+              className="pb-2 md:pb-3 flex items-center gap-2"
+            >
+              <input
+                ref={inputRef}
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask anything or request a focused action..."
+                disabled={isSending}
+                className="flex-1 bg-white dark:bg-[#16161C] border border-black/[0.1] dark:border-white/[0.1] rounded-2xl px-3.5 py-2 text-xs sm:text-sm text-[#0A0A0C] dark:text-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#FACC15]"
+              />
+              <button
+                type="submit"
+                disabled={!chatInput.trim() || isSending}
+                className={`p-2 rounded-2xl font-bold transition-all flex items-center justify-center flex-shrink-0 ${
+                  chatInput.trim() && !isSending
+                    ? 'bg-[#FACC15] text-[#0A0A0C] shadow-sm hover:scale-105 active:scale-95'
+                    : 'bg-black/[0.05] dark:bg-white/[0.05] text-[#9CA3AF] cursor-not-allowed'
+                }`}
+                aria-label="Send message"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-12 rounded-lg border border-black/10 flex-shrink-0 bg-white shadow-2xs flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-[#8A8A92]" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-xs font-bold text-[#1A1A1E] dark:text-white truncate">
-                      {res.file_name}
-                    </h3>
-                    <p className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA] truncate mt-0.5">
-                      {res.section_count} section{res.section_count === 1 ? '' : 's'} parsed
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1 text-[9px] text-[#8A8A92]">
-                      <Clock className="w-2.5 h-2.5" />
-                      <span>{formatDate(res.created_at)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                  <div className="flex items-center gap-1">
-                    {res.latest_ats_score !== null && (
-                      <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-[#16A34A]/10 text-[#16A34A] dark:text-[#22C55E]">
-                        {res.latest_ats_score}% ATS
-                      </span>
-                    )}
-                    <button
-                      onClick={() => handleDuplicateResume(res)}
-                      disabled={busyResumeId === res.id}
-                      className="p-1 rounded-md text-[#8A8A92] hover:text-[#0A0A0C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                      title="Duplicate resume"
-                      aria-label="Duplicate resume"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteResume(res.id)}
-                      disabled={busyResumeId === res.id}
-                      className="p-1 rounded-md text-[#8A8A92] hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                      title="Delete resume"
-                      aria-label="Delete resume"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <Link href={`/resumes/${res.id}/edit`}>
-                    <Button variant="default" size="sm" className="h-7 text-[11px] px-2.5">
-                      Open in Editor
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 4. Section: Recent Interview Sessions */}
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black uppercase tracking-wider text-[#1A1A1E] dark:text-white">
-              Recent Interview Sessions
-            </h2>
-            <Link href="/interview/new" className="text-[11px] text-[#854D0E] dark:text-[#FACC15] hover:underline font-bold">
-              New Simulation &rarr;
-            </Link>
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
           </div>
 
-          {sessions !== null && sessions.length === 0 && (
-            <div className="p-4 rounded-2xl bg-white/90 dark:bg-[#121217] border border-dashed border-black/[0.15] dark:border-white/[0.15] text-xs text-[#5A5A63] dark:text-[#A1A1AA] flex items-center justify-between gap-3">
-              <span>No practice sessions yet. Start a simulation to see it here.</span>
-              <Link href="/interview/new">
-                <Button variant="secondary" size="sm" className="h-7 text-[11px] px-2.5">
-                  Start Practicing
-                </Button>
-              </Link>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            {(sessions ?? []).slice(0, 3).map((interview) => (
-              <div
-                key={interview.session_id}
-                className="p-3.5 rounded-2xl bg-white/90 dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-xs flex items-center justify-between gap-3"
+          {/* ── History disclosure (collapsed by default) ── */}
+          <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
+            <div className="max-w-4xl mx-auto w-full px-3 sm:px-6 lg:px-8">
+              <button
+                type="button"
+                onClick={() => setHistoryOpen((v) => !v)}
+                className="w-full py-2 flex items-center justify-between text-[11px] font-bold text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#0A0A0C] dark:hover:text-white transition-colors"
+                aria-expanded={historyOpen}
+                aria-label="Toggle workspace history"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#FACC15]/20 text-[#0A0A0C] dark:text-[#FACC15] flex items-center justify-center flex-shrink-0">
-                    <Mic className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xs font-bold text-[#1A1A1E] dark:text-white">
-                        {interview.target_role}
+                <span>
+                  {resumeCount} resumes · {sessionCount} sessions
+                  {avgAts !== null && ` · avg ATS ${avgAts}%`}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                    historyOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {historyOpen && (
+                <div className="pb-3 space-y-4 max-h-[40vh] overflow-y-auto">
+                  {/* Recent Resumes */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[10px] font-black uppercase tracking-wider text-[#1A1A1E] dark:text-white">
+                        Recent Resumes
                       </h3>
-                      <Badge variant="accent" size="sm">
-                        {interview.status}
-                      </Badge>
+                      <div className="flex items-center gap-3">
+                        <Link href="/resumes/upload">
+                          <Button variant="secondary" size="sm" icon={<UploadCloud className="w-3.5 h-3.5" />} className="h-7 text-[11px] px-2.5">
+                            Upload PDF
+                          </Button>
+                        </Link>
+                        <Link href="/history" className="text-[11px] text-[#854D0E] dark:text-[#FACC15] hover:underline font-bold">
+                          View All &rarr;
+                        </Link>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA] mt-0.5">
-                      {interview.company ? `${interview.company} \u2022 ` : ''}
-                      {interview.answered}/{interview.question_count} Questions Answered
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    {interview.average_score !== null && (
-                      <div className="text-xs font-black text-[#16A34A] dark:text-[#22C55E]">
-                        {Math.round(interview.average_score * 10) / 10}/100
+                    {actionError && (
+                      <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-600 dark:text-red-400">
+                        {actionError}
                       </div>
                     )}
-                    <div className="text-[9px] text-[#8A8A92]">{formatDate(interview.created_at)}</div>
-                  </div>
 
-                  <Link href={`/interview/${interview.session_id}/report`}>
-                    <Button variant="secondary" size="sm" icon={<ExternalLink className="w-3 h-3" />} className="h-7 text-[11px] px-2.5">
-                      View Report
-                    </Button>
-                  </Link>
+                    {resumes !== null && resumes.length === 0 && (
+                      <div className="p-3 rounded-2xl bg-white/90 dark:bg-[#121217] border border-dashed border-black/[0.15] dark:border-white/[0.15] text-xs text-[#5A5A63] dark:text-[#A1A1AA] flex items-center justify-between gap-3">
+                        <span>No resumes saved yet. Upload one to see it here.</span>
+                        <Link href="/resumes/upload">
+                          <Button variant="secondary" size="sm" className="h-7 text-[11px] px-2.5">
+                            Upload Resume
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {(resumes ?? []).map((res) => (
+                        <div
+                          key={res.id}
+                          className="p-3 rounded-2xl bg-white/90 dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-xs flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-12 rounded-lg border border-black/10 flex-shrink-0 bg-white shadow-2xs flex items-center justify-center">
+                              <FileText className="w-4 h-4 text-[#8A8A92]" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-xs font-bold text-[#1A1A1E] dark:text-white truncate">
+                                {res.file_name}
+                              </h3>
+                              <p className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA] truncate mt-0.5">
+                                {res.section_count} section{res.section_count === 1 ? '' : 's'} parsed
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-1 text-[9px] text-[#8A8A92]">
+                                <Clock className="w-2.5 h-2.5" />
+                                <span>{formatDate(res.created_at)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            <div className="flex items-center gap-1">
+                              {res.latest_ats_score !== null && (
+                                <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-[#16A34A]/10 text-[#16A34A] dark:text-[#22C55E]">
+                                  {res.latest_ats_score}% ATS
+                                </span>
+                              )}
+                              <button
+                                onClick={() => handleDuplicateResume(res)}
+                                disabled={busyResumeId === res.id}
+                                className="p-1 rounded-md text-[#8A8A92] hover:text-[#0A0A0C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                title="Duplicate resume"
+                                aria-label="Duplicate resume"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteResume(res.id)}
+                                disabled={busyResumeId === res.id}
+                                className="p-1 rounded-md text-[#8A8A92] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                title="Delete resume"
+                                aria-label="Delete resume"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+
+                            <Link href={`/resumes/${res.id}/edit`}>
+                              <Button variant="default" size="sm" className="h-7 text-[11px] px-2.5">
+                                Open in Editor
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Recent Interview Sessions */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[10px] font-black uppercase tracking-wider text-[#1A1A1E] dark:text-white">
+                        Recent Interview Sessions
+                      </h3>
+                      <Link href="/interview/new" className="text-[11px] text-[#854D0E] dark:text-[#FACC15] hover:underline font-bold">
+                        New Simulation &rarr;
+                      </Link>
+                    </div>
+
+                    {sessions !== null && sessions.length === 0 && (
+                      <div className="p-3 rounded-2xl bg-white/90 dark:bg-[#121217] border border-dashed border-black/[0.15] dark:border-white/[0.15] text-xs text-[#5A5A63] dark:text-[#A1A1AA] flex items-center justify-between gap-3">
+                        <span>No practice sessions yet. Start a simulation to see it here.</span>
+                        <Link href="/interview/new">
+                          <Button variant="secondary" size="sm" className="h-7 text-[11px] px-2.5">
+                            Start Practicing
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      {(sessions ?? []).slice(0, 3).map((interview) => (
+                        <div
+                          key={interview.session_id}
+                          className="p-3 rounded-2xl bg-white/90 dark:bg-[#121217] border border-black/[0.1] dark:border-white/[0.12] shadow-xs flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-[#FACC15]/20 text-[#0A0A0C] dark:text-[#FACC15] flex items-center justify-center flex-shrink-0">
+                              <Mic className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-xs font-bold text-[#1A1A1E] dark:text-white">
+                                  {interview.target_role}
+                                </h3>
+                                <Badge variant="accent" size="sm">
+                                  {interview.status}
+                                </Badge>
+                              </div>
+                              <p className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA] mt-0.5">
+                                {interview.company ? `${interview.company} \u2022 ` : ''}
+                                {interview.answered}/{interview.question_count} Questions Answered
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              {interview.average_score !== null && (
+                                <div className="text-xs font-black text-[#16A34A] dark:text-[#22C55E]">
+                                  {Math.round(interview.average_score * 10) / 10}/100
+                                </div>
+                              )}
+                              <div className="text-[9px] text-[#8A8A92]">{formatDate(interview.created_at)}</div>
+                            </div>
+
+                            <Link href={`/interview/${interview.session_id}/report`}>
+                              <Button variant="secondary" size="sm" icon={<ExternalLink className="w-3 h-3" />} className="h-7 text-[11px] px-2.5">
+                                View Report
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
-        </section>
-      </main>
+
+          {/* Mobile bottom spacer: account for tab bar height */}
+          <div className="h-16 md:h-0" aria-hidden="true" />
+        </div>
+      </div>
     </AppShell>
   );
 }
