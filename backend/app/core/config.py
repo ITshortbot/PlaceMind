@@ -72,6 +72,21 @@ class Settings(BaseSettings):
         description="Max tokens for OSS endpoint completion"
     )
 
+    # OpenRouter (free models only - paid calls are disabled in this build;
+    # the service layer refuses any model outside the verified-free allowlist)
+    OPENROUTER_API_KEY: str = Field(
+        default="",
+        description="OpenRouter API key, supplied via environment only"
+    )
+    OPENROUTER_MODEL: str = Field(
+        default="openrouter/free",
+        description="OpenRouter model id; must stay on the free allowlist"
+    )
+    OPENROUTER_TIMEOUT_S: int = Field(
+        default=45,
+        description="Request timeout in seconds for OpenRouter"
+    )
+
     # Vector Embedding Model
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-small-en-v1.5"
     EMBEDDING_DIMENSION: int = 384
