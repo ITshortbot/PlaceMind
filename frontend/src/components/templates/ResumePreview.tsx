@@ -370,6 +370,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                    Left/right stay 0: the sheet supplies its own side padding. */
                 margin: 12mm 0;
               }
+              html,
               body {
                 background: white !important;
                 margin: 0 !important;
@@ -386,11 +387,15 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
               body *:not(:has(#resume-preview-sheet)):not(#resume-preview-sheet):not(#resume-preview-sheet *) {
                 display: none !important;
               }
+              html,
               body,
               body *:has(#resume-preview-sheet) {
                 background: white !important;
+                background-color: white !important;
               }
               #resume-preview-sheet {
+                background: white !important;
+                background-color: white !important;
                 position: static !important;
                 height: auto !important;
                 max-height: none !important;

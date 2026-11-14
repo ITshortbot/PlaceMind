@@ -379,7 +379,7 @@ test.describe('Core Generation + Save Roundtrip', () => {
 
     expect(fs.existsSync(pdfPath)).toBeTruthy();
 
-    // Extract text from the PDF using PyMuPDF / fitz via backend .venv python
+    // Extract text from the PDF using PyMuPDF / fitz
     const extractScript = [
       'import fitz',
       `doc = fitz.open("${pdfPath}")`,
@@ -387,11 +387,32 @@ test.describe('Core Generation + Save Roundtrip', () => {
       'print(full_text)',
     ].join('; ');
 
-    const extractedText = execFileSync(
-      '/Users/cookiecoderr/PBL/Placemind/backend/.venv/bin/python',
-      ['-c', extractScript],
-      { encoding: 'utf-8' }
-    );
+    const pythonBin = process.env.PDF_TEST_PYTHON || 'python3';
+    let extractedText = '';
+    try {
+      extractedText = execFileSync(
+        pythonBin,
+        ['-c', extractScript],
+        { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
+      );
+    } catch (err: unknown) {
+      const execErr = err as { code?: string; stderr?: Buffer | string; message?: string };
+      const stderr = execErr?.stderr ? execErr.stderr.toString() : '';
+      const message = execErr?.message || String(err);
+      if (execErr?.code === 'ENOENT') {
+        throw new Error(
+          `Print-to-PDF verification failed: Python interpreter "${pythonBin}" was not found on PATH or via PDF_TEST_PYTHON. Please install python3 or set PDF_TEST_PYTHON to a valid Python executable with PyMuPDF installed.`
+        );
+      }
+      if (stderr.includes('No module named') || stderr.includes('fitz') || message.includes('fitz')) {
+        throw new Error(
+          `Print-to-PDF verification failed: Python interpreter "${pythonBin}" failed to import the 'fitz' (PyMuPDF) module. Stderr: ${stderr.trim()}. Please install pymupdf or point PDF_TEST_PYTHON to an environment with fitz installed.`
+        );
+      }
+      throw new Error(
+        `Print-to-PDF verification failed executing "${pythonBin}": ${message}. Stderr: ${stderr.trim()}`
+      );
+    }
 
     // Verify all sections and items are in extracted PDF text
     expect(extractedText).toContain('Robin PrintSynth');
