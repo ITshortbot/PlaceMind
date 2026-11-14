@@ -9,14 +9,14 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.dialects.sqlite.base import SQLiteTypeCompiler
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.database.models import Resume, ResumeSection, User
+from app.database.models import ATSMatchScore, JobDescription, Resume, ResumeSection, User
 from app.database.session import get_db
 from app.main import app
 
 SQLiteTypeCompiler.visit_JSONB = lambda self, type_, **kw: "JSON"
 SQLiteTypeCompiler.visit_vector = lambda self, type_, **kw: "BLOB"
 
-for _table in (User.__table__, Resume.__table__, ResumeSection.__table__):
+for _table in (User.__table__, Resume.__table__, ResumeSection.__table__, JobDescription.__table__, ATSMatchScore.__table__):
     for _col in _table.c:
         if _col.server_default is not None and str(_col.server_default.arg).endswith("::jsonb"):
             _col.server_default = None
@@ -29,6 +29,8 @@ async def client():
         await conn.run_sync(User.__table__.create, checkfirst=True)
         await conn.run_sync(Resume.__table__.create, checkfirst=True)
         await conn.run_sync(ResumeSection.__table__.create, checkfirst=True)
+        await conn.run_sync(JobDescription.__table__.create, checkfirst=True)
+        await conn.run_sync(ATSMatchScore.__table__.create, checkfirst=True)
     maker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
     async def _get_db():
