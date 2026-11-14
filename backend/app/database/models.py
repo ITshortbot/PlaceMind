@@ -31,7 +31,7 @@ class Resume(Base):
     file_name = Column(String(255), nullable=False)
     r2_storage_key = Column(Text, nullable=True)
     raw_text = Column(Text, nullable=False)
-    parsed_metadata = Column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    parsed_metadata = Column(JSONB, default=dict, server_default=text("'{}'"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -47,7 +47,7 @@ class ResumeSection(Base):
     resume_id = Column(UUID(as_uuid=True), ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False)
     section_type = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
-    meta_info = Column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    meta_info = Column(JSONB, default=dict, server_default=text("'{}'"))
     embedding = Column(Vector(384), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
