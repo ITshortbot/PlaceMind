@@ -19,6 +19,8 @@ const nextConfig = {
   // Images must be unoptimized for static desktop export
   images: {
     unoptimized: isTauriBuild,
+    // Path-based dev proxies (code-server /proxy/PORT) must also prefix the image optimizer
+    path: process.env.NEXT_ASSET_PREFIX ? process.env.NEXT_ASSET_PREFIX + "/_next/image" : undefined,
   },
 
   // Ensure trailing slashes match static file index routing in Tauri webview
