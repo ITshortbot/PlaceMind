@@ -14,8 +14,9 @@ from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.endpoints.resumes import _local_user, get_resume
-from app.database.models import Resume, ResumeSection
+from app.api.v1.endpoints.resumes import get_resume
+from app.core.auth import get_current_user
+from app.database.models import Resume, ResumeSection, User
 from app.database.session import get_db
 from app.schemas.resumes import ResumeDetailOut
 
@@ -96,10 +97,9 @@ def _missing_facts(a: OnboardingAnswers) -> list[str]:
 @router.post("/bootstrap", response_model=BootstrapResponse, status_code=status.HTTP_201_CREATED)
 async def bootstrap_resume(
     payload: OnboardingAnswers,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> BootstrapResponse:
-    user = await _local_user(db)
-
     name = payload.full_name.strip()
     role_part = f" - {payload.target_role.strip()}" if payload.target_role else ""
     raw_lines = [name + role_part]
@@ -116,8 +116,8 @@ async def bootstrap_resume(
     db.add(resume)
     await db.flush()
 
-    logger.info("Onboarding bootstrap created resume %s for local user", resume.id)
+    logger.info("Onboarding bootstrap created resume %s for user %s", resume.id, user.id)
     return BootstrapResponse(
-        resume=await get_resume(resume.id, db),
+        resume=await get_resume(resume.id, user, db),
         missing=_missing_facts(payload),
     )

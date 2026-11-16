@@ -91,6 +91,29 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-small-en-v1.5"
     EMBEDDING_DIMENSION: int = 384
 
+    # Authentication (Google OAuth 2.0 + signed session cookie)
+    # The client secret and session signing key are supplied via environment /
+    # .env on the host only - never committed to the repository.
+    GOOGLE_CLIENT_ID: str = Field(default="", description="Google OAuth 2.0 Web client ID")
+    GOOGLE_CLIENT_SECRET: str = Field(default="", description="Google OAuth 2.0 Web client secret")
+    GOOGLE_REDIRECT_URI: str = Field(
+        default="http://localhost:8000/api/v1/auth/google/callback",
+        description="OAuth redirect URI; must exactly match the Google Cloud console entry",
+    )
+    AUTH_SECRET_KEY: str = Field(
+        default="",
+        description="HS256 signing key for session/state tokens (generate per deployment)",
+    )
+    AUTH_SESSION_DAYS: int = Field(default=14, description="Remembered session lifetime in days (configurable per deployment)")
+    AUTH_COOKIE_SECURE: bool = Field(
+        default=False,
+        description="Set True when served over HTTPS so the session cookie is Secure",
+    )
+    FRONTEND_URL: str = Field(
+        default="http://localhost:3000",
+        description="Public base URL of the Next.js frontend for post-login redirects",
+    )
+
     # Cloudflare R2 Storage (S3-compatible)
     R2_ACCOUNT_ID: str = ""
     R2_ACCESS_KEY_ID: str = ""
@@ -110,6 +133,21 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "GEMINI_API_KEY must be set in staging/production environments. "
                     "Set it in your .env file or as a container environment variable."
+                )
+            if not self.AUTH_SECRET_KEY:
+                raise ValueError(
+                    "AUTH_SECRET_KEY must be set in staging/production environments. "
+                    "Generate one (e.g. `openssl rand -hex 32`) and set it in the environment."
+                )
+            if not self.AUTH_COOKIE_SECURE:
+                raise ValueError(
+                    "AUTH_COOKIE_SECURE must be true in staging/production: the "
+                    "session cookie must only travel over HTTPS."
+                )
+            if not self.GOOGLE_CLIENT_ID or not self.GOOGLE_CLIENT_SECRET:
+                raise ValueError(
+                    "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set in "
+                    "staging/production environments - sign-in is required."
                 )
         return self
 

@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { useAuth } from '@/lib/auth';
 import { WaveTextReveal } from '@/components/ui/WaveTextReveal';
 import {
   ArrowRight,
@@ -34,6 +35,9 @@ interface HeroSectionProps {
 export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
   const [cardTilt, setCardTilt] = useState({ rotateX: 0, rotateY: 0 });
   const shouldReduceMotion = useReducedMotion();
+  const { user } = useAuth();
+  const startHref = user ? '/dashboard' : '/login';
+  const startLabel = user ? 'Open Dashboard' : 'Try it Free';
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (shouldReduceMotion) return;
@@ -90,14 +94,14 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-              <Link href="/onboarding" className="w-full sm:w-auto">
+              <Link href={startHref} className="w-full sm:w-auto">
                 <Button
                   variant="primary"
                   size="lg"
                   icon={<ArrowRight className="w-4 h-4" />}
                   className="w-full text-sm px-9 py-4 shadow-xl"
                 >
-                  Try it Free
+                  {startLabel}
                 </Button>
               </Link>
 
@@ -160,8 +164,8 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
                 <Award className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">ATS-Friendly Format</div>
-                <div className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA]">Single-Column LaTeX Ready</div>
+                <div className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">Print-Ready Format</div>
+                <div className="text-[10px] text-[#5A5A63] dark:text-[#A1A1AA]">Single-Column, Print-Ready</div>
               </div>
             </div>
 

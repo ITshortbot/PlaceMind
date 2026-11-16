@@ -393,6 +393,16 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 background: white !important;
                 background-color: white !important;
               }
+              /* Multi-page output: the on-screen workspace constrains the
+                 sheet's ancestors to the viewport (flex-1 min-h-0,
+                 overflow-hidden). At print those clip a resume longer than
+                 one page. Let the whole ancestor chain grow and fragment. */
+              body *:has(#resume-preview-sheet) {
+                height: auto !important;
+                max-height: none !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+              }
               #resume-preview-sheet {
                 background: white !important;
                 background-color: white !important;

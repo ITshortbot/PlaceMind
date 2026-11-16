@@ -6,7 +6,7 @@
 // ============================================================================
 
 import React from 'react';
-import { Sparkles, Github, Twitter, Linkedin, Terminal } from 'lucide-react';
+import { Sparkles, Github, Terminal } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -30,14 +30,8 @@ export function Footer() {
               Modern dual-deployment ATS career copilot engineered with Next.js 15, PostgreSQL pgvector, Google Gemini 2.5 Flash, and local LM Studio privacy support.
             </p>
             <div className="flex items-center gap-3 pt-2 text-[#8A8A92] dark:text-[#6B6B76]">
-              <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-[#6C5CE7] transition-colors">
+              <a href="https://github.com/ITshortbot/PlaceMind" target="_blank" rel="noreferrer" className="hover:text-[#6C5CE7] transition-colors">
                 <Github className="w-4 h-4" />
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-[#6C5CE7] transition-colors">
-                <Twitter className="w-4 h-4" />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="hover:text-[#6C5CE7] transition-colors">
-                <Linkedin className="w-4 h-4" />
               </a>
             </div>
           </div>
@@ -45,7 +39,7 @@ export function Footer() {
           {/* Core Modules */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1E] dark:text-[#F5F5F7] mb-4">
-              Architecture
+              Supported Integrations
             </h4>
             <ul className="space-y-2.5 text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
               <li><a href="#demo" className="hover:text-[#6C5CE7] transition-colors">pgvector HNSW Store</a></li>
@@ -64,9 +58,9 @@ export function Footer() {
             <ul className="space-y-2.5 text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
               <li><a href="#demo" className="hover:text-[#6C5CE7] transition-colors">ATS Match Scoring</a></li>
               <li><a href="#demo" className="hover:text-[#6C5CE7] transition-colors">XYZ Bullet Rewriter</a></li>
-              <li><a href="#demo" className="hover:text-[#6C5CE7] transition-colors">Mock Voice Rehearsals</a></li>
+              <li><a href="#demo" className="hover:text-[#6C5CE7] transition-colors">Mock Interview Practice</a></li>
               <li><a href="#features" className="hover:text-[#6C5CE7] transition-colors">Local LM Studio Privacy</a></li>
-              <li><a href="#how-it-works" className="hover:text-[#6C5CE7] transition-colors">LaTeX PDF Generation</a></li>
+              <li><a href="#how-it-works" className="hover:text-[#6C5CE7] transition-colors">Print-Ready PDF Export</a></li>
             </ul>
           </div>
 
@@ -81,8 +75,7 @@ export function Footer() {
                 <span>PBL Capstone Defense</span>
               </li>
               <li><span>Computer Science & AI</span></li>
-              <li><span>Zero-Retention Certified</span></li>
-              <li><span>Dual SaaS / Desktop</span></li>
+                            <li><span>Dual Web / Desktop</span></li>
             </ul>
           </div>
         </div>
@@ -93,9 +86,7 @@ export function Footer() {
             &copy; {new Date().getFullYear()} Placemind AI Platform. Project-Based Learning University Submission.
           </div>
           <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-[#6C5CE7] transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-[#6C5CE7] transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-[#6C5CE7] transition-colors">System Architecture</a>
+            <a href="https://github.com/ITshortbot/PlaceMind" target="_blank" rel="noreferrer" className="hover:text-[#6C5CE7] transition-colors">Source Code</a>
           </div>
         </div>
       </div>

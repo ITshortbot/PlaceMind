@@ -55,8 +55,8 @@ export function FeatureGrid() {
     {
       icon: Download,
       title: 'Instant ATS PDF Export',
-      tag: 'Standard LaTeX',
-      desc: 'Generate clean, single-column, ATS-parseable PDF resumes structured for reliable parsing by mainstream ATS software like Workday, Greenhouse, and Lever.',
+      tag: 'Print-Ready',
+      desc: 'Generate a clean, single-column PDF resume from your real content, ready to print or share.',
     },
     {
       icon: BarChart3,

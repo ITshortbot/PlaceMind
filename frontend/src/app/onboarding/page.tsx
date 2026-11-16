@@ -2,14 +2,15 @@
 
 // ============================================================================
 // File: frontend/src/app/onboarding/page.tsx
-// Description: 4-Step Interactive Onboarding Wizard
-//              Step 1: Auth (Email demo)
-//              Step 2: Profile Basics (Name, Phone, University, Specialization)
-//              Step 3: Personalize (Target Role, Target Company)
-//              Step 4: Template Preference & Bootstrap Resume Creation
+// Description: 3-Step Interactive Onboarding Wizard (requires Google sign-in)
+//              Step 1: Profile Basics (Name, Phone, University, Specialization)
+//              Step 2: Personalize (Target Role, Target Company)
+//              Step 3: Template Preference & Bootstrap Resume Creation
+//              The account (name/email) comes from the signed-in Google
+//              identity; there is no demo email/password step.
 // ============================================================================
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,13 +19,9 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
-  Lock,
   Building2,
-  GraduationCap,
   Briefcase,
-  Layers,
   Wand2,
-  ShieldCheck,
   AlertTriangle,
   Loader2,
   RefreshCw,
@@ -38,18 +35,27 @@ import { ResumePreview } from '@/components/templates/ResumePreview';
 import { BUILDER_TEMPLATES, SAMPLE_RESUME_CONTENT } from '@/lib/builderTemplates';
 import { buildPalette } from '@/lib/color/engine';
 import { bootstrapResume, type OnboardingAnswers } from '@/lib/api/onboarding';
+import { useAuth } from '@/lib/auth';
+import { RequireAuth } from '@/components/app/RequireAuth';
 
 export default function OnboardingPage() {
+  return (
+    <RequireAuth>
+      <OnboardingWizard />
+    </RequireAuth>
+  );
+}
+
+function OnboardingWizard() {
   const router = useRouter();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isBootstrapping, setIsBootstrapping] = useState(false);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
-  // Form State
+  // Form State - the account fields come from the signed-in Google identity
   const [formData, setFormData] = useState({
-    authMethod: 'email',
     email: '',
-    password: '',
     name: '',
     phone: '',
     university: '',
@@ -60,15 +66,18 @@ export default function OnboardingPage() {
     autoSelectTemplate: true,
   });
 
+  // Pre-fill the wizard from the signed-in account
+  useEffect(() => {
+    if (!user) return;
+    setFormData((prev) => ({
+      ...prev,
+      email: user.email || prev.email,
+      name: prev.name || user.full_name || '',
+    }));
+  }, [user]);
+
   const nextStep = async () => {
-    if (currentStep < 4) {
-      // If moving from step 1 to 2, derive default name from email if not already typed
-      if (currentStep === 1 && !formData.name && formData.email) {
-        const derived = formData.email.split('@')[0].replace(/[._-]+/g, ' ').trim();
-        if (derived) {
-          setFormData((prev) => ({ ...prev, name: derived }));
-        }
-      }
+    if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1);
     } else {
       const trimmedName = formData.name.trim();
@@ -154,9 +163,9 @@ export default function OnboardingPage() {
           <span className="font-extrabold text-base tracking-tight">Placemind</span>
         </Link>
 
-        {/* 4-Step Progress Indicator */}
+        {/* 3-Step Progress Indicator */}
         <div className="flex items-center gap-2">
-          {[1, 2, 3, 4].map((step) => (
+          {[1, 2, 3].map((step) => (
             <div
               key={step}
               className={`h-2 rounded-full transition-all duration-300 ${
@@ -167,7 +176,7 @@ export default function OnboardingPage() {
             />
           ))}
           <span className="text-xs font-mono font-bold text-[#8A8A92] ml-2">
-            Step 0{currentStep} / 04
+            Step 0{currentStep} / 03
           </span>
         </div>
       </header>
@@ -175,7 +184,7 @@ export default function OnboardingPage() {
       {/* Main Multi-Step Form Stage */}
       <main className="flex-1 max-w-xl mx-auto w-full p-6 flex flex-col justify-center">
         <AnimatePresence mode="wait">
-          {/* STEP 1: AUTHENTICATION */}
+          {/* STEP 1: PROFILE BASICS */}
           {currentStep === 1 && (
             <motion.div
               key="step1"
@@ -185,63 +194,7 @@ export default function OnboardingPage() {
               className="space-y-6"
             >
               <div className="space-y-1.5 text-center">
-                <Badge variant="accent" size="sm">Step 01 &bull; Demo Setup</Badge>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                  Welcome to Placemind
-                </h1>
-                <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-                  This is a single-user demo: no account is created and nothing you enter is verified.
-                </p>
-              </div>
-
-              <Card className="p-6 space-y-4 shadow-xl">
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="name@company.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                  <p className="text-[10px] text-[#8A8A92]">
-                    Used to label local demo exports; not sent to any auth provider.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Password</Label>
-                  <Input
-                    type="password"
-                    placeholder="Demo only (not stored)"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  />
-                </div>
-
-                <Button
-                  variant="primary"
-                  size="default"
-                  onClick={nextStep}
-                  className="w-full mt-2"
-                  icon={<ArrowRight className="w-4 h-4" />}
-                >
-                  Continue with Email
-                </Button>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* STEP 2: PROFILE BASICS */}
-          {currentStep === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
-            >
-              <div className="space-y-1.5 text-center">
-                <Badge variant="accent" size="sm">Step 02 &bull; Background</Badge>
+                <Badge variant="accent" size="sm">Step 01 &bull; Background</Badge>
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                   Profile & Education Basics
                 </h1>
@@ -251,6 +204,10 @@ export default function OnboardingPage() {
               </div>
 
               <Card className="p-6 space-y-4 shadow-xl">
+                <div className="p-3 rounded-xl bg-[#6C5CE7]/[0.07] border border-[#6C5CE7]/20 text-[11px] text-[#4A4A52] dark:text-[#A1A1AA]">
+                  Signed in as <strong className="text-[#1A1A1E] dark:text-white">{formData.email || 'your Google account'}</strong>. This email labels your resumes and exports.
+                </div>
+
                 <div className="space-y-1.5">
                   <Label>Full Name</Label>
                   <Input
@@ -291,10 +248,7 @@ export default function OnboardingPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-4">
-                  <Button variant="ghost" size="sm" onClick={prevStep} icon={<ArrowLeft className="w-3.5 h-3.5" />}>
-                    Back
-                  </Button>
+                <div className="flex items-center justify-end pt-4">
                   <Button variant="primary" size="default" onClick={nextStep} icon={<ArrowRight className="w-4 h-4" />}>
                     Continue
                   </Button>
@@ -303,17 +257,17 @@ export default function OnboardingPage() {
             </motion.div>
           )}
 
-          {/* STEP 3: PERSONALIZE */}
-          {currentStep === 3 && (
+          {/* STEP 2: PERSONALIZE */}
+          {currentStep === 2 && (
             <motion.div
-              key="step3"
+              key="step2"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
               <div className="space-y-1.5 text-center">
-                <Badge variant="accent" size="sm">Step 03 &bull; Target Goals</Badge>
+                <Badge variant="accent" size="sm">Step 02 &bull; Target Goals</Badge>
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                   Personalize Your Track
                 </h1>
@@ -363,17 +317,17 @@ export default function OnboardingPage() {
             </motion.div>
           )}
 
-          {/* STEP 4: TEMPLATE PREFERENCE & BOOTSTRAP */}
-          {currentStep === 4 && (
+          {/* STEP 3: TEMPLATE PREFERENCE & BOOTSTRAP */}
+          {currentStep === 3 && (
             <motion.div
-              key="step4"
+              key="step3"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
               <div className="space-y-1.5 text-center">
-                <Badge variant="accent" size="sm">Step 04 &bull; Format Engine</Badge>
+                <Badge variant="accent" size="sm">Step 03 &bull; Format Engine</Badge>
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                   Choose Starting Template
                 </h1>
@@ -472,7 +426,7 @@ export default function OnboardingPage() {
                 {!formData.name.trim() && (
                   <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Please enter your full name (Step 2) to build your starting resume draft.</span>
+                    <span>Please enter your full name (Step 1) to build your starting resume draft.</span>
                   </div>
                 )}
 
@@ -498,7 +452,7 @@ export default function OnboardingPage() {
 
       {/* Footer Disclaimer */}
       <footer className="py-4 text-center text-[11px] text-[#8A8A92] border-t border-black/[0.06] dark:border-white/[0.06]">
-        Placemind demo build
+        Placemind
       </footer>
     </div>
   );

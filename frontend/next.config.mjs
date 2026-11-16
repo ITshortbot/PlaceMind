@@ -34,6 +34,14 @@ const nextConfig = {
   // Unset in normal local dev and Vercel - no behavior change.
   assetPrefix: process.env.NEXT_ASSET_PREFIX || undefined,
 
+  // Full path-prefix deployments (code-server /absproxy/PORT dev tunnel, whose
+  // proxy passes the path through instead of stripping it): serve pages,
+  // _next assets and public files under the prefix. next/link, useRouter and
+  // next/image all prepend basePath automatically (audited: no raw <a href>,
+  // no plain <img>, no relative API fetches - backend calls use absolute URLs).
+  // Unset in normal local dev and Vercel - no behavior change.
+  basePath: process.env.NEXT_BASE_PATH || undefined,
+
   transpilePackages: ['three'],
 };
 

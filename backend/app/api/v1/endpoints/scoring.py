@@ -14,6 +14,7 @@ from app.services.embeddings import embedding_engine
 from app.services.ai_router import HybridLLMRouter, RoutingMode
 from app.services.ats_scorer import ATSScoringEngine
 from app.services.r2_storage import r2_storage
+from app.core.auth import get_current_user
 from app.database.session import get_db
 from app.database.models import ATSMatchScore, JobDescription, JobRequirement, Resume, ResumeSection, User
 
@@ -34,6 +35,7 @@ async def score_resume_pdf(
     job_title: str = Form(..., description="Target Job Title (e.g. Senior Frontend Engineer)"),
     job_description_raw: str = Form(..., description="Raw text of the target Job Description"),
     routing_mode: Literal["cloud", "local"] = Form("cloud", description="'cloud' (Gemini) or 'local' (LM Studio)"),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -105,11 +107,9 @@ async def score_resume_pdf(
         )
 
         try:
-            anon_email = f"anonymous-{uuid.uuid4()}@placemind.local"
-            db_user = User(email=anon_email, full_name="Anonymous", is_local_only=(routing_mode == "local"))
-            db.add(db_user)
-            await db.flush()
-
+            # Uploaded work belongs to the signed-in account; no anonymous
+            # throwaway users are created.
+            db_user = user
             db_resume = Resume(
                 user_id=db_user.id,
                 file_name=file.filename,

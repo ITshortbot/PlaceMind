@@ -8,7 +8,9 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.endpoints.resumes import _load_resume, _local_user
+from app.api.v1.endpoints.resumes import _load_resume
+from app.core.auth import get_current_user
+from app.database.models import User
 from app.database.session import get_db
 from app.schemas.templates import CandidateFacts, GenerateRequest, GenerateResponse, ResumeContent
 from app.services.resume_content import content_from_resume
@@ -34,10 +36,6 @@ router = APIRouter(prefix="/templates", tags=["Resume Templates"])
 # In-process semaphore to limit concurrency (max 1 concurrent generation)
 _generation_semaphore = asyncio.Semaphore(1)
 
-# TODO: Add authentication (e.g. JWT/session) and database persistence (PostgreSQL/SQLAlchemy)
-# for user templates and generation quotas in production.
-
-
 @router.post(
     "/generate",
     response_model=GenerateResponse,
@@ -50,6 +48,7 @@ _generation_semaphore = asyncio.Semaphore(1)
 )
 async def generate_template(
     request: GenerateRequest,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> GenerateResponse:
     """
@@ -64,8 +63,7 @@ async def generate_template(
     if request.facts is not None:
         facts_content = _facts_to_content(request.facts)
     elif request.resume_id is not None:
-        await _local_user(db)
-        resume = await _load_resume(request.resume_id, db)  # 404 when missing
+        resume = await _load_resume(request.resume_id, db, user)  # 404 when missing or foreign
         facts_content = content_from_resume(resume)
 
     if _generation_semaphore.locked():

@@ -5,13 +5,16 @@
 // Description: Tab 8 - Settings: Profile Info, AI Engine Routing Preference,
 //              Notifications & Privacy from Wireframe v1
 //
-// Persistence model (single-user demo): profile and engine preference are
-// saved to this browser's localStorage and read back by the Resume Builder
-// and ATS page. Nothing here creates an account or syncs anywhere.
+// Persistence model: the account is the signed-in Google identity (session
+// cookie). Profile and engine preference are saved to this browser's
+// localStorage and read back by the Resume Builder and ATS page as form
+// convenience data - they are not the account.
 // ============================================================================
 
 import React, { useEffect, useState } from 'react';
 import { AppShell } from '@/components/app/AppShell';
+import { useRouter } from 'next/navigation';
+import { useAuth, logout } from '@/lib/auth';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -26,6 +29,7 @@ import {
   Server,
   Lock,
   Database,
+  LogOut,
 } from 'lucide-react';
 
 const PROFILE_STORAGE_KEY = 'placemind.profile';
@@ -46,6 +50,8 @@ const EMPTY_PROFILE: StoredProfile = {
 };
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'engine' | 'privacy'>('profile');
   const [profile, setProfile] = useState<StoredProfile>(EMPTY_PROFILE);
   const [enginePreference, setEnginePreference] = useState<'cloud' | 'local'>('cloud');
@@ -111,7 +117,7 @@ export default function SettingsPage() {
             Account & Application Settings
           </h1>
           <p className="text-xs sm:text-sm text-[#5A5A63] dark:text-[#A1A1AA] mt-1">
-            Local preferences for this single-user demo. Saved in this browser only.
+            Your Google account plus local preferences saved in this browser.
           </p>
         </div>
 
@@ -161,6 +167,35 @@ export default function SettingsPage() {
               {/* TAB 1: Profile & Education Info */}
               {activeTab === 'profile' && (
                 <div className="space-y-4">
+                  {/* Signed-in account: the Google identity this data belongs to */}
+                  <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#6C5CE7]/[0.07] border border-[#6C5CE7]/20">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {user?.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={user.avatar_url} alt="" className="w-9 h-9 rounded-full flex-shrink-0" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-[#6C5CE7]/20 flex items-center justify-center text-[#6C5CE7] flex-shrink-0">
+                          <User className="w-4 h-4" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">{user?.full_name || 'Signed in'}</div>
+                        <div className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] truncate">{user?.email}</div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<LogOut className="w-3.5 h-3.5" />}
+                      onClick={async () => {
+                        await logout();
+                        router.replace('/login');
+                      }}
+                    >
+                      Sign out
+                    </Button>
+                  </div>
+
                   <div className="border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
                     <h3 className="text-base font-bold">Profile & Education Basics</h3>
                     <p className="text-xs text-[#8A8A92] mt-0.5">

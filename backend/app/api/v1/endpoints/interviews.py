@@ -1,9 +1,11 @@
 # ============================================================================
 # File: backend/app/api/v1/endpoints/interviews.py
 # Description: Mock-interview API - deterministic practice sessions.
-#   Create a session (question plan), answer turn by turn with heuristic
-#   feedback, then fetch an aggregate report. No LLM calls; the engine is
-#   rule-based and every score is reproducible.
+#   Sessions belong to the signed-in account: lists are scoped to the caller
+#   and every session-level read, answer and report verifies ownership (404 on
+#   foreign ids). Legacy sessions with no owner stay quarantined - they are
+#   invisible to every account. No LLM calls; the engine is rule-based and
+#   every score is reproducible.
 # ============================================================================
 
 import asyncio
@@ -14,7 +16,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.models import InterviewSession, InterviewTurn
+from app.core.auth import get_current_user
+from app.database.models import InterviewSession, InterviewTurn, User
 from app.database.session import get_db
 from app.schemas.interviews import (
     AnswerRequest,
@@ -42,10 +45,12 @@ def _planned_out(q) -> PlannedQuestionOut:
     return PlannedQuestionOut(order=q["order"], category=q["category"], prompt=q["prompt"], focus=q["focus"])
 
 
-async def _load_session(session_id: UUID, db: AsyncSession) -> InterviewSession:
+async def _load_session(session_id: UUID, db: AsyncSession, user: User) -> InterviewSession:
+    """Load a session only when it belongs to the caller. Foreign, missing or
+    ownerless (legacy) ids all 404 so existence is not leaked."""
     result = await db.execute(select(InterviewSession).where(InterviewSession.id == session_id))
     session = result.scalar_one_or_none()
-    if session is None:
+    if session is None or session.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found.")
     return session
 
@@ -94,7 +99,7 @@ def _turn_out(t: InterviewTurn) -> TurnOut:
 
 
 @router.post("/sessions", response_model=SessionOut, status_code=status.HTTP_201_CREATED)
-async def create_session(payload: CreateSessionRequest, db: AsyncSession = Depends(get_db)):
+async def create_session(payload: CreateSessionRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     plan = generate_plan(
         target_role=payload.target_role,
         company=payload.company,
@@ -104,6 +109,7 @@ async def create_session(payload: CreateSessionRequest, db: AsyncSession = Depen
         seed=None,
     )
     session = InterviewSession(
+        user_id=user.id,
         target_role=payload.target_role.strip(),
         company=(payload.company or "").strip() or None,
         interview_type=payload.interview_type,
@@ -144,8 +150,10 @@ async def create_session(payload: CreateSessionRequest, db: AsyncSession = Depen
 
 
 @router.get("/sessions", response_model=list[SessionSummaryOut])
-async def list_sessions(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(InterviewSession).order_by(InterviewSession.created_at.desc()))
+async def list_sessions(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(InterviewSession).where(InterviewSession.user_id == user.id).order_by(InterviewSession.created_at.desc())
+    )
     sessions = list(result.scalars().all())
     out: list[SessionSummaryOut] = []
     for s in sessions:
@@ -168,8 +176,8 @@ async def list_sessions(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/sessions/{session_id}", response_model=SessionOut)
-async def get_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
-    session = await _load_session(session_id, db)
+async def get_session(session_id: UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    session = await _load_session(session_id, db, user)
     turns = await _turns(session_id, db)
     nxt = _next_unanswered(turns)
     answered = _answered_planned(turns)
@@ -191,16 +199,16 @@ _ANSWER_LOCKS: dict[UUID, asyncio.Lock] = {}
 
 
 @router.post("/sessions/{session_id}/answer", response_model=AnswerResponse)
-async def answer_current(session_id: UUID, payload: AnswerRequest, db: AsyncSession = Depends(get_db)):
+async def answer_current(session_id: UUID, payload: AnswerRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     # Serialize concurrent submissions per session: a double-fired request must
     # observe the state the first one left behind, not the state before it.
     lock = _ANSWER_LOCKS.setdefault(session_id, asyncio.Lock())
     async with lock:
-        return await _answer_locked(session_id, payload, db)
+        return await _answer_locked(session_id, payload, db, user)
 
 
-async def _answer_locked(session_id: UUID, payload: AnswerRequest, db: AsyncSession) -> AnswerResponse:
-    session = await _load_session(session_id, db)
+async def _answer_locked(session_id: UUID, payload: AnswerRequest, db: AsyncSession, user: User) -> AnswerResponse:
+    session = await _load_session(session_id, db, user)
     if session.status == "completed":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Session already completed. Start a new one.")
     turns = await _turns(session_id, db)
@@ -278,8 +286,8 @@ async def _answer_locked(session_id: UUID, payload: AnswerRequest, db: AsyncSess
 
 
 @router.get("/sessions/{session_id}/report", response_model=ReportOut)
-async def session_report(session_id: UUID, db: AsyncSession = Depends(get_db)):
-    session = await _load_session(session_id, db)
+async def session_report(session_id: UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    session = await _load_session(session_id, db, user)
     turns = await _turns(session_id, db)
     shaped = []
     for t in turns:

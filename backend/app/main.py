@@ -5,7 +5,8 @@
 
 from contextlib import asynccontextmanager
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.core.config import settings
@@ -23,8 +24,17 @@ async def initialize_database(engine, metadata):
         if engine.url.get_backend_name() == "postgresql":
             async with engine.begin() as conn:
                 await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        # Create missing tables before altering existing ones. A fresh
+        # PostgreSQL database does not have a users table yet.
         async with engine.begin() as conn:
             await conn.run_sync(metadata.create_all)
+        if engine.url.get_backend_name() == "postgresql":
+            async with engine.begin() as conn:
+                # Idempotent auth-column migration: create_all never alters
+                # existing tables, so add the sign-in columns explicitly.
+                await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub varchar(255)"))
+                await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url text"))
+                await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub ON users (google_sub)"))
         logger.info("Database tables ensured (pgvector extension on PostgreSQL only).")
     except Exception as exc:
         logger.warning("Database initialization failed; continuing without database features: %s", exc)
@@ -94,6 +104,24 @@ async def db_health_check(db: AsyncSession = Depends(get_db)):
         }
     except Exception as exc:
         return {"status": "offline", "error": str(exc)}
+
+# CSRF defense in depth: the session cookie is SameSite=Lax (cross-site POSTs
+# never carry it); additionally, any mutating request that presents an Origin
+# header must come from a configured frontend origin. Cookie-less tooling
+# without an Origin header is unaffected.
+_MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+@app.middleware("http")
+async def origin_guard(request: Request, call_next):
+    if request.method in _MUTATING_METHODS:
+        origin = request.headers.get("origin")
+        if origin:
+            allowed = {o.rstrip("/") for o in settings.CORS_ORIGINS}
+            if origin.rstrip("/") not in allowed:
+                return JSONResponse(status_code=403, content={"detail": "Forbidden origin."})
+    return await call_next(request)
+
 
 # Mount API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)

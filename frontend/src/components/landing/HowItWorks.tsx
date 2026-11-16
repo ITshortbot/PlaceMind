@@ -98,7 +98,7 @@ export function HowItWorks() {
           </h2>
 
           <p className="text-base sm:text-lg text-[#5A5A63] dark:text-[#A1A1AA] mt-4 leading-relaxed">
-            An end-to-end algorithmic career engine engineered to bypass screening filters and prepare you for the technical round.
+            An end-to-end career engine that finds what screening filters flag, strengthens weak points, and prepares you for the technical round.
           </p>
         </div>
 

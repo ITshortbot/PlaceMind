@@ -13,7 +13,12 @@ from app.database.models import Base
 from app.main import initialize_database
 
 
-async def test_initialize_database_creates_tables_on_sqlite(tmp_path):
+async def test_initialize_database_creates_tables_on_sqlite(tmp_path, monkeypatch):
+    # This test uses the same explicit PostgreSQL-type compiler shims as the
+    # API fixtures, without depending on other test modules being collected.
+    from sqlalchemy.dialects.sqlite.base import SQLiteTypeCompiler
+    monkeypatch.setattr(SQLiteTypeCompiler, "visit_JSONB", lambda self, type_, **kw: "JSON", raising=False)
+    monkeypatch.setattr(SQLiteTypeCompiler, "visit_vector", lambda self, type_, **kw: "BLOB", raising=False)
     db_file = tmp_path / "init.db"
     engine = create_async_engine(f"sqlite+aiosqlite:///{db_file}")
     try:
@@ -27,3 +32,43 @@ async def test_initialize_database_creates_tables_on_sqlite(tmp_path):
         assert "interview_turns" in tables
     finally:
         await engine.dispose()
+
+
+async def test_fresh_postgres_creates_users_before_auth_migration():
+    """An empty PostgreSQL DB must not ALTER a table before creating it."""
+    calls = []
+
+    class Connection:
+        async def execute(self, statement):
+            sql = str(statement)
+            if sql.startswith("ALTER TABLE users"):
+                assert "create_all" in calls
+            calls.append(sql)
+
+        async def run_sync(self, callback):
+            callback(None)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+    class URL:
+        def get_backend_name(self):
+            return "postgresql"
+
+    class Engine:
+        url = URL()
+
+        def begin(self):
+            return Connection()
+
+    class Metadata:
+        def create_all(self, connection):
+            calls.append("create_all")
+
+    await initialize_database(Engine(), Metadata())
+    assert calls[0] == "CREATE EXTENSION IF NOT EXISTS vector"
+    assert calls[1] == "create_all"
+    assert sum(sql.startswith("ALTER TABLE users") for sql in calls) == 2

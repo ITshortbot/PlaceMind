@@ -6,12 +6,17 @@
 // ============================================================================
 
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/auth';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { WaveTextReveal } from '@/components/ui/WaveTextReveal';
 
 export function Pricing() {
+  const { user } = useAuth();
+  const startHref = user ? '/dashboard' : '/login';
+  const startLabel = user ? 'Open Dashboard' : 'Start Free Audit';
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -101,18 +106,16 @@ export function Pricing() {
             </div>
 
             <div className="mt-10">
-              <Button
-                variant="primary"
-                size="md"
-                className="w-full"
-                icon={<ArrowRight className="w-4 h-4" />}
-                onClick={() => {
-                  const el = document.getElementById('demo');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Start Free Audit
-              </Button>
+              <Link href={startHref} className="w-full block">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="w-full"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                >
+                  {startLabel}
+                </Button>
+              </Link>
             </div>
           </motion.div>
 

@@ -6,12 +6,17 @@
 // ============================================================================
 
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/auth';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { WaveTextReveal } from '@/components/ui/WaveTextReveal';
 
 export function FinalCTA() {
+  const { user } = useAuth();
+  const startHref = user ? '/dashboard' : '/login';
+  const startLabel = user ? 'Open Dashboard' : 'Get Started Free';
   return (
     <section className="py-28 md:py-36 relative overflow-hidden">
       {/* Background Radial Glow */}
@@ -40,22 +45,20 @@ export function FinalCTA() {
           </h2>
 
           <p className="text-base sm:text-lg text-[#5A5A63] dark:text-[#A1A1AA] max-w-xl mx-auto leading-[1.7]">
-            Audit your application against any job description in under 30 seconds. 100% free, no credit card required.
+            Audit your application against any job description. 100% free, no credit card required.
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              variant="primary"
-              size="lg"
-              icon={<ArrowRight className="w-4 h-4" />}
-              onClick={() => {
-                const el = document.getElementById('demo');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="w-full sm:w-auto text-sm px-8"
-            >
-              Get Started Free
-            </Button>
+            <Link href={startHref} className="w-full sm:w-auto">
+              <Button
+                variant="primary"
+                size="lg"
+                icon={<ArrowRight className="w-4 h-4" />}
+                className="w-full sm:w-auto text-sm px-8"
+              >
+                {startLabel}
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </div>

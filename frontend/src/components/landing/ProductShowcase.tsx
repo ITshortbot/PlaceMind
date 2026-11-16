@@ -82,7 +82,7 @@ export function ProductShowcase() {
         </h2>
 
         <p className="text-base sm:text-lg text-[#5A5A63] dark:text-[#A1A1AA] mt-3 max-w-2xl mx-auto leading-relaxed">
-          Real-time ATS parsing, metric-driven bullet point enhancements, and instant match scoring.
+          Live editing with ATS readiness checks, bullet-point guidance, and match scoring.
         </p>
       </div>
 
@@ -104,14 +104,14 @@ export function ProductShowcase() {
             <div>
               <div className="flex items-center gap-1.5">
                 <h4 className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">
-                  ATS-Safe Formatting
+                  Clean, Simple Structure
                 </h4>
                 <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[#16A34A]/10 text-[#16A34A] dark:text-[#22C55E]">
                   0 Errors
                 </span>
               </div>
               <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] mt-1 leading-relaxed">
-                Structured to pass single-column Workday & Greenhouse parsers.
+                A single-column layout designed for clean reading and easy printing.
               </p>
             </div>
           </div>
@@ -210,7 +210,7 @@ export function ProductShowcase() {
                 Instant Export
               </h4>
               <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] mt-1 leading-relaxed">
-                Export to clean ATS-ready PDF or LaTeX anytime.
+                Export a clean, ATS-ready PDF anytime.
               </p>
             </div>
           </div>

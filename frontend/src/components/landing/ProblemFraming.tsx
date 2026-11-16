@@ -6,8 +6,8 @@
 //              and glassmorphic bento cards.
 // ============================================================================
 
-import React, { useState, useEffect } from 'react';
-import { motion, useInView } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import {
   AlertOctagon,
   Search,
@@ -22,38 +22,8 @@ import {
 } from 'lucide-react';
 
 export function ProblemFraming() {
-  const ref = React.useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
-
-  const [stat1, setStat1] = useState(0);
-  const [stat2, setStat2] = useState(0);
-  const [stat3, setStat3] = useState(0);
-
-  useEffect(() => {
-    if (isInView) {
-      const duration = 1200;
-      const steps = 40;
-      const interval = duration / steps;
-      let step = 0;
-
-      const timer = setInterval(() => {
-        step++;
-        const progress = step / steps;
-        const ease = 1 - Math.pow(1 - progress, 3);
-
-        setStat1(Math.round(75 * ease));
-        setStat2(Math.round(6.4 * ease * 10) / 10);
-        setStat3(Math.round(82 * ease));
-
-        if (step >= steps) clearInterval(timer);
-      }, interval);
-
-      return () => clearInterval(timer);
-    }
-  }, [isInView]);
-
   return (
-    <section ref={ref} className="py-24 md:py-36 relative overflow-hidden">
+    <section className="py-24 md:py-36 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -63,14 +33,14 @@ export function ProblemFraming() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-tight text-[#1A1A1E] dark:text-[#F5F5F7]">
-            <span className="font-light">Why great candidates get over</span>{' '}
+            <span className="font-light">Why strong experience gets</span>{' '}
             <span className="font-extrabold bg-gradient-to-r from-[#6C5CE7] via-[#8F82FF] to-[#38BDF8] bg-clip-text text-transparent">
               overlooked
             </span>
           </h2>
 
           <p className="text-base sm:text-lg text-[#5A5A63] dark:text-[#A1A1AA] mt-4 leading-relaxed">
-            Automated screening systems discard hundreds of qualified applications simply due to formatting nuances and keyword gaps.
+            Make your experience easier to read, compare with a job description, and discuss in an interview.
           </p>
         </div>
 
@@ -101,26 +71,26 @@ export function ProblemFraming() {
                 </div>
 
                 <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#F04438]/10 text-[#B91C1C] dark:text-[#F04438] border border-[#F04438]/30 flex items-center gap-1.5">
-                  <AlertOctagon className="w-3.5 h-3.5" /> High Rejection Rate
+                  <AlertOctagon className="w-3.5 h-3.5" /> Formatting &amp; Keywords
                 </span>
               </div>
 
               {/* Stat Display */}
               <div className="flex items-baseline gap-2">
                 <span className="text-6xl sm:text-7xl font-black text-[#1A1A1E] dark:text-[#F5F5F7] tracking-tight">
-                  {stat1}%<span className="text-[#6C5CE7]">+</span>
+                  Clarity
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#8A8A92] dark:text-[#6B6B76]">
-                  OF RESUMES NEVER REACH A HUMAN
+                  FOR PEOPLE AND PARSERS
                 </span>
               </div>
 
               <h3 className="text-2xl font-bold text-[#1A1A1E] dark:text-[#F5F5F7] mt-4 tracking-tight">
-                Filtered by Rigid Keyword Matchers
+                Make Relevant Experience Easier to Find
               </h3>
 
               <p className="text-sm text-[#5A5A63] dark:text-[#A1A1AA] mt-3 leading-[1.7]">
-                If your experience describes your work with different terminology than the job post, automated scanners may reject your application before a recruiter ever reviews your portfolio.
+                Review formatting and job-post terminology, then decide which changes accurately describe your work.
               </p>
 
               {/* Comparison Graphic */}
@@ -128,9 +98,9 @@ export function ProblemFraming() {
                 <div className="flex items-center gap-2.5 text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
                   <span className="w-2 h-2 rounded-full bg-[#F04438]" />
                   <span>
-                    Unoptimized Application:{" "}
+                    Before Review:{" "}
                     <strong className="inline md:block text-[#B91C1C] dark:text-[#F04438]">
-                      Likely Filtered
+                      Gaps to Check
                     </strong>
                   </span>
 
@@ -139,9 +109,9 @@ export function ProblemFraming() {
                 <div className="flex items-center gap-2.5 text-xs text-[#1A1A1E] dark:text-[#F5F5F7] font-medium">
                   <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
                   <span>
-                    Placemind Tailored Resume:{" "}
+                    After Your Review:{" "}
                     <strong className="inline md:block text-[#16A34A] dark:text-[#22C55E]">
-                      95%+ Screening Pass
+                      Clearer Alignment
                     </strong>
                   </span>
 
@@ -150,7 +120,7 @@ export function ProblemFraming() {
             </div>
 
             <div className="mt-8 pt-6 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-xs text-[#8A8A92] dark:text-[#6B6B76]">
-              <span>Resolution: Contextual Skill Matching</span>
+              <span>Check: Relevant Skills and Clear Structure</span>
               <span className="text-[#6C5CE7] font-semibold">Parse-Friendly Single-Column Formats &rarr;</span>
             </div>
           </motion.div>
@@ -170,25 +140,25 @@ export function ProblemFraming() {
                   <Clock className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F04438]/10 text-[#B91C1C] dark:text-[#F04438]">
-                  Recruiter Review Time
+                  Show Your Contribution
                 </span>
               </div>
 
               <div className="flex items-baseline gap-1.5">
                 <span className="text-4xl font-black text-[#1A1A1E] dark:text-[#F5F5F7] tracking-tight">
-                  {stat2}s
+                  Impact
                 </span>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A8A92] dark:text-[#6B6B76]">
-                  AVERAGE INITIAL GLANCE
+                  EXPLAIN YOUR CONTRIBUTION
                 </span>
               </div>
 
               <h4 className="text-base font-bold text-[#1A1A1E] dark:text-[#F5F5F7] mt-2">
-                Unclear Impact Bullets Get Skipped
+                Explain What Changed Because of Your Work
               </h4>
 
               <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] mt-2 leading-relaxed">
-                Recruiters scan for immediate metrics. Bullet points without concrete numbers get overlooked in seconds.
+                Use specific outcomes where you can support them. Do not add numbers you cannot verify.
               </p>
             </motion.div>
 
@@ -205,25 +175,25 @@ export function ProblemFraming() {
                   <MessageSquareWarning className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F04438]/10 text-[#B91C1C] dark:text-[#F04438]">
-                  Interview Anxiety
+                  Interview Preparation
                 </span>
               </div>
 
               <div className="flex items-baseline gap-1.5">
                 <span className="text-4xl font-black text-[#1A1A1E] dark:text-[#F5F5F7] tracking-tight">
-                  {stat3}%
+                  Practice
                 </span>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A8A92] dark:text-[#6B6B76]">
-                  OF CANDIDATES FEEL UNPREPARED
+                  BEFORE THE INTERVIEW
                 </span>
               </div>
 
               <h4 className="text-base font-bold text-[#1A1A1E] dark:text-[#F5F5F7] mt-2">
-                No Real-Time Practice Before the Call
+                Rehearse Answers Out Loud
               </h4>
 
               <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] mt-2 leading-relaxed">
-                Most candidates read questions silently rather than speaking aloud under realistic pressure.
+                Practice explaining your decisions and trade-offs, then review where your answer could be clearer.
               </p>
             </motion.div>
           </div>

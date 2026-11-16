@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { FloatingNavBar } from '@/components/app/FloatingNavBar';
+import { RequireAuth } from '@/components/app/RequireAuth';
 import { AiCommandBar, type AiCommandBarProps } from '@/components/app/AiCommandBar';
 import { DynamicBackground } from '@/components/ui/DynamicBackground';
 import {
@@ -37,7 +38,17 @@ const MOBILE_NAV_ITEMS = [
 
 export const AI_PROMPT_HANDOFF_KEY = 'placemind.pendingPrompt';
 
-export function AppShell({ children, hideSidebar = false, showAiBar, aiBarProps }: AppShellProps) {
+export function AppShell(props: AppShellProps) {
+  // Every internal page requires a signed-in account; the gate redirects to
+  // /login and the backend enforces auth on each API call.
+  return (
+    <RequireAuth>
+      <AppShellInner {...props} />
+    </RequireAuth>
+  );
+}
+
+function AppShellInner({ children, hideSidebar = false, showAiBar, aiBarProps }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   useEffect(() => {

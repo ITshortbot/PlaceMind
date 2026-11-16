@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/auth';
 import {
   Sun,
   Moon,
@@ -31,6 +32,9 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
+  const startHref = user ? '/dashboard' : '/login';
+  const startLabel = user ? 'Open Dashboard' : 'Try it Free';
 
   useEffect(() => {
     setMounted(true);
@@ -76,10 +80,10 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
             className="hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7] transition-colors font-medium flex items-center gap-1 hover:scale-105"
           >
             <span>Templates</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-[#6C5CE7]/15 text-[#6C5CE7] text-[10px] font-mono font-bold">10</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-[#6C5CE7]/15 text-[#6C5CE7] text-[10px] font-mono font-bold">5</span>
           </Link>
           <a
-            href="/#how-it-works"
+            href="#how-it-works"
             className="hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7] transition-colors font-medium hover:scale-105"
           >
             Guide
@@ -92,7 +96,7 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
             <span>Resume Builder</span>
           </Link>
           <a
-            href="/#pricing"
+            href="#pricing"
             className="hover:text-[#1A1A1E] dark:hover:text-[#F5F5F7] transition-colors font-medium hover:scale-105"
           >
             Pricing
@@ -131,14 +135,14 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
 
 
           {/* Open Onboarding / Try Free CTA */}
-          <Link href="/onboarding">
+          <Link href={startHref}>
             <Button
               variant="primary"
               size="md"
               icon={<ArrowRight className="w-4 h-4" />}
               className="px-6 py-2.5 text-xs font-bold"
             >
-              Try it Free
+              {startLabel}
             </Button>
           </Link>
         </div>
@@ -188,21 +192,21 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
               <FileText className="w-4 h-4 text-[#8A8A92]" />
             </Link>
             <a
-              href="/#templates"
+              href="#templates"
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"
             >
-              ATS Resume Templates (18)
+              ATS Resume Designs (18)
             </a>
             <a
-              href="/#how-it-works"
+              href="#how-it-works"
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"
             >
               How It Works
             </a>
             <a
-              href="/#pricing"
+              href="#pricing"
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"
             >
@@ -211,9 +215,9 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
           </div>
 
           <div className="pt-2">
-            <Link href="/studio" onClick={() => setIsMobileMenuOpen(false)}>
+            <Link href={startHref} onClick={() => setIsMobileMenuOpen(false)}>
               <Button variant="primary" size="md" className="w-full">
-                Get Started
+                {user ? 'Open Dashboard' : 'Get Started'}
               </Button>
             </Link>
           </div>
