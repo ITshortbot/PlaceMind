@@ -45,7 +45,7 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-[#00000014] dark:bg-[#ffffff14] transition-all duration-300 py-3 px-4 sm:px-6 lg:px-8 border-b border-[#00000014] dark:border-[#ffffff14]">
+    <header className="fixed top-0 inset-x-0 z-50 bg-[#00000014] dark:bg-[#ffffff14] backdrop-blur-xl transition-all duration-300 py-3 px-4 sm:px-6 lg:px-8 border-b border-[#00000014] dark:border-[#ffffff14]">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand Logo */}
         <Link
