@@ -375,7 +375,16 @@ class TemplateGenerator:
         )
 
     async def _call_llm(self, messages: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str]]:
-        """Invokes router in OSS mode, attempting JSON format first."""
+        """Calls the free-tier OpenRouter route when a key is configured, else the OSS router."""
+        from app.core.config import settings as _settings
+        if _settings.OPENROUTER_API_KEY:
+            from app.services.openrouter import chat_completion
+            try:
+                res = await chat_completion(messages, temperature=0.3, max_tokens=3500)
+                return res.content, None
+            except Exception as e:
+                return None, str(e)
+        # Fallback: OSS-compatible router, JSON format first.
         # Try structured json_schema / json_object first
         try:
             res = await self.router.complete(
