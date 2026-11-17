@@ -228,6 +228,8 @@ def post_process_content(
         )
 
     return ResumeContent(
+        name=clean_markdown_and_html(content.name, allowed_urls, allowed_emails) if content.name else None,
+        contact=clean_markdown_and_html(content.contact, allowed_urls, allowed_emails) if content.contact else None,
         headline=cleaned_headline[:120],
         summary=cleaned_summary[:400],
         skills=cleaned_skills[:20],
@@ -289,6 +291,7 @@ class TemplateGenerator:
             parsed, val_err = self._parse_and_validate(response_text)
             if parsed:
                 style, content = parsed
+                if have_facts and not content.name: content = content.model_copy(update={"name": facts.name, "contact": content.contact or facts.contact})
                 clean_content = post_process_content(content, allowed_urls, allowed_emails)
                 latency = round((time.perf_counter() - start_time) * 1000, 2)
                 return GenerateResponse(
@@ -313,6 +316,7 @@ class TemplateGenerator:
                 parsed_retry, val_retry_err = self._parse_and_validate(retry_text)
                 if parsed_retry:
                     style, content = parsed_retry
+                    if have_facts and not content.name: content = content.model_copy(update={"name": facts.name, "contact": content.contact or facts.contact})
                     clean_content = post_process_content(content, allowed_urls, allowed_emails)
                     latency = round((time.perf_counter() - start_time) * 1000, 2)
                     return GenerateResponse(
