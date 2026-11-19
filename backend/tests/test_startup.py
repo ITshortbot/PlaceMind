@@ -11,8 +11,11 @@ class UnavailableDatabase:
 
 
 @pytest.mark.asyncio
-async def test_database_initialization_failure_does_not_abort_startup(caplog):
-    with caplog.at_level(logging.WARNING, logger="placemind.main"):
-        await initialize_database(UnavailableDatabase(), metadata=None)
+async def test_database_initialization_failure_aborts_startup_and_logs_operation(caplog):
+    with caplog.at_level(logging.ERROR, logger="placemind.main"):
+        with pytest.raises(RuntimeError, match="open initialization transaction") as exc:
+            await initialize_database(UnavailableDatabase(), metadata=None)
 
-    assert "continuing without database features" in caplog.text
+    assert isinstance(exc.value.__cause__, ConnectionError)
+    assert "Database initialization failed during open initialization transaction" in caplog.text
+    assert "database unavailable" in caplog.text

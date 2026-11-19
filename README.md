@@ -80,4 +80,30 @@ Open **http://localhost:3000/template** to use the Prompt-to-Template Studio and
 
 Visitors receive an independent guest identity and signed, HttpOnly session cookie automatically. Guest records use a null email and an explicit `is_guest` flag; user-owned API routes retain their ownership checks and guest requests are rate limited. Guest data is not transferred when signing in with Google.
 
-For an existing database, apply `backend/database/migrations/001_guest_identity.sql` before deploying this version. Do not apply it to a production database without the normal backup and change-approval process.
+Before deploying to an existing PostgreSQL database, run the read-only
+`backend/database/verify_neon_schema.sql` audit and review its results against
+the expected ORM schema. The backend does not apply
+`backend/database/migrations/001_guest_identity.sql` automatically:
+
+1. Back up the database and confirm the audit shows the pre-migration state:
+   `users.email` is NOT NULL, and `is_guest` plus
+   `ck_users_guest_email` are both absent.
+2. If the audit already shows the complete post-migration state, do not rerun
+   the migration. If it shows a partial or otherwise different state, stop and
+   reconcile that state manually.
+3. Only for the exact pre-migration state, apply
+   `001_guest_identity.sql` once through the normal approved database change
+   process, then rerun the audit and verify that `email` is nullable,
+   `is_guest` is NOT NULL with a false default, and the named check constraint
+   exists.
+4. Do not blindly reverse this migration after guest rows exist. Requiring
+   non-NULL emails again can fail and dropping `is_guest` would discard guest
+   identity state. Prefer restoring the pre-migration backup or plan a separate
+   data-preserving rollback after reviewing affected guest rows.
+
+Startup serializes its non-destructive PostgreSQL initialization DDL across
+workers, creates missing ORM tables, and ensures the Google OAuth columns and
+unique subject index. It does not repair columns in existing tables. Startup
+fails before serving requests if the required user schema is incomplete. The
+database role needs the privileges required for the applicable `CREATE EXTENSION`,
+`CREATE TABLE`, `ALTER TABLE`, and `CREATE INDEX` operations.

@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE,
     full_name VARCHAR(255),
+    google_sub VARCHAR(255),
+    avatar_url TEXT,
     is_local_only BOOLEAN DEFAULT FALSE, -- Flag for zero-cloud privacy accounts
     is_guest BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT ck_users_guest_email CHECK (
@@ -36,6 +38,8 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub ON users (google_sub);
 
 -- ----------------------------------------------------------------------------
 -- Table: resumes
@@ -108,6 +112,38 @@ CREATE TABLE IF NOT EXISTS ats_match_scores (
     gap_report JSONB NOT NULL,                -- Structured gap matrix and AI bullet rewrites
     processing_time_ms NUMERIC(8, 2) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ----------------------------------------------------------------------------
+-- Table: interview_sessions
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS interview_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    target_role VARCHAR(255) NOT NULL,
+    company VARCHAR(255),
+    interview_type VARCHAR(20) NOT NULL,
+    question_count INTEGER NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    planned_questions JSON NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ----------------------------------------------------------------------------
+-- Table: interview_turns
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS interview_turns (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id UUID NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
+    "order" INTEGER NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    question_text TEXT NOT NULL,
+    focus VARCHAR(255),
+    answer_text TEXT,
+    score NUMERIC(5, 1),
+    feedback JSON,
+    answered_at TIMESTAMP WITH TIME ZONE
 );
 
 -- ----------------------------------------------------------------------------
