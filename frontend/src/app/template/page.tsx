@@ -537,6 +537,18 @@ export default function TemplatePage() {
           </div>
         )}
 
+        {/* ─── Empty-content hint ─── */}
+        {!canApply && currentResponse.source !== "demo" && (
+          <div
+            id="empty-content-hint"
+            role="status"
+            className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200"
+          >
+            This preview is empty on purpose. PlaceMind only writes what you tell it and never invents jobs, numbers or dates.
+            Add your name, skills, projects and education in the Resume Builder, then generate again.
+          </div>
+        )}
+
         {/* ─── Status & Fallback Indicator Badge ─── */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
