@@ -26,9 +26,13 @@ CREATE EXTENSION IF NOT EXISTS "vector";
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE,
     full_name VARCHAR(255),
     is_local_only BOOLEAN DEFAULT FALSE, -- Flag for zero-cloud privacy accounts
+    is_guest BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT ck_users_guest_email CHECK (
+        (is_guest = TRUE AND email IS NULL) OR (is_guest = FALSE AND email IS NOT NULL)
+    ),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

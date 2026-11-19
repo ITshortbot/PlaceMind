@@ -205,7 +205,11 @@ function OnboardingWizard() {
 
               <Card className="p-6 space-y-4 shadow-xl">
                 <div className="p-3 rounded-xl bg-[#6C5CE7]/[0.07] border border-[#6C5CE7]/20 text-[11px] text-[#4A4A52] dark:text-[#A1A1AA]">
-                  Signed in as <strong className="text-[#1A1A1E] dark:text-white">{formData.email || 'your Google account'}</strong>. This email labels your resumes and exports.
+                  {user?.is_guest ? 'Using a guest session. ' : 'Signed in as '}
+                  <strong className="text-[#1A1A1E] dark:text-white">
+                    {formData.email || (user?.is_guest ? 'guest' : 'your Google account')}
+                  </strong>
+                  {formData.email && ' This email labels your resumes and exports.'}
                 </div>
 
                 <div className="space-y-1.5">

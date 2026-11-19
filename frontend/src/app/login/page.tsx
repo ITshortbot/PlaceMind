@@ -40,7 +40,7 @@ function LoginInner() {
     : null;
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !user.is_guest) {
       router.replace(safeNext);
     }
   }, [loading, user, router, safeNext]);
@@ -87,7 +87,9 @@ function LoginInner() {
         <div className="space-y-1.5">
           <h1 className="text-2xl font-extrabold tracking-tight">Sign in</h1>
           <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-            Your resumes, scores and interview practice are tied to your account.
+            {user?.is_guest
+              ? 'You are using a guest session. Continue with Google for a registered account.'
+              : 'Your resumes, scores and interview practice are tied to your account.'}
           </p>
         </div>
 

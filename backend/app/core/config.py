@@ -109,6 +109,11 @@ class Settings(BaseSettings):
         default=False,
         description="Set True when served over HTTPS so the session cookie is Secure",
     )
+    RATE_LIMIT_GUEST_CREATION_WINDOW_SECONDS: int = Field(default=3600, ge=1)
+    RATE_LIMIT_GUEST_CREATION_PER_IP: int = Field(default=20, ge=1)
+    RATE_LIMIT_GUEST_OPERATIONS_WINDOW_SECONDS: int = Field(default=3600, ge=1)
+    RATE_LIMIT_GUEST_OPERATIONS_PER_USER: int = Field(default=600, ge=1)
+    RATE_LIMIT_GUEST_OPERATIONS_PER_IP: int = Field(default=3000, ge=1)
     FRONTEND_URL: str = Field(
         default="http://localhost:3000",
         description="Public base URL of the Next.js frontend for post-login redirects",

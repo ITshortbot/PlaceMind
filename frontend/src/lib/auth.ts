@@ -2,19 +2,17 @@
 
 // ============================================================================
 // File: frontend/src/lib/auth.ts
-// Description: Client-side session helpers for the real Google sign-in.
-//   The session itself is an HttpOnly cookie issued by the backend; this
-//   module only asks the backend who is signed in. Nothing here stores or
-//   reads credentials in the browser.
+// Description: Client-side helpers for signed HttpOnly Google and guest sessions.
 // ============================================================================
 
 import { useEffect, useState } from 'react';
 
 export interface AuthUser {
   id: string;
-  email: string;
+  email: string | null;
   full_name: string | null;
   avatar_url: string | null;
+  is_guest: boolean;
 }
 
 const SESSION_USER_KEY = 'placemind.sessionUser';
@@ -48,15 +46,64 @@ function reconcileStoredUser(userId: string | null) {
 const backendUrl = () =>
   (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
 
-export async function fetchCurrentUser(): Promise<AuthUser | null> {
+function isAuthUser(value: unknown): value is AuthUser {
+  if (!value || typeof value !== 'object') return false;
+  const user = value as Record<string, unknown>;
+  return (
+    typeof user.id === 'string' &&
+    (typeof user.email === 'string' || user.email === null) &&
+    (typeof user.full_name === 'string' || user.full_name === null) &&
+    (typeof user.avatar_url === 'string' || user.avatar_url === null) &&
+    typeof user.is_guest === 'boolean'
+  );
+}
+
+async function createGuestSession(): Promise<AuthUser> {
+  const response = await fetch(`${backendUrl()}/api/v1/auth/guest`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    throw new Error(`Guest session could not be established (${response.status}).`);
+  }
+  const value: unknown = await response.json();
+  if (!isAuthUser(value)) {
+    throw new Error('The backend returned an invalid session identity.');
+  }
+  reconcileStoredUser(value.id);
+  return value;
+}
+
+async function fetchCurrentUserOnce(): Promise<AuthUser | null> {
   try {
-    const res = await fetch(`${backendUrl()}/api/v1/auth/me`, { credentials: 'include' });
-    const user = res.ok ? ((await res.json()) as AuthUser) : null;
-    reconcileStoredUser(user ? user.id : null);
-    return user;
+    const response = await fetch(`${backendUrl()}/api/v1/auth/me`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    if (response.status === 401) {
+      return await createGuestSession();
+    }
+    if (!response.ok) return null;
+    const value: unknown = await response.json();
+    if (!isAuthUser(value)) return null;
+    reconcileStoredUser(value.id);
+    return value;
   } catch {
     return null;
   }
+}
+
+let currentUserRequest: Promise<AuthUser | null> | null = null;
+
+export function fetchCurrentUser(): Promise<AuthUser | null> {
+  if (currentUserRequest) return currentUserRequest;
+  const request = fetchCurrentUserOnce();
+  currentUserRequest = request;
+  void request.then(() => {
+    if (currentUserRequest === request) currentUserRequest = null;
+  });
+  return request;
 }
 
 export function loginWithGoogle() {
@@ -64,16 +111,23 @@ export function loginWithGoogle() {
 }
 
 export async function logout(): Promise<void> {
-  try {
-    await fetch(`${backendUrl()}/api/v1/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-  } catch {
-    // Network failure: the cookie remains, but the UI still navigates away.
+  currentUserRequest = null;
+  const response = await fetch(`${backendUrl()}/api/v1/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    throw new Error(`Sign-out failed (${response.status}).`);
   }
-  // Sign-out also drops this browser's convenience data for the account.
-  reconcileStoredUser(null);
+  currentUserRequest = null;
+  try {
+    const guest = await createGuestSession();
+    if (!guest.is_guest) throw new Error('A guest session was not established after sign-out.');
+  } catch (error) {
+    reconcileStoredUser(null);
+    throw error;
+  }
 }
 
 export interface AuthState {
@@ -98,4 +152,11 @@ export function useAuth(): AuthState {
     };
   }, []);
   return state;
+}
+
+export function SessionBootstrap() {
+  useEffect(() => {
+    void fetchCurrentUser();
+  }, []);
+  return null;
 }

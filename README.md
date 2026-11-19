@@ -75,3 +75,9 @@ Open **http://localhost:3000/template** to use the Prompt-to-Template Studio and
 ## 5. Privacy & Security Note
 > **Privacy Note: Zero Data Egress in Local Mode.**  
 > When operating with the local OSS model, all candidate information, resume content, and prompts remain strictly on the local machine. Zero external network calls, zero prompt telemetry, and zero unverified hallucinated records are permitted.
+
+## Guest access and database upgrade
+
+Visitors receive an independent guest identity and signed, HttpOnly session cookie automatically. Guest records use a null email and an explicit `is_guest` flag; user-owned API routes retain their ownership checks and guest requests are rate limited. Guest data is not transferred when signing in with Google.
+
+For an existing database, apply `backend/database/migrations/001_guest_identity.sql` before deploying this version. Do not apply it to a production database without the normal backup and change-approval process.

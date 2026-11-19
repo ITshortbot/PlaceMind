@@ -56,6 +56,7 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<StoredProfile>(EMPTY_PROFILE);
   const [enginePreference, setEnginePreference] = useState<'cloud' | 'local'>('cloud');
   const [savedTab, setSavedTab] = useState<string | null>(null);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   // Load persisted preferences on mount.
   useEffect(() => {
@@ -117,7 +118,9 @@ export default function SettingsPage() {
             Account & Application Settings
           </h1>
           <p className="text-xs sm:text-sm text-[#5A5A63] dark:text-[#A1A1AA] mt-1">
-            Your Google account plus local preferences saved in this browser.
+            {user?.is_guest
+              ? 'Guest access is active. Preferences are saved in this browser.'
+              : 'Your Google account plus local preferences saved in this browser.'}
           </p>
         </div>
 
@@ -180,7 +183,9 @@ export default function SettingsPage() {
                       )}
                       <div className="min-w-0">
                         <div className="text-xs font-bold truncate">{user?.full_name || 'Signed in'}</div>
-                        <div className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] truncate">{user?.email}</div>
+                        <div className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] truncate">
+                          {user?.is_guest ? 'Guest session' : user?.email}
+                        </div>
                       </div>
                     </div>
                     <Button
@@ -188,13 +193,23 @@ export default function SettingsPage() {
                       size="sm"
                       icon={<LogOut className="w-3.5 h-3.5" />}
                       onClick={async () => {
-                        await logout();
-                        router.replace('/login');
+                        setLogoutError(null);
+                        try {
+                          await logout();
+                          router.replace('/dashboard');
+                        } catch {
+                          setLogoutError('Could not restore guest access. Please retry when the backend is available.');
+                        }
                       }}
                     >
                       Sign out
                     </Button>
                   </div>
+                  {logoutError && (
+                    <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+                      {logoutError}
+                    </p>
+                  )}
 
                   <div className="border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
                     <h3 className="text-base font-bold">Profile & Education Basics</h3>

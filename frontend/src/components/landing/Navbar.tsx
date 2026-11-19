@@ -105,6 +105,19 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
 
         {/* Right CTA & Controls */}
         <div className="hidden lg:flex items-center gap-3">
+          {user?.is_guest && (
+            <>
+              <span className="text-[11px] font-semibold text-[#5A5A63] dark:text-[#A1A1AA]">
+                Guest session
+              </span>
+              <Link
+                href="/login"
+                className="text-xs font-bold text-[#6C5CE7] hover:text-[#5143C5]"
+              >
+                Sign in
+              </Link>
+            </>
+          )}
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
@@ -215,6 +228,18 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
           </div>
 
           <div className="pt-2">
+            {user?.is_guest && (
+              <div className="mb-3 flex items-center justify-between text-xs">
+                <span className="text-[#5A5A63] dark:text-[#A1A1AA]">Guest session</span>
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="font-bold text-[#6C5CE7]"
+                >
+                  Sign in
+                </Link>
+              </div>
+            )}
             <Link href={startHref} onClick={() => setIsMobileMenuOpen(false)}>
               <Button variant="primary" size="md" className="w-full">
                 {user ? 'Open Dashboard' : 'Get Started'}

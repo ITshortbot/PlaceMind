@@ -234,6 +234,7 @@ async def test_callback_creates_account_session_and_remembers_user(client, maker
     body = res.json()
     assert body["email"] == "newuser@gmail.com"
     assert body["full_name"] == "New User"
+    assert body["is_guest"] is False
 
     # A second sign-in with the same Google subject lands on the dashboard.
     state, _ = await _login(client)
@@ -381,6 +382,172 @@ async def test_logout_clears_session(client, maker, monkeypatch):
     assert SESSION_COOKIE_NAME in set_cookie and "Max-Age=0" in set_cookie
     client.cookies.clear()
     assert (await client.get("/api/v1/auth/me")).status_code == 401
+    guest_res = await client.post("/api/v1/auth/guest")
+    assert guest_res.status_code == 200
+    assert guest_res.json()["is_guest"] is True
+    assert guest_res.json()["id"] != str(user.id)
+    assert (await client.get("/api/v1/auth/me")).json()["is_guest"] is True
+
+
+@pytest.mark.asyncio
+async def test_guest_sessions_are_independent_persistent_and_http_only(client, maker, auth_settings):
+    transport_a = ASGITransport(app=app, client=("198.51.100.21", 10021))
+    transport_b = ASGITransport(app=app, client=("198.51.100.22", 10022))
+    async with (
+        AsyncClient(transport=transport_a, base_url="http://test") as guest_a,
+        AsyncClient(transport=transport_b, base_url="http://test") as guest_b,
+    ):
+        response_a = await guest_a.post("/api/v1/auth/guest")
+        response_b = await guest_b.post("/api/v1/auth/guest")
+
+        assert response_a.status_code == response_b.status_code == 200
+        identity_a = response_a.json()
+        identity_b = response_b.json()
+        assert identity_a["is_guest"] is True
+        assert identity_a["email"] is None
+        assert identity_a["id"] != identity_b["id"]
+        assert "session_token" not in identity_a
+
+        cookie = next(
+            value for value in response_a.headers.get_list("set-cookie")
+            if value.startswith(SESSION_COOKIE_NAME)
+        )
+        assert "HttpOnly" in cookie
+        assert "SameSite=lax" in cookie
+        assert f"Max-Age={settings.AUTH_SESSION_DAYS * 86400}" in cookie
+
+        refreshed = await guest_a.get("/api/v1/auth/me")
+        assert refreshed.status_code == 200
+        assert refreshed.json()["id"] == identity_a["id"]
+
+
+@pytest.mark.asyncio
+async def test_guest_cookie_is_secure_when_configured(client, maker, auth_settings, monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_COOKIE_SECURE", True)
+    transport = ASGITransport(app=app, client=("198.51.100.23", 10023))
+    async with AsyncClient(transport=transport, base_url="http://test") as guest:
+        response = await guest.post("/api/v1/auth/guest")
+    assert response.status_code == 200
+    cookie = next(
+        value for value in response.headers.get_list("set-cookie")
+        if value.startswith(SESSION_COOKIE_NAME)
+    )
+    assert "Secure" in cookie
+    assert "HttpOnly" in cookie
+
+
+@pytest.mark.asyncio
+async def test_expired_guest_session_is_replaced(client, auth_settings, monkeypatch):
+    created = await client.post("/api/v1/auth/guest")
+    assert created.status_code == 200
+    old_guest_id = created.json()["id"]
+
+    session_days = settings.AUTH_SESSION_DAYS
+    monkeypatch.setattr(settings, "AUTH_SESSION_DAYS", -1)
+    expired_token, _ = create_session_token(old_guest_id)
+    monkeypatch.setattr(settings, "AUTH_SESSION_DAYS", session_days)
+    client.cookies.set(SESSION_COOKIE_NAME, expired_token)
+
+    assert (await client.get("/api/v1/auth/me")).status_code == 401
+    replacement = await client.post("/api/v1/auth/guest")
+    assert replacement.status_code == 200
+    assert replacement.json()["is_guest"] is True
+    assert replacement.json()["id"] != old_guest_id
+
+
+@pytest.mark.asyncio
+async def test_guest_data_is_isolated_from_other_guests_and_registered_users(client, maker, auth_settings):
+    transport_a = ASGITransport(app=app, client=("198.51.100.24", 10024))
+    transport_b = ASGITransport(app=app, client=("198.51.100.25", 10025))
+    async with (
+        AsyncClient(transport=transport_a, base_url="http://test") as guest_a,
+        AsyncClient(transport=transport_b, base_url="http://test") as guest_b,
+    ):
+        identity_a = (await guest_a.post("/api/v1/auth/guest")).json()
+        identity_b = (await guest_b.post("/api/v1/auth/guest")).json()
+        assert identity_a["id"] != identity_b["id"]
+
+        resume_a = await guest_a.post(
+            "/api/v1/resumes",
+            json={
+                "file_name": "guest-a.pdf",
+                "raw_text": "Guest A resume text",
+                "parsed_metadata": {},
+                "sections": [{"section_type": "summary", "content": "Guest A summary"}],
+            },
+        )
+        assert resume_a.status_code == 201, resume_a.text
+        resume_a_id = resume_a.json()["id"]
+
+        resume_b = await guest_b.post(
+            "/api/v1/resumes",
+            json={
+                "file_name": "guest-b.pdf",
+                "raw_text": "Guest B resume text",
+                "parsed_metadata": {},
+                "sections": [{"section_type": "summary", "content": "Guest B summary"}],
+            },
+        )
+        assert resume_b.status_code == 201, resume_b.text
+        resume_b_id = resume_b.json()["id"]
+
+        assert (await guest_a.get("/api/v1/resumes")).json()[0]["id"] == resume_a_id
+        assert (await guest_b.get("/api/v1/resumes")).json()[0]["id"] == resume_b_id
+        assert (await guest_a.get(f"/api/v1/resumes/{resume_b_id}")).status_code == 404
+        assert (await guest_b.get(f"/api/v1/resumes/{resume_a_id}")).status_code == 404
+
+        interview_a = await guest_a.post(
+            "/api/v1/interviews/sessions",
+            json={"target_role": "Engineer", "question_count": 3},
+        )
+        assert interview_a.status_code == 201, interview_a.text
+        interview_id = interview_a.json()["session_id"]
+        assert (
+            await guest_b.get(f"/api/v1/interviews/sessions/{interview_id}")
+        ).status_code == 404
+
+        registered = await _make_user(maker, "registered-isolation@example.com", sub="g-isolation")
+        guest_b.cookies.set(SESSION_COOKIE_NAME, _session_cookie(registered))
+        assert (await guest_b.get(f"/api/v1/resumes/{resume_a_id}")).status_code == 404
+        assert (await guest_b.get(f"/api/v1/resumes/{resume_b_id}")).status_code == 404
+        assert (
+            await guest_b.get(f"/api/v1/interviews/sessions/{interview_id}")
+        ).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_guest_creation_is_rate_limited_per_ip(client, maker, auth_settings, monkeypatch):
+    monkeypatch.setattr(settings, "RATE_LIMIT_GUEST_CREATION_PER_IP", 1)
+    transport = lambda: ASGITransport(app=app, client=("198.51.100.26", 10026))
+    async with (
+        AsyncClient(transport=transport(), base_url="http://test") as first,
+        AsyncClient(transport=transport(), base_url="http://test") as second,
+    ):
+        assert (await first.post("/api/v1/auth/guest")).status_code == 200
+        limited = await second.post("/api/v1/auth/guest")
+        assert limited.status_code == 429
+        assert int(limited.headers["retry-after"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_guest_data_operations_are_rate_limited_per_user(client, maker, auth_settings, monkeypatch):
+    monkeypatch.setattr(settings, "RATE_LIMIT_GUEST_OPERATIONS_PER_USER", 1)
+    transport = ASGITransport(app=app, client=("198.51.100.27", 10027))
+    async with AsyncClient(transport=transport, base_url="http://test") as guest:
+        created = await guest.post("/api/v1/auth/guest")
+        assert created.status_code == 200
+        assert (await guest.get("/api/v1/resumes")).status_code == 200
+        limited = await guest.get("/api/v1/resumes")
+        assert limited.status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_guest_creation_fails_closed_without_session_signing_key(client, maker, auth_settings, monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_SECRET_KEY", "")
+    transport = ASGITransport(app=app, client=("198.51.100.28", 10028))
+    async with AsyncClient(transport=transport, base_url="http://test") as guest:
+        response = await guest.post("/api/v1/auth/guest")
+    assert response.status_code == 503
 
 
 @pytest.mark.asyncio

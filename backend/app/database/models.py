@@ -1,7 +1,7 @@
 import uuid
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Text, func, text
+from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, ForeignKey, Integer, Numeric, String, Text, func, text
 from sqlalchemy import JSON, Uuid as GenericUuid
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import declarative_base, relationship
@@ -11,15 +11,22 @@ Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint(
+            "(is_guest = TRUE AND email IS NULL) OR (is_guest = FALSE AND email IS NOT NULL)",
+            name="ck_users_guest_email",
+        ),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email = Column(String(255), unique=True, nullable=False)
+    email = Column(String(255), unique=True, nullable=True)
     full_name = Column(String(255), nullable=True)
     # Google identity subject (the `sub` claim) - the stable account key for
     # sign-in. Nullable so pre-auth demo rows stay untouched and quarantined.
     google_sub = Column(String(255), unique=True, nullable=True, index=True)
     avatar_url = Column(Text, nullable=True)
     is_local_only = Column(Boolean, default=False)
+    is_guest = Column(Boolean, nullable=False, default=False, server_default=text("false"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

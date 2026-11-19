@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { SessionBootstrap } from '@/lib/auth';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="scroll-smooth">
       <body className="bg-[#F7EFE8] dark:bg-[#0A0A0C] text-[#1A1A1E] dark:text-[#F5F5F7] antialiased selection:bg-[#6C5CE7] selection:text-white transition-colors duration-300">
         <ThemeProvider>
+          <SessionBootstrap />
           {children}
         </ThemeProvider>
 

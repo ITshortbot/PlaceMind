@@ -35,6 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import SESSION_COOKIE_NAME, get_current_user
 from app.core.config import settings
+from app.core.rate_limit import RateLimitRule, rate_limiter, request_client_ip
 from app.core.security import (
     create_session_token,
     create_state_token,
@@ -232,7 +233,11 @@ async def google_callback(
             # A quarantined pre-auth demo identity is never claimed, and an
             # email Google does not vouch for is never linked - both would be
             # account takeover paths.
-            if by_email.is_local_only or not _google_authoritative_for_email(claims, email):
+            if (
+                by_email.is_guest
+                or by_email.is_local_only
+                or not _google_authoritative_for_email(claims, email)
+            ):
                 return _fail("account_exists")
             user = by_email
             user.google_sub = google_sub
@@ -243,11 +248,14 @@ async def google_callback(
             google_sub=google_sub,
             avatar_url=avatar_url,
             is_local_only=False,
+            is_guest=False,
         )
         db.add(user)
         await db.flush()
         is_new_user = True
     else:
+        if user.is_guest:
+            return _fail("account_exists")
         # Keep profile fields fresh from Google on each login.
         if full_name:
             user.full_name = full_name
@@ -275,14 +283,72 @@ async def google_callback(
     return response
 
 
-@router.get("/me")
-async def auth_me(user: User = Depends(get_current_user)):
+def _user_identity(user: User) -> dict:
     return {
         "id": str(user.id),
         "email": user.email,
         "full_name": user.full_name,
         "avatar_url": user.avatar_url,
+        "is_guest": user.is_guest,
     }
+
+
+async def _current_user_or_none(request: Request, db: AsyncSession) -> User | None:
+    try:
+        return await get_current_user(request, db)
+    except HTTPException as error:
+        if error.status_code != status.HTTP_401_UNAUTHORIZED:
+            raise
+        return None
+
+
+@router.get("/me")
+async def auth_me(user: User = Depends(get_current_user)):
+    return _user_identity(user)
+
+
+@router.post("/guest")
+async def create_guest_session(
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    current_user = await _current_user_or_none(request, db)
+    if current_user is not None:
+        return _user_identity(current_user)
+
+    if not settings.AUTH_SECRET_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication sessions are not configured on this server.",
+        )
+
+    rate_limiter.check_many(
+        [
+            RateLimitRule(
+                bucket="guest-create-ip",
+                identity=request_client_ip(request),
+                limit=settings.RATE_LIMIT_GUEST_CREATION_PER_IP,
+                window_seconds=settings.RATE_LIMIT_GUEST_CREATION_WINDOW_SECONDS,
+            )
+        ]
+    )
+
+    guest = User(email=None, full_name=None, is_local_only=False, is_guest=True)
+    db.add(guest)
+    await db.flush()
+
+    token, max_age = create_session_token(str(guest.id))
+    response.set_cookie(
+        SESSION_COOKIE_NAME,
+        token,
+        max_age=max_age,
+        httponly=True,
+        samesite="lax",
+        secure=settings.AUTH_COOKIE_SECURE,
+        path="/",
+    )
+    return _user_identity(guest)
 
 
 @router.post("/logout")
