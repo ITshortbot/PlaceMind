@@ -3,8 +3,7 @@
 // Description: Typed client for the resume persistence backend API.
 // ============================================================================
 
-const backendUrl = () =>
-  (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
+import { backendApiUrl } from './base';
 
 export interface ResumeSection {
   id?: string;
@@ -29,7 +28,7 @@ export interface ResumeDetail extends Omit<ResumeSummary, 'section_count'> {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${backendUrl()}${path}`, {
+  const res = await fetch(backendApiUrl(path), {
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     ...init,

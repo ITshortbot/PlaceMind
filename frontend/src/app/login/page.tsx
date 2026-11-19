@@ -14,6 +14,7 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth, loginWithGoogle } from '@/lib/auth';
+import { backendApiUrl } from '@/lib/api/base';
 
 const ERROR_MESSAGES: Record<string, string> = {
   google_declined: 'The Google sign-in was cancelled or declined.',
@@ -49,8 +50,7 @@ function LoginInner() {
     setStarting(true);
     setConfigError(null);
     try {
-      const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
-      const res = await fetch(`${backendUrl}/api/v1/auth/google/login`, {
+      const res = await fetch(backendApiUrl('/api/v1/auth/google/login'), {
         redirect: 'manual',
         credentials: 'include',
       });

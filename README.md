@@ -107,3 +107,20 @@ unique subject index. It does not repair columns in existing tables. Startup
 fails before serving requests if the required user schema is incomplete. The
 database role needs the privileges required for the applicable `CREATE EXTENSION`,
 `CREATE TABLE`, `ALTER TABLE`, and `CREATE INDEX` operations.
+
+## Vercel multi-service deployment
+
+The root `vercel.json` defines a FastAPI `backend` service and a Next.js
+`frontend` service. Requests under `/api/*` route to the backend; all other
+public paths route to the frontend. The frontend calls the backend through
+same-origin `/api/...` URLs. These are browser requests handled by the public
+rewrite, not server-to-server calls, so no service binding is required.
+
+Use `vercel dev` to exercise the multi-service routing locally. For production,
+configure the backend's required runtime settings in Vercel rather than
+committing secrets. Set `FRONTEND_URL` to the deployment's public origin,
+include that origin in `CORS_ORIGINS`, and set `GOOGLE_REDIRECT_URI` to
+`<public-origin>/api/v1/auth/google/callback` (and register that exact callback
+with Google). Enable `AUTH_COOKIE_SECURE` for HTTPS deployments. Do not set
+`NEXT_PUBLIC_BACKEND_URL` in production; the frontend uses the same-origin
+`/api` route.

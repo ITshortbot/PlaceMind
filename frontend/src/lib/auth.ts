@@ -6,6 +6,7 @@
 // ============================================================================
 
 import { useEffect, useState } from 'react';
+import { backendApiUrl } from '@/lib/api/base';
 
 export interface AuthUser {
   id: string;
@@ -43,9 +44,6 @@ function reconcileStoredUser(userId: string | null) {
   }
 }
 
-const backendUrl = () =>
-  (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
-
 function isAuthUser(value: unknown): value is AuthUser {
   if (!value || typeof value !== 'object') return false;
   const user = value as Record<string, unknown>;
@@ -59,7 +57,7 @@ function isAuthUser(value: unknown): value is AuthUser {
 }
 
 async function createGuestSession(): Promise<AuthUser> {
-  const response = await fetch(`${backendUrl()}/api/v1/auth/guest`, {
+  const response = await fetch(backendApiUrl('/api/v1/auth/guest'), {
     method: 'POST',
     credentials: 'include',
     cache: 'no-store',
@@ -77,7 +75,7 @@ async function createGuestSession(): Promise<AuthUser> {
 
 async function fetchCurrentUserOnce(): Promise<AuthUser | null> {
   try {
-    const response = await fetch(`${backendUrl()}/api/v1/auth/me`, {
+    const response = await fetch(backendApiUrl('/api/v1/auth/me'), {
       credentials: 'include',
       cache: 'no-store',
     });
@@ -107,12 +105,12 @@ export function fetchCurrentUser(): Promise<AuthUser | null> {
 }
 
 export function loginWithGoogle() {
-  window.location.href = `${backendUrl()}/api/v1/auth/google/login`;
+  window.location.href = backendApiUrl('/api/v1/auth/google/login');
 }
 
 export async function logout(): Promise<void> {
   currentUserRequest = null;
-  const response = await fetch(`${backendUrl()}/api/v1/auth/logout`, {
+  const response = await fetch(backendApiUrl('/api/v1/auth/logout'), {
     method: 'POST',
     credentials: 'include',
     cache: 'no-store',

@@ -21,6 +21,7 @@ import { AtsReadinessPanel, type ScoreDocResponse } from '@/components/ats/AtsRe
 import { buildPalette, type Mood, type Palette } from '@/lib/color/engine';
 import { TEMPLATE_FAMILIES } from '@/lib/templates/registry';
 import { generateTemplate } from '@/lib/api/templates';
+import { backendApiUrl } from '@/lib/api/base';
 import {
   GenerateRequest,
   GenerateResponse,
@@ -215,11 +216,7 @@ export default function TemplatePage() {
     // The readiness engine is deterministic (no LLM), so it runs against the
     // real backend even in demo mode. If it is unreachable, say so honestly.
     try {
-      const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(
-        /\/$/,
-        ''
-      );
-      const res = await fetch(`${backendUrl}/api/v1/ats/score-doc`, {
+      const res = await fetch(backendApiUrl('/api/v1/ats/score-doc'), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

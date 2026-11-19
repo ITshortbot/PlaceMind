@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { backendApiUrl } from '@/lib/api/base';
 import type { ATSGapReport, ScoreResumeParams } from '@/types/ats';
 
 export type ScoringStatus = 'idle' | 'parsing' | 'embedding' | 'synthesizing' | 'done' | 'error';
@@ -28,10 +29,8 @@ export function useATSScoring() {
     formData.append('job_description_raw', jobDescription);
     formData.append('routing_mode', mode);
 
-    const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
-
     try {
-      const response = await fetch(`${backendUrl}/api/v1/resume/score`, {
+      const response = await fetch(backendApiUrl('/api/v1/resume/score'), {
         method: 'POST',
         credentials: 'include',
         body: formData,

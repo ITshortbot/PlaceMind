@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { useATSScoring, ScoringStatus } from '@/lib/hooks/useATSScoring';
+import { backendApiUrl } from '@/lib/api/base';
 import type { RequirementGapItem } from '@/types/ats';
 import { AIServiceClient } from '@/lib/api/aiService';
 import {
@@ -426,7 +427,7 @@ export default function AtsAutoGeneratePage() {
               <span>
                 Backend:{' '}
                 <strong>
-                  {process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}
+                  {backendApiUrl('/api')}
                 </strong>
               </span>
             </div>

@@ -7,9 +7,7 @@
 // ============================================================================
 
 import type { ResumeDetail } from './resumes';
-
-const backendUrl = () =>
-  (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
+import { backendApiUrl } from './base';
 
 export interface OnboardingAnswers {
   full_name: string;
@@ -27,7 +25,7 @@ export interface BootstrapResponse {
 }
 
 export async function bootstrapResume(answers: OnboardingAnswers): Promise<BootstrapResponse> {
-  const res = await fetch(`${backendUrl()}/api/v1/onboarding/bootstrap`, {
+  const res = await fetch(backendApiUrl('/api/v1/onboarding/bootstrap'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

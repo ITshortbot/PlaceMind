@@ -11,6 +11,8 @@
 
 /** @type {import('next').NextConfig} */
 const isTauriBuild = process.env.TAURI_ENV_PLATFORM !== undefined;
+const useLocalBackendProxy =
+  process.env.NODE_ENV === 'development' && !process.env.VERCEL && !isTauriBuild;
 
 const nextConfig = {
   // Static export only when building Tauri desktop binary
@@ -37,12 +39,33 @@ const nextConfig = {
   // Full path-prefix deployments (code-server /absproxy/PORT dev tunnel, whose
   // proxy passes the path through instead of stripping it): serve pages,
   // _next assets and public files under the prefix. next/link, useRouter and
-  // next/image all prepend basePath automatically (audited: no raw <a href>,
-  // no plain <img>, no relative API fetches - backend calls use absolute URLs).
+  // next/image all prepend basePath automatically. API calls use the same
+  // prefix through NEXT_PUBLIC_BASE_PATH.
   // Unset in normal local dev and Vercel - no behavior change.
   basePath: process.env.NEXT_BASE_PATH || undefined,
 
+  env: {
+    NEXT_PUBLIC_BASE_PATH: process.env.NEXT_BASE_PATH || '',
+  },
+
   transpilePackages: ['three'],
+
+  ...(useLocalBackendProxy
+    ? {
+        async rewrites() {
+          const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(
+            /\/$/,
+            ''
+          );
+          return [
+            {
+              source: '/api/:path*',
+              destination: `${backendUrl}/api/:path*`,
+            },
+          ];
+        },
+      }
+    : {}),
 };
 
 export default nextConfig;

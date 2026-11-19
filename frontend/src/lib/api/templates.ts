@@ -13,14 +13,12 @@ import type {
   GenerateRequest,
   GenerateResponse,
 } from '@/types/templates';
-
-const backendUrl = () =>
-  (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
+import { backendApiUrl } from './base';
 
 export type { CandidateFacts, GenerateRequest, GenerateResponse };
 
 export async function generateTemplate(request: GenerateRequest): Promise<GenerateResponse> {
-  const res = await fetch(`${backendUrl()}/api/v1/templates/generate`, {
+  const res = await fetch(backendApiUrl('/api/v1/templates/generate'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

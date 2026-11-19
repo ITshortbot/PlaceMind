@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
+import { backendApiUrl } from '@/lib/api/base';
 import {
   UploadCloud,
   FileCheck,
@@ -80,8 +81,7 @@ export default function ResumeUploadPage() {
       formData.append('job_description_raw', 'Professional with technical skills and work experience seeking a role.');
       formData.append('routing_mode', 'cloud');
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-      const res = await fetch(`${backendUrl}/api/v1/resume/score`, {
+      const res = await fetch(backendApiUrl('/api/v1/resume/score'), {
         method: 'POST',
         credentials: 'include',
         body: formData,

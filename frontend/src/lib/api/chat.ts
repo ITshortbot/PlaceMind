@@ -5,8 +5,7 @@
 //              Mirrors backend/app/schemas/chat.py; keep the two in sync.
 // ============================================================================
 
-const backendUrl = () =>
-  (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
+import { backendApiUrl } from './base';
 
 export interface PageContext {
   path: string;
@@ -45,7 +44,7 @@ export interface ChatResponse {
 }
 
 export async function sendChatMessage(req: ChatRequest): Promise<ChatResponse> {
-  const res = await fetch(`${backendUrl()}/api/v1/chat`, {
+  const res = await fetch(backendApiUrl('/api/v1/chat'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
