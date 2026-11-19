@@ -7,6 +7,9 @@ from typing import List, Literal, Optional, Dict, Any
 from uuid import UUID
 from pydantic import BaseModel, Field
 
+ATSProvider = Literal["ollama", "cloud", "local"]
+DEFAULT_ATS_PROVIDER: ATSProvider = "ollama"
+
 class ParsedSectionDTO(BaseModel):
     section_type: str = Field(..., description="work_experience, skills, projects, education, summary")
     content: str
@@ -14,7 +17,7 @@ class ParsedSectionDTO(BaseModel):
 class ATSScorePdfRequest(BaseModel):
     job_title: str
     job_description_raw: str
-    routing_mode: Literal["cloud", "local"] = "cloud"
+    routing_mode: ATSProvider = DEFAULT_ATS_PROVIDER
 
 class RequirementGapItem(BaseModel):
     requirement: str

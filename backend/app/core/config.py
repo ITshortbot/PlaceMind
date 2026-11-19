@@ -60,7 +60,7 @@ class Settings(BaseSettings):
         description="API key for OSS OpenAI-compatible endpoint"
     )
     LLM_MODEL: str = Field(
-        default="gpt-oss:20b",
+        default="qwen2.5-coder:1.5b",
         description="Model name for OSS endpoint"
     )
     LLM_TIMEOUT_S: int = Field(
@@ -134,11 +134,6 @@ class Settings(BaseSettings):
         on every AI request because credentials are not set.
         """
         if self.ENVIRONMENT in ("staging", "production"):
-            if not self.GEMINI_API_KEY:
-                raise ValueError(
-                    "GEMINI_API_KEY must be set in staging/production environments. "
-                    "Set it in your .env file or as a container environment variable."
-                )
             if not self.AUTH_SECRET_KEY:
                 raise ValueError(
                     "AUTH_SECRET_KEY must be set in staging/production environments. "

@@ -5,6 +5,7 @@
 
 export type MatchStatus = 'covered' | 'weak' | 'missing';
 export type AIMode = 'cloud' | 'local';
+export type ATSProvider = AIMode | 'ollama';
 
 export interface RequirementGapItem {
   requirement: string;
@@ -47,5 +48,5 @@ export interface ScoreResumeParams {
   file: File;
   jobTitle: string;
   jobDescription: string;
-  mode?: AIMode;
+  mode?: ATSProvider;
 }

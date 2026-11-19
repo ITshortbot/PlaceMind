@@ -78,14 +78,14 @@ Output Bullet: "Engineered high-throughput cloud database index handling 250M qu
 
 In `backend/.env`:
 ```env
-# Cloud Engine (Gemini)
+# Optional Cloud Engine (Gemini; only used when selected)
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 
 # Local OSS Privacy Engine (Ollama / OpenAI-compatible endpoint)
 LLM_BASE_URL=http://localhost:11434/v1
 LLM_API_KEY=ollama
-LLM_MODEL=gpt-oss:20b
+LLM_MODEL=qwen2.5-coder:1.5b
 LLM_TIMEOUT_S=60
 LLM_MAX_TOKENS=1500
 
@@ -98,14 +98,19 @@ LOCAL_LLM_MODEL=meta-llama-3-8b-instruct
 EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 ```
 
+On Render, set `LLM_BASE_URL` to an Ollama-compatible endpoint reachable from
+the Render backend, and set `LLM_MODEL=qwen2.5-coder:1.5b`. Do not use
+`localhost` unless the Ollama server runs in the same environment. Gemini is
+optional and is not used by default ATS scoring.
+
 ---
 
 ## 5. Local Setup & Pulling the Model
 
 ### Step 1: Pull the Local OSS Model
 ```bash
-# Pull the recommended local 20B OSS model via Ollama
-ollama pull gpt-oss:20b
+# Pull the default ATS model via Ollama
+ollama pull qwen2.5-coder:1.5b
 
 # Ensure Ollama server is running locally on port 11434
 ollama serve

@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { useATSScoring, ScoringStatus } from '@/lib/hooks/useATSScoring';
 import { backendApiUrl } from '@/lib/api/base';
-import type { RequirementGapItem } from '@/types/ats';
+import type { ATSProvider, RequirementGapItem } from '@/types/ats';
 import { AIServiceClient } from '@/lib/api/aiService';
 import {
   Wand2,
@@ -45,7 +45,7 @@ const STATUS_LABELS: Record<ScoringStatus, string> = {
   idle: '',
   parsing: 'Extracting resume sections with PyMuPDF…',
   embedding: 'Computing 384-d BAAI/bge embeddings…',
-  synthesizing: 'Synthesizing AI gap report with Gemini…',
+  synthesizing: 'Synthesizing AI gap report…',
   done: 'Analysis complete.',
   error: 'Pipeline error.',
 };
@@ -81,7 +81,7 @@ export default function AtsAutoGeneratePage() {
   const [jdText, setJdText] = useState('');
   // Start from the SSR-safe default and apply the saved Settings preference on
   // mount. Reading localStorage in the initializer causes a hydration mismatch.
-  const [aiMode, setAiMode] = useState<'cloud' | 'local'>('cloud');
+  const [aiMode, setAiMode] = useState<ATSProvider>('ollama');
   useEffect(() => {
     setAiMode(AIServiceClient.getPreferredAIMode());
   }, []);
@@ -314,9 +314,9 @@ export default function AtsAutoGeneratePage() {
             Analyze Resume vs. Job Description
           </h1>
           <p className="text-xs sm:text-sm text-[#4A4A52] dark:text-[#A1A1AA]">
-            Upload your PDF resume and paste a job description. The backend scores it with local
-            bipartite cosine similarity. AI-written suggestions run only when a provider (Gemini API
-            key or local LM Studio) is configured; otherwise you get the built-in deterministic analysis.
+            Upload your PDF resume and paste a job description. Core scoring uses local bipartite
+            cosine similarity. Ollama is the default AI provider; Gemini and LM Studio are used only
+            when explicitly selected.
           </p>
         </div>
 
@@ -325,6 +325,16 @@ export default function AtsAutoGeneratePage() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-[#1A1A1E] dark:text-white">AI Engine</span>
             <div className="flex items-center bg-black/10 dark:bg-white/10 p-1 rounded-xl border border-black/10 dark:border-white/15">
+              <button
+                onClick={() => setAiMode('ollama')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  aiMode === 'ollama'
+                    ? 'bg-[#FACC15] text-[#0A0A0C] shadow-sm'
+                    : 'text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-white'
+                }`}
+              >
+                <Server className="w-3 h-3" /> Ollama
+              </button>
               <button
                 onClick={() => setAiMode('cloud')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${

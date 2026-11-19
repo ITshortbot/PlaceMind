@@ -17,7 +17,7 @@ export function useATSScoring() {
     setLatencyMs(null);
   };
 
-  const scoreResume = async ({ file, jobTitle, jobDescription, mode = 'cloud' }: ScoreResumeParams) => {
+  const scoreResume = async ({ file, jobTitle, jobDescription, mode = 'ollama' }: ScoreResumeParams) => {
     const startedAt = performance.now();
     setStatus('parsing');
     setReport(null);

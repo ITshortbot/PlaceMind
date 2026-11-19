@@ -1,15 +1,15 @@
 # Placemind — AI ATS Optimization & Template Studio
-> **Decoupled Hybrid Architecture:** Next.js 15 Frontend + FastAPI Backend + Local OSS Model (Ollama `gpt-oss:20b`) & Cloud Track (Gemini 2.5 Flash).
+> **Decoupled Hybrid Architecture:** Next.js 15 Frontend + FastAPI Backend + Ollama (`qwen2.5-coder:1.5b`) by default, with optional Gemini and LM Studio providers.
 
 ---
 
 ## Quickstart & Demo Guide
 
 ### 1. Prerequisites & Model Setup
-Install [Ollama](https://ollama.com/) and pull the local 20B OSS model:
+Install [Ollama](https://ollama.com/) and pull the configured model:
 ```bash
-# Pull local OSS model
-ollama pull gpt-oss:20b
+# Pull the default ATS model
+ollama pull qwen2.5-coder:1.5b
 
 # Start local model runtime (default port 11434)
 ollama serve
@@ -21,7 +21,7 @@ Ensure `backend/.env` is configured:
 # Local OSS Model Configuration
 LLM_BASE_URL=http://localhost:11434/v1
 LLM_API_KEY=ollama
-LLM_MODEL=gpt-oss:20b
+LLM_MODEL=qwen2.5-coder:1.5b
 LLM_TIMEOUT_S=60
 LLM_MAX_TOKENS=1500
 

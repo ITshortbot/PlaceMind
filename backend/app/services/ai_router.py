@@ -1,7 +1,6 @@
 # ============================================================================
 # File: backend/app/services/ai_router.py
-# Description: Unified Hybrid AI Router dispatching prompts between Cloud (Gemini)
-#              and Local (LM Studio Server) with fallback and telemetry.
+# Description: Unified AI Router for explicit Gemini, LM Studio, and Ollama routing.
 #
 # COMPUTATIONAL THINKING & DEFENSE NOTES FOR JURY:
 # 1. Strategy Pattern: Decouples high-level ATS logic from vendor-specific LLM SDKs.
@@ -10,10 +9,8 @@
 #      low latency via Google's distributed TPUs.
 #    - Local Privacy Mode (LM Studio @ localhost:1234): 100% Zero-Data-Retention, runs
 #      quantized models (e.g. LLaMA 3.2 Q4) entirely on the client's Apple Silicon / GPU.
-# 3. Fault Tolerance & Graceful Degradation:
-#    - If the local server is offline or throws a ConnectionRefusedError, the router catches
-#      the transport error and either falls back to Cloud (with user audit) or provides
-#      an explicit recovery diagnostic.
+# 3. Ollama requests never fall back to Gemini. An unavailable configured
+#    Ollama provider produces an explicit provider error.
 # ============================================================================
 
 import os
@@ -33,6 +30,22 @@ class RoutingMode(str, Enum):
     CLOUD = "cloud"    # Google Gemini 2.5 Flash via Cloud API
     LOCAL = "local"    # Local LM Studio Server (OpenAI-compatible)
     OSS = "oss"        # OSS OpenAI-compatible endpoint (e.g. Ollama)
+
+
+class OllamaProviderUnavailable(ConnectionError):
+    """The configured Ollama endpoint or model could not serve a request."""
+
+
+def ats_routing_mode(provider: str) -> RoutingMode:
+    try:
+        return {
+            "ollama": RoutingMode.OSS,
+            "cloud": RoutingMode.CLOUD,
+            "local": RoutingMode.LOCAL,
+        }[provider]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported ATS provider: {provider}") from exc
+
 
 class LLMResponse(BaseModel):
     content: str
@@ -97,10 +110,10 @@ class HybridLLMRouter:
         
         Args:
             messages: List of role-content message dictionaries.
-            mode: RoutingMode.CLOUD or RoutingMode.LOCAL.
+            mode: RoutingMode.OSS, RoutingMode.CLOUD, or RoutingMode.LOCAL.
             temperature: Sampling temperature (lower = more deterministic for ATS analysis).
             response_format: JSON schema enforcement if supported.
-            allow_fallback_to_cloud: If True, falls back to Gemini if LM Studio is offline.
+            allow_fallback_to_cloud: If True, only LM Studio may fall back to Gemini.
         """
         start_time = time.perf_counter()
 
@@ -199,7 +212,19 @@ class HybridLLMRouter:
         if response_format:
             kwargs["response_format"] = response_format
 
-        response = await litellm.acompletion(**kwargs)
+        try:
+            response = await litellm.acompletion(**kwargs)
+        except (
+            litellm.APIError,
+            ConnectionError,
+            TimeoutError,
+            httpx.TransportError,
+        ) as exc:
+            logger.warning("Ollama inference request failed (%s).", type(exc).__name__)
+            raise OllamaProviderUnavailable(
+                "Ollama provider is unavailable or the configured model failed. "
+                "Verify LLM_BASE_URL, LLM_API_KEY, and LLM_MODEL."
+            ) from exc
         elapsed_ms = (time.perf_counter() - start_time) * 1000
 
         usage = {}
@@ -233,6 +258,10 @@ class HybridLLMRouter:
         start_time: float,
     ) -> LLMResponse:
         """Executes completion via Google Gemini Cloud using LiteLLM."""
+        if not settings.GEMINI_API_KEY:
+            raise RuntimeError(
+                "Gemini was selected but GEMINI_API_KEY is not configured."
+            )
         kwargs: Dict[str, Any] = {
             "model": self.cloud_model,
             "messages": messages,

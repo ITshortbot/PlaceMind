@@ -29,7 +29,7 @@ from app.schemas.scoring import (
     ModelAuditMetadata,
 )
 from app.services.embeddings import embedding_engine
-from app.services.ai_router import HybridLLMRouter, RoutingMode
+from app.services.ai_router import HybridLLMRouter, OllamaProviderUnavailable, RoutingMode
 
 logger = logging.getLogger("placemind.ats_scorer")
 
@@ -44,7 +44,7 @@ class ATSScoringEngine:
     async def extract_requirements_from_jd(
         self,
         job_description: str,
-        mode: RoutingMode = RoutingMode.CLOUD
+        mode: RoutingMode = RoutingMode.OSS
     ) -> List[str]:
         """
         Uses the selected LLM to parse a raw JD into an array of atomic requirements.
@@ -63,6 +63,7 @@ class ATSScoringEngine:
                 ],
                 mode=mode,
                 temperature=0.1,
+                allow_fallback_to_cloud=False,
             )
             # Clean possible markdown wrapping
             raw_json = res.content.strip()
@@ -74,6 +75,8 @@ class ATSScoringEngine:
                 return [str(item) for item in parsed]
             elif isinstance(parsed, dict) and "requirements" in parsed:
                 return [str(item) for item in parsed["requirements"]]
+        except OllamaProviderUnavailable:
+            raise
         except Exception as e:
             logger.warning(f"LLM requirement extraction fallback due to: {str(e)}")
 
@@ -89,7 +92,7 @@ class ATSScoringEngine:
         self,
         parsed_sections: List[ParsedSectionDTO],
         job_requirements: List[str],
-        mode: RoutingMode = RoutingMode.CLOUD,
+        mode: RoutingMode = RoutingMode.OSS,
         pdf_r2_url: str = None,
         extracted_email: str = "",
         extracted_phone: str = "",
@@ -202,11 +205,14 @@ class ATSScoringEngine:
                 ],
                 mode=mode,
                 temperature=0.2,
+                allow_fallback_to_cloud=False,
             )
             ai_model_used = ai_response.model_used
             ai_routing_mode = ai_response.routing_mode.value
             ai_latency_ms = ai_response.latency_ms
             ai_is_fallback = ai_response.is_fallback
+        except OllamaProviderUnavailable:
+            raise
         except Exception as llm_err:
             logger.warning(
                 "LLM gap synthesis unavailable, using deterministic suggestions: %s",

@@ -79,7 +79,7 @@ export default function ResumeUploadPage() {
       formData.append('file', file);
       formData.append('job_title', 'General ATS Audit');
       formData.append('job_description_raw', 'Professional with technical skills and work experience seeking a role.');
-      formData.append('routing_mode', 'cloud');
+      formData.append('routing_mode', 'ollama');
 
       const res = await fetch(backendApiUrl('/api/v1/resume/score'), {
         method: 'POST',

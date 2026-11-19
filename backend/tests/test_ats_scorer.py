@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from app.schemas.scoring import ParsedSectionDTO
-from app.services.ai_router import RoutingMode
+from app.services.ai_router import OllamaProviderUnavailable, RoutingMode
 from app.services.ats_scorer import ATSScoringEngine
 
 
@@ -51,3 +51,29 @@ async def test_structure_score_uses_resume_signals(
 
     assert report.structure_score == expected_structure_score
     assert report.overall_score == round(expected_structure_score * 0.2, 1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stage", ["requirements", "synthesis"])
+async def test_ollama_unavailable_is_not_swallowed(stage, monkeypatch):
+    async def unavailable(**kwargs):
+        assert kwargs["mode"] == RoutingMode.OSS
+        assert kwargs["allow_fallback_to_cloud"] is False
+        raise OllamaProviderUnavailable("Ollama provider is unavailable.")
+
+    engine = ATSScoringEngine(ai_router=SimpleNamespace(complete=unavailable))
+
+    with pytest.raises(OllamaProviderUnavailable, match="Ollama provider is unavailable"):
+        if stage == "requirements":
+            await engine.extract_requirements_from_jd("A detailed engineering role.")
+        else:
+            monkeypatch.setattr(
+                "app.services.ats_scorer.embedding_engine.embed_documents",
+                lambda texts: np.zeros((len(texts), 384)),
+            )
+            await engine.compute_scoring_pipeline(
+                parsed_sections=[
+                    ParsedSectionDTO(section_type="skills", content="Python services")
+                ],
+                job_requirements=["Python"],
+            )

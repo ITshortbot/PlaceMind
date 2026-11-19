@@ -4,14 +4,18 @@
 # ============================================================================
 
 import uuid
-from typing import Literal
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.scoring import ATSGapReportResponse, ParsedSectionDTO
+from app.schemas.scoring import (
+    ATSGapReportResponse,
+    ATSProvider,
+    DEFAULT_ATS_PROVIDER,
+    ParsedSectionDTO,
+)
 from app.services.pdf_parser import PDFResumeParser
 from app.services.embeddings import embedding_engine
-from app.services.ai_router import HybridLLMRouter, RoutingMode
+from app.services.ai_router import HybridLLMRouter, ats_routing_mode
 from app.services.ats_scorer import ATSScoringEngine
 from app.services.r2_storage import r2_storage
 from app.core.auth import get_current_user
@@ -34,7 +38,10 @@ async def score_resume_pdf(
     file: UploadFile = File(..., description="Binary PDF Resume File"),
     job_title: str = Form(..., description="Target Job Title (e.g. Senior Frontend Engineer)"),
     job_description_raw: str = Form(..., description="Raw text of the target Job Description"),
-    routing_mode: Literal["cloud", "local"] = Form("cloud", description="'cloud' (Gemini) or 'local' (LM Studio)"),
+    routing_mode: ATSProvider = Form(
+        DEFAULT_ATS_PROVIDER,
+        description="'ollama' (default), 'cloud' (Gemini), or 'local' (LM Studio)",
+    ),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -89,7 +96,7 @@ async def score_resume_pdf(
             r2_url = await r2_storage.upload_pdf(pdf_bytes, file_key)
 
         # Step 4: Extract requirements from JD
-        selected_mode = RoutingMode.CLOUD if routing_mode == "cloud" else RoutingMode.LOCAL
+        selected_mode = ats_routing_mode(routing_mode)
         requirements = await scoring_engine.extract_requirements_from_jd(
             job_description=job_description_raw,
             mode=selected_mode,

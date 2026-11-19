@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Card } from '@/components/ui/Card';
+import type { ATSProvider } from '@/types/ats';
 import {
   User,
   ShieldCheck,
@@ -54,7 +55,7 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'engine' | 'privacy'>('profile');
   const [profile, setProfile] = useState<StoredProfile>(EMPTY_PROFILE);
-  const [enginePreference, setEnginePreference] = useState<'cloud' | 'local'>('cloud');
+  const [enginePreference, setEnginePreference] = useState<ATSProvider>('ollama');
   const [savedTab, setSavedTab] = useState<string | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
@@ -66,8 +67,9 @@ export default function SettingsPage() {
         const parsed = JSON.parse(rawProfile) as Partial<StoredProfile>;
         setProfile({ ...EMPTY_PROFILE, ...parsed });
       }
-      if (window.localStorage.getItem(AI_MODE_STORAGE_KEY) === 'local') {
-        setEnginePreference('local');
+      const savedMode = window.localStorage.getItem(AI_MODE_STORAGE_KEY);
+      if (savedMode === 'cloud' || savedMode === 'local' || savedMode === 'ollama') {
+        setEnginePreference(savedMode);
       }
     } catch {
       // storage unavailable - start from empty defaults
@@ -283,11 +285,37 @@ export default function SettingsPage() {
                       AI Engine Routing Preference
                     </h3>
                     <p className="text-xs text-[#8A8A92] mt-0.5">
-                      Choose which engine the ATS 1-Pass page asks the backend to use.
+                      Ollama is the default. Choose Gemini or LM Studio only when you want to override it.
                     </p>
                   </div>
 
                   <div className="space-y-3">
+                    <label
+                      onClick={() => setEnginePreference('ollama')}
+                      className={`p-4 rounded-2xl border transition-all flex items-start justify-between cursor-pointer ${
+                        enginePreference === 'ollama'
+                          ? 'bg-[#16A34A]/10 border-[#16A34A]/40 shadow-xs'
+                          : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.06] dark:border-white/[0.06]'
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#1A1A1E] dark:text-white">
+                          <Cpu className="w-4 h-4 text-[#16A34A]" />
+                          <span>Prefer Ollama (Recommended)</span>
+                        </div>
+                        <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA]">
+                          Uses the backend&apos;s configured LLM_BASE_URL and LLM_MODEL. It never
+                          falls back to Gemini if unavailable.
+                        </p>
+                      </div>
+                      <input
+                        type="radio"
+                        name="engine"
+                        checked={enginePreference === 'ollama'}
+                        onChange={() => setEnginePreference('ollama')}
+                      />
+                    </label>
+
                     <label
                       onClick={() => setEnginePreference('local')}
                       className={`p-4 rounded-2xl border transition-all flex items-start justify-between cursor-pointer ${
@@ -329,7 +357,7 @@ export default function SettingsPage() {
                           <span>Prefer Gemini Cloud</span>
                         </div>
                         <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA]">
-                          Requests Gemini for AI-written suggestions. Requires a Gemini API key
+                          Uses Gemini only when explicitly selected. Requires a Gemini API key
                           configured on the backend; without one, the report falls back to the
                           built-in deterministic analysis.
                         </p>

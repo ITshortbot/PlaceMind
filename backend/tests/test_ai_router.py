@@ -10,8 +10,36 @@ from typing import Any
 import logging
 import pytest
 
-from app.core.config import settings
-from app.services.ai_router import HybridLLMRouter, RoutingMode
+from app.core.config import Settings, settings
+from app.schemas.scoring import ATSScorePdfRequest
+from app.services.ai_router import (
+    HybridLLMRouter,
+    OllamaProviderUnavailable,
+    RoutingMode,
+    ats_routing_mode,
+)
+
+
+def test_ats_defaults_to_ollama():
+    request = ATSScorePdfRequest(
+        job_title="Engineer",
+        job_description_raw="Role description",
+    )
+    assert request.routing_mode == "ollama"
+    assert ats_routing_mode("ollama") == RoutingMode.OSS
+
+
+def test_gemini_key_is_not_required_for_production_settings():
+    production_settings = Settings(
+        _env_file=None,
+        ENVIRONMENT="production",
+        AUTH_SECRET_KEY="test-session-secret",
+        AUTH_COOKIE_SECURE=True,
+        GOOGLE_CLIENT_ID="test-client-id",
+        GOOGLE_CLIENT_SECRET="test-client-secret",
+    )
+
+    assert production_settings.GEMINI_API_KEY == ""
 
 
 def _create_mock_response(content: str = "Hello, world!"):
@@ -115,13 +143,13 @@ async def test_oss_completion_timeout(monkeypatch):
     monkeypatch.setattr("litellm.acompletion", mock_timeout)
 
     router = HybridLLMRouter()
-    with pytest.raises(asyncio.TimeoutError) as exc_info:
+    with pytest.raises(OllamaProviderUnavailable) as exc_info:
         await router.complete(
             messages=[{"role": "user", "content": "say hi"}],
             mode=RoutingMode.OSS,
         )
 
-    assert "Request timed out" in str(exc_info.value)
+    assert "Ollama provider is unavailable" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -133,13 +161,60 @@ async def test_oss_completion_error(monkeypatch):
     monkeypatch.setattr("litellm.acompletion", mock_error)
 
     router = HybridLLMRouter()
-    with pytest.raises(ConnectionRefusedError) as exc_info:
+    async def unexpected_cloud(**kwargs):
+        pytest.fail("An unavailable Ollama request must not invoke Gemini.")
+
+    monkeypatch.setattr(router, "_execute_cloud", unexpected_cloud)
+    with pytest.raises(OllamaProviderUnavailable) as exc_info:
         await router.complete(
             messages=[{"role": "user", "content": "say hi"}],
-            mode=RoutingMode.OSS,
+            mode=ats_routing_mode("ollama"),
         )
 
-    assert "Failed to connect" in str(exc_info.value)
+    assert "Ollama provider is unavailable" in str(exc_info.value)
+    assert "localhost" not in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_ats_ollama_selection_never_invokes_gemini(monkeypatch):
+    captured_kwargs = {}
+
+    async def mock_acompletion(**kwargs):
+        captured_kwargs.update(kwargs)
+        return _create_mock_response("Ollama ATS response")
+
+    async def unexpected_cloud(**kwargs):
+        pytest.fail("Ollama ATS requests must never invoke Gemini.")
+
+    monkeypatch.setattr("litellm.acompletion", mock_acompletion)
+    router = HybridLLMRouter()
+    monkeypatch.setattr(router, "_execute_cloud", unexpected_cloud)
+
+    response = await router.complete(
+        messages=[{"role": "user", "content": "ATS request"}],
+        mode=ats_routing_mode("ollama"),
+    )
+
+    assert response.routing_mode == RoutingMode.OSS
+    assert response.model_used == f"openai/{settings.LLM_MODEL}"
+    assert captured_kwargs["api_base"] == settings.LLM_BASE_URL
+
+
+@pytest.mark.asyncio
+async def test_gemini_requires_an_explicitly_configured_api_key(monkeypatch):
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
+
+    async def unexpected_completion(**kwargs):
+        pytest.fail("Gemini must not be invoked without an API key.")
+
+    monkeypatch.setattr("litellm.acompletion", unexpected_completion)
+    router = HybridLLMRouter()
+
+    with pytest.raises(RuntimeError, match="GEMINI_API_KEY is not configured"):
+        await router.complete(
+            messages=[{"role": "user", "content": "ATS request"}],
+            mode=RoutingMode.CLOUD,
+        )
 
 
 @pytest.mark.asyncio
@@ -175,6 +250,7 @@ async def test_existing_modes_remain_functional(monkeypatch):
         return _create_mock_response("Cloud reply")
 
     monkeypatch.setattr("litellm.acompletion", mock_acompletion)
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-key")
 
     router = HybridLLMRouter()
     response = await router.complete(
