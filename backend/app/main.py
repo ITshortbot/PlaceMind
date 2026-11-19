@@ -35,6 +35,9 @@ async def initialize_database(engine, metadata):
                 await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub varchar(255)"))
                 await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url text"))
                 await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub ON users (google_sub)"))
+                # Guest-identity columns (migration 001) so an older database never 500s.
+                await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest boolean NOT NULL DEFAULT false"))
+                await conn.execute(text("ALTER TABLE users ALTER COLUMN email DROP NOT NULL"))
         logger.info("Database tables ensured (pgvector extension on PostgreSQL only).")
     except Exception as exc:
         logger.warning("Database initialization failed; continuing without database features: %s", exc)

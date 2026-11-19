@@ -34,3 +34,11 @@ def authenticated_test_user():
     app.dependency_overrides[get_current_user] = lambda: user
     yield user
     app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture(autouse=True)
+def no_live_ai_key(monkeypatch):
+    """Unit tests must never reach a live provider, even if the host .env has a key."""
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "OPENROUTER_API_KEY", "")
+    yield
