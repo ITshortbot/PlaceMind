@@ -20,4 +20,4 @@ echo "== Backend tests =="
 cd backend && python -m pytest tests/ -q || true
 
 echo "Done. Start backend:  cd backend && CORS_ORIGINS='[\"<your-3000-url>\"]' uvicorn app.main:app --host 0.0.0.0 --port 8000"
-echo "Start frontend: cd frontend && NEXT_PUBLIC_BACKEND_URL=<your-8000-url> npm run dev"
+echo "Start frontend: cd frontend && vercel dev"

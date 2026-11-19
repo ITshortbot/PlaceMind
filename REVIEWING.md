@@ -45,15 +45,16 @@ pkill -f 'uvicorn app.main' ; sleep 2
 
 ```bash
 cd /workspaces/PlaceMind/frontend && \
-NEXT_PUBLIC_BACKEND_URL=https://<codespace-name>-8000.app.github.dev \
-npm run dev -- -p 3001
+vercel dev --listen 3001
 ```
 
 Node 22 is required (matches CI). On this codespace the default node is already
 v22 - check with `node -v`; do not source `~/.nvm/nvm.sh` (it is absent and
 breaks nohup chains). The app is then at
 `https://<codespace-name>-3001.app.github.dev` (private: it goes through a GitHub
-sign-in interstitial because the port forward is not public).
+sign-in interstitial because the port forward is not public). Vercel's
+`frontend/vercel.json` keeps API requests on this origin and proxies them to
+the configured Render backend.
 
 ## 5. Run the Playwright suite
 

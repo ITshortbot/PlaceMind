@@ -1,6 +1,6 @@
 # Placemind — DevOps, Backend & Cloud Infrastructure Guide
 > **Owner/Role:** DevOps & Cloud Infrastructure Engineer  
-> **Tech Stack:** Docker, Docker Compose, FastAPI, PostgreSQL (pgvector), Cloudflare R2, Nginx, GitHub Actions, Vercel / Railway
+> **Tech Stack:** Vercel (Next.js), Render (FastAPI), Neon PostgreSQL (pgvector), Cloudflare R2, Docker, GitHub Actions
 
 ---
 
@@ -12,19 +12,19 @@ This guide outlines the backend infrastructure, database configuration, containe
 ## 2. Infrastructure Architecture Diagram
 
 ```
-                 [ User Browser / Client ]
-                             │
-                  (HTTPS / DNS via Cloudflare)
-                             │
-            ┌────────────────┴────────────────┐
-            ▼                                 ▼
-   [ Next.js Frontend ]              [ FastAPI Backend ]
-   (Vercel / Port 3000)             (Railway / Port 8000)
-                                              │
-                    ┌─────────────────────────┼─────────────────────────┐
-                    ▼                         ▼                         ▼
-            [ PostgreSQL DB ]         [ Cloudflare R2 ]        [ Gemini / LM Studio ]
-            (pgvector extension)      (Encrypted Blobs)          (Dual AI Router)
+                  [ User Browser ]
+                        │
+                 Vercel domain
+                        │
+               [ Next.js Frontend ]
+                 /api/:path* rewrite
+                        │
+                 [ Render FastAPI ]
+                        │
+        ┌───────────────┼─────────────────┐
+        ▼               ▼                 ▼
+ [ Neon PostgreSQL ] [ Cloudflare R2 ] [ Gemini / LM Studio ]
+  (pgvector)         (Encrypted Blobs)    (AI providers)
 ```
 
 ---
@@ -107,8 +107,6 @@ services:
     container_name: placemind-ui
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - backend
 
@@ -116,22 +114,32 @@ volumes:
   pgdata:
 ```
 
+This Compose example is for local container orchestration. Production API
+routing is defined only by `frontend/vercel.json`; frontend requests use
+same-origin `/api/...` paths.
+
 ---
 
 ## 5. Deployment Guidelines
 
 ### A. Frontend Deployment (Vercel)
-1. Link GitHub repository to Vercel.
-2. Root Directory: `frontend`
-3. Framework Preset: `Next.js`
-4. Set Environment Variables:
-   - `NEXT_PUBLIC_API_URL`: `https://api.placemind.app`
+1. Link the GitHub repository and set **Root Directory** to `frontend`.
+2. Select Next.js; `package-lock.json` selects npm and `npm run build` is the
+   package build command. Keep the default Next.js output directory.
+3. Vercel deploys only this frontend. `frontend/vercel.json` proxies
+   `/api/:path*` to `https://placemind-tdhj.onrender.com/api/:path*`.
+4. No Vercel API URL variable or backend service is needed.
 
-### B. Backend Deployment (Railway / Render)
-1. Deploy from root using Dockerfile or Python buildpack.
-2. Root Directory: `backend`
-3. Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-4. Set Database Connection: `DATABASE_URL` pointing to PostgreSQL with pgvector enabled.
+### B. Backend and database (existing production services)
+
+Render remains the only FastAPI backend; keep its existing deployment,
+database connection, and model configuration unchanged. Neon remains the
+PostgreSQL database. After confirming the Vercel domain, update the Render
+environment values `FRONTEND_URL`, `CORS_ORIGINS`, and
+`GOOGLE_REDIRECT_URI` to use that domain, and keep `AUTH_COOKIE_SECURE=true`.
+Register the exact `/api/v1/auth/google/callback` Vercel URL as Google's
+authorized redirect URI. Keep database and provider credentials only in the
+existing Render environment.
 
 ---
 

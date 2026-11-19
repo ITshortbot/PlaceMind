@@ -30,10 +30,9 @@ EMBEDDING_MODEL_NAME=BAAI/bge-small-en-v1.5
 CORS_ORIGINS=["http://localhost:3000"]
 ```
 
-Ensure `frontend/.env.local` is configured:
-```env
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
-```
+The frontend uses same-origin `/api/...` requests. No public backend URL is
+required in frontend environment variables. Use `vercel dev` from `frontend/`
+to exercise the Vercel API proxy locally.
 
 ---
 
@@ -51,10 +50,11 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ### Frontend (Next.js 15 + Tailwind CSS)
 ```bash
 cd frontend
-npm install
-npm run dev
+vercel dev --listen 3000
 ```
-Open **http://localhost:3000/template** to use the Prompt-to-Template Studio and ATS Readiness Auditor.
+The Vercel CLI uses `frontend/vercel.json` for the same-origin Render API
+proxy. Open **http://localhost:3000/template** to use the Prompt-to-Template
+Studio and ATS Readiness Auditor.
 
 ---
 
@@ -108,19 +108,51 @@ fails before serving requests if the required user schema is incomplete. The
 database role needs the privileges required for the applicable `CREATE EXTENSION`,
 `CREATE TABLE`, `ALTER TABLE`, and `CREATE INDEX` operations.
 
-## Vercel multi-service deployment
+## Production deployment: Vercel, Render, and Neon
 
-The root `vercel.json` defines a FastAPI `backend` service and a Next.js
-`frontend` service. Requests under `/api/*` route to the backend; all other
-public paths route to the frontend. The frontend calls the backend through
-same-origin `/api/...` URLs. These are browser requests handled by the public
-rewrite, not server-to-server calls, so no service binding is required.
+Vercel hosts only the Next.js frontend. In the Vercel project settings, set
+**Root Directory** to `frontend`, select the Next.js framework, and use the
+`npm` package manager detected from `frontend/package-lock.json`. The build
+command is `npm run build`; leave the output directory at the Next.js default.
+The repository root has no frontend package manifest, and there is no linked
+Vercel project metadata in this checkout, so verify the dashboard Root
+Directory is `frontend`.
 
-Use `vercel dev` to exercise the multi-service routing locally. For production,
-configure the backend's required runtime settings in Vercel rather than
-committing secrets. Set `FRONTEND_URL` to the deployment's public origin,
-include that origin in `CORS_ORIGINS`, and set `GOOGLE_REDIRECT_URI` to
-`<public-origin>/api/v1/auth/google/callback` (and register that exact callback
-with Google). Enable `AUTH_COOKIE_SECURE` for HTTPS deployments. Do not set
-`NEXT_PUBLIC_BACKEND_URL` in production; the frontend uses the same-origin
-`/api` route.
+The authoritative API proxy is `frontend/vercel.json`: `/api/:path*` is
+rewritten to `https://placemind-tdhj.onrender.com/api/:path*`. The `/api`
+prefix is preserved and browser URLs stay on the Vercel domain. Render remains
+the only FastAPI backend and continues to use the existing Neon PostgreSQL
+database. Do not create a Vercel backend service or add a public backend URL to
+frontend environment variables.
+
+No Vercel environment variables are required for API routing. After the Vercel
+domain is known, configure these non-secret settings on the existing Render
+backend:
+
+```env
+ENVIRONMENT=production
+FRONTEND_URL=https://<vercel-domain>
+CORS_ORIGINS=["https://<vercel-domain>"]
+GOOGLE_REDIRECT_URI=https://<vercel-domain>/api/v1/auth/google/callback
+AUTH_COOKIE_SECURE=true
+```
+
+The Google OAuth authorized redirect URI must exactly match
+`GOOGLE_REDIRECT_URI`. The callback is served on the Vercel origin and proxied
+to Render; the backend then redirects to `FRONTEND_URL`. The existing auth
+implementation already uses these configured URLs, so no callback code change
+is needed. `CORS_ORIGINS` is also checked by the backend's origin guard for
+mutating requests.
+
+Keep `DATABASE_URL`, `AUTH_SECRET_KEY`, `GOOGLE_CLIENT_SECRET`,
+`GEMINI_API_KEY`, and any configured storage/provider credentials only in
+Render's environment. `GOOGLE_CLIENT_ID` is also configured on Render for the
+backend OAuth flow. Never put secrets in `NEXT_PUBLIC_*` variables or commit
+them to the repository.
+
+After deployment, verify that `/` serves the Next.js site and that browser
+requests to `/api/v1/...` remain on the Vercel domain and receive API responses
+from Render. For example, `GET /api/v1/auth/me` should return the expected
+unauthenticated or current-session response. Then test the Google login flow
+and confirm its callback and final redirect remain on the configured Vercel
+domain.

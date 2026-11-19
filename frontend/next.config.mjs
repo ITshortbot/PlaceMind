@@ -11,8 +11,6 @@
 
 /** @type {import('next').NextConfig} */
 const isTauriBuild = process.env.TAURI_ENV_PLATFORM !== undefined;
-const useLocalBackendProxy =
-  process.env.NODE_ENV === 'development' && !process.env.VERCEL && !isTauriBuild;
 
 const nextConfig = {
   // Static export only when building Tauri desktop binary
@@ -49,23 +47,6 @@ const nextConfig = {
   },
 
   transpilePackages: ['three'],
-
-  ...(useLocalBackendProxy
-    ? {
-        async rewrites() {
-          const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').replace(
-            /\/$/,
-            ''
-          );
-          return [
-            {
-              source: '/api/:path*',
-              destination: `${backendUrl}/api/:path*`,
-            },
-          ];
-        },
-      }
-    : {}),
 };
 
 export default nextConfig;
