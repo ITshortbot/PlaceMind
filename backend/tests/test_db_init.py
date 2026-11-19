@@ -71,4 +71,4 @@ async def test_fresh_postgres_creates_users_before_auth_migration():
     await initialize_database(Engine(), Metadata())
     assert calls[0] == "CREATE EXTENSION IF NOT EXISTS vector"
     assert calls[1] == "create_all"
-    assert sum(sql.startswith("ALTER TABLE users") for sql in calls) == 2
+    assert sum(sql.startswith("ALTER TABLE users") for sql in calls) == 4
