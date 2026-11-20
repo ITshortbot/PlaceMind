@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
+import { PasteImportCard } from '@/components/resume/PasteImportCard';
 import {
   UploadCloud,
   FileCheck,
@@ -188,6 +189,8 @@ export default function ResumeUploadPage() {
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
               />
             </label>
+
+            <PasteImportCard />
 
             <div className="p-4 rounded-2xl bg-white/70 dark:bg-[#141417]/70 border border-black/[0.06] dark:border-white/[0.06] flex items-center gap-3 text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
               <ShieldCheck className="w-4 h-4 text-[#16A34A] flex-shrink-0" />
