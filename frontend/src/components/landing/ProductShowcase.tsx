@@ -156,7 +156,7 @@ export function ProductShowcase() {
         >
           <div className="relative w-full aspect-[16/9] min-h-[480px] sm:min-h-[600px] lg:min-h-[720px]">
             <Image
-              src="/assets/mockups/macbook-final.png"
+              src="/assets/mockups/macbook-final.webp"
               alt="Placemind MacBook Studio Showcase"
               fill
               priority
