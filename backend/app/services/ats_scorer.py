@@ -22,6 +22,8 @@ import logging
 from typing import List, Dict, Any, Tuple
 import numpy as np
 
+from app.services.ats_rules import simple_stem
+from app.services.jd_keywords import jd_terms, resume_covers
 from app.schemas.scoring import (
     RequirementGapItem,
     ATSGapReportResponse,
@@ -142,15 +144,15 @@ class ATSScoringEngine:
         req_corpus = " ".join(job_requirements).lower()
         
         resume_words = set(re.findall(r"\b[a-z]{3,}\b", resume_corpus))
-        req_words = set(re.findall(r"\b[a-z]{3,}\b", req_corpus))
-        stopwords = {
-            "and", "the", "with", "for", "that", "this", "from", "have", "been",
-            "will", "your", "must", "able", "work", "team", "skills", "experience"
-        }
-        domain_req_words = req_words - stopwords
-        overlap = domain_req_words.intersection(resume_words)
-        missing_kw = list(domain_req_words - resume_words)[:8]
-        
+        # Role and skill terms only: generic job-post filler and common verbs are
+        # dropped, and every term shown comes from the job description text.
+        domain_req_terms = jd_terms(job_requirements)
+        resume_stems = {simple_stem(w) for w in resume_words}
+        covered_terms = [t for t in domain_req_terms if resume_covers(t, resume_words, resume_stems)]
+        overlap = set(covered_terms)
+        domain_req_words = set(domain_req_terms)
+        missing_kw = [t for t in domain_req_terms if t not in overlap][:8]
+
         keyword_score = (len(overlap) / max(len(domain_req_words), 1)) * 100.0
 
         structure_score = 0.0

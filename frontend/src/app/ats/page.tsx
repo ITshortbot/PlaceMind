@@ -26,7 +26,6 @@ import {
   Loader2,
   Upload,
   FileCheck2,
-  Cpu,
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -35,7 +34,6 @@ import {
   Lightbulb,
   RotateCcw,
   Server,
-  Cloud,
 } from 'lucide-react';
 
 // ─── Pipeline Status Labels ──────────────────────────────────────────────────
@@ -44,7 +42,7 @@ const STATUS_LABELS: Record<ScoringStatus, string> = {
   idle: '',
   parsing: 'Extracting resume sections with PyMuPDF…',
   embedding: 'Computing 384-d BAAI/bge embeddings…',
-  synthesizing: 'Synthesizing AI gap report with Gemini…',
+  synthesizing: 'Building the gap report…',
   done: 'Analysis complete.',
   error: 'Pipeline error.',
 };
@@ -170,7 +168,7 @@ export default function AtsAutoGeneratePage() {
                       <Zap className="w-3 h-3" />
                       {report.processing_metadata.model_used.startsWith('none')
                         ? 'No AI provider - deterministic analysis'
-                        : 'Fallback: Cloud'}
+                        : 'Fallback model used'}
                     </span>
                   )}
                 </p>
@@ -314,37 +312,19 @@ export default function AtsAutoGeneratePage() {
           </h1>
           <p className="text-xs sm:text-sm text-[#4A4A52] dark:text-[#A1A1AA]">
             Upload your PDF resume and paste a job description. The backend scores it with local
-            bipartite cosine similarity. AI-written suggestions run only when a provider (Gemini API
-            key or local LM Studio) is configured; otherwise you get the built-in deterministic analysis.
+            bipartite cosine similarity. AI-written suggestions run only when a model provider is
+            configured on the server; otherwise you get the built-in deterministic analysis.
           </p>
         </div>
 
         <Card className="p-6 sm:p-8 space-y-6 shadow-2xl border-2 border-black/[0.08] dark:border-white/[0.12] bg-white/90 dark:bg-[#121217]/90 backdrop-blur-2xl">
-          {/* AI Mode Toggle */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#1A1A1E] dark:text-white">AI Engine</span>
-            <div className="flex items-center bg-black/10 dark:bg-white/10 p-1 rounded-xl border border-black/10 dark:border-white/15">
-              <button
-                onClick={() => setAiMode('cloud')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  aiMode === 'cloud'
-                    ? 'bg-[#FACC15] text-[#0A0A0C] shadow-sm'
-                    : 'text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-white'
-                }`}
-              >
-                <Cloud className="w-3 h-3" /> Gemini Cloud
-              </button>
-              <button
-                onClick={() => setAiMode('local')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  aiMode === 'local'
-                    ? 'bg-[#FACC15] text-[#0A0A0C] shadow-sm'
-                    : 'text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-white'
-                }`}
-              >
-                <Cpu className="w-3 h-3" /> Local LM Studio
-              </button>
-            </div>
+          {/* Engine note: states what actually runs, no provider toggle */}
+          <div className="flex items-start justify-between gap-4">
+            <span className="text-xs font-bold text-[#1A1A1E] dark:text-white">Analysis engine</span>
+            <span className="text-xs text-right text-[#4A4A52] dark:text-[#A1A1AA] max-w-sm">
+              Built-in scoring on this server: embeddings, keyword match and structure checks. AI-written suggestions
+              appear only if a model provider is configured; the report states exactly what ran.
+            </span>
           </div>
 
           {/* PDF Upload Zone */}
