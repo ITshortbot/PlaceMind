@@ -30,6 +30,12 @@ import {
   Lock,
   Database,
   LogOut,
+  Phone,
+  GraduationCap,
+  BookOpen,
+  Mail,
+  FileText,
+  RotateCcw,
 } from 'lucide-react';
 
 const PROFILE_STORAGE_KEY = 'placemind.profile';
@@ -57,6 +63,9 @@ export default function SettingsPage() {
   const [enginePreference, setEnginePreference] = useState<'cloud' | 'local'>('cloud');
   const [savedTab, setSavedTab] = useState<string | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [savedProfile, setSavedProfile] = useState<StoredProfile>(EMPTY_PROFILE);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   // Load persisted preferences on mount.
   useEffect(() => {
@@ -65,6 +74,7 @@ export default function SettingsPage() {
       if (rawProfile) {
         const parsed = JSON.parse(rawProfile) as Partial<StoredProfile>;
         setProfile({ ...EMPTY_PROFILE, ...parsed });
+        setSavedProfile({ ...EMPTY_PROFILE, ...parsed });
       }
       if (window.localStorage.getItem(AI_MODE_STORAGE_KEY) === 'local') {
         setEnginePreference('local');
@@ -81,7 +91,15 @@ export default function SettingsPage() {
 
   const saveProfile = () => {
     try {
-      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      const clean: StoredProfile = {
+        fullName: profile.fullName.trim(),
+        phone: profile.phone.trim(),
+        college: profile.college.trim(),
+        specialization: profile.specialization.trim(),
+      };
+      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(clean));
+      setProfile(clean);
+      setSavedProfile(clean);
       flashSaved('profile');
     } catch {
       setSavedTab('error');
@@ -99,6 +117,38 @@ export default function SettingsPage() {
     }
   };
 
+  const clearProfile = () => {
+    try { window.localStorage.removeItem(PROFILE_STORAGE_KEY); } catch {}
+    setProfile(EMPTY_PROFILE);
+    setSavedProfile(EMPTY_PROFILE);
+    flashSaved('profile');
+  };
+
+  const doSignOut = async () => {
+    setLogoutError(null);
+    setSigningOut(true);
+    try {
+      await logout();
+      setConfirmingSignOut(false);
+      router.replace('/dashboard');
+    } catch {
+      setLogoutError('Could not complete sign out. Please retry when the backend is available.');
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
+  const keys = Object.keys(EMPTY_PROFILE) as (keyof StoredProfile)[];
+  const isDirty = keys.some((k) => profile[k] !== savedProfile[k]);
+  const filledCount = keys.filter((k) => savedProfile[k].trim()).length;
+  const displayName = profile.fullName.trim() || user?.full_name || '';
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
+
   const setField = (field: keyof StoredProfile) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setProfile((prev) => ({ ...prev, [field]: e.target.value }));
 
@@ -110,6 +160,16 @@ export default function SettingsPage() {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Settings' },
         ]}
+        actionButton={
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<LogOut className="w-3.5 h-3.5" />}
+            onClick={() => { setActiveTab('profile'); setConfirmingSignOut(true); }}
+          >
+            Sign out
+          </Button>
+        }
       />
 
       <main className="p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-8">
@@ -169,107 +229,135 @@ export default function SettingsPage() {
             <Card className="p-6 sm:p-8 space-y-6 shadow-sm">
               {/* TAB 1: Profile & Education Info */}
               {activeTab === 'profile' && (
-                <div className="space-y-4">
-                  {/* Signed-in account: the Google identity this data belongs to */}
-                  <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#6C5CE7]/[0.07] border border-[#6C5CE7]/20">
-                    <div className="flex items-center gap-3 min-w-0">
+                <div className="space-y-6">
+                  {/* Identity header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#6C5CE7]/[0.12] to-[#FACC15]/[0.10] border border-[#6C5CE7]/20">
+                    <div className="flex items-center gap-4 min-w-0">
                       {user?.avatar_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={user.avatar_url} alt="" className="w-9 h-9 rounded-full flex-shrink-0" />
+                        <img src={user.avatar_url} alt="" className="w-14 h-14 rounded-full flex-shrink-0 ring-2 ring-white/60" />
                       ) : (
-                        <div className="w-9 h-9 rounded-full bg-[#6C5CE7]/20 flex items-center justify-center text-[#6C5CE7] flex-shrink-0">
-                          <User className="w-4 h-4" />
+                        <div className="w-14 h-14 rounded-full bg-[#0A0A0C] text-[#FACC15] flex items-center justify-center text-lg font-black flex-shrink-0 ring-2 ring-white/60">
+                          {initials || <User className="w-6 h-6" />}
                         </div>
                       )}
                       <div className="min-w-0">
-                        <div className="text-xs font-bold truncate">{user?.full_name || 'Signed in'}</div>
-                        <div className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] truncate">
-                          {user?.is_guest ? 'Guest session' : user?.email}
+                        <div className="text-base font-extrabold truncate">
+                          {displayName || (user?.is_guest ? 'Guest' : 'Your profile')}
                         </div>
+                        <div className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] truncate">
+                          {user?.is_guest ? 'Guest session on this browser' : user?.email}
+                        </div>
+                        <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08] text-[#4A4A52] dark:text-[#D4D4D8]">
+                          {user?.is_guest ? 'Guest' : 'Signed in with Google'}
+                        </span>
                       </div>
                     </div>
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<LogOut className="w-3.5 h-3.5" />}
-                      onClick={async () => {
-                        setLogoutError(null);
-                        try {
-                          await logout();
-                          router.replace('/dashboard');
-                        } catch {
-                          setLogoutError('Could not restore guest access. Please retry when the backend is available.');
-                        }
-                      }}
+                      variant="outline"
+                      size="default"
+                      icon={<LogOut className="w-4 h-4" />}
+                      onClick={() => setConfirmingSignOut(true)}
+                      className="flex-shrink-0"
                     >
                       Sign out
                     </Button>
                   </div>
+
+                  {confirmingSignOut && (
+                    <div role="alertdialog" aria-label="Confirm sign out" className="p-4 rounded-2xl border border-[#EF4444]/30 bg-[#EF4444]/[0.06] space-y-3">
+                      <p className="text-xs text-[#4A4A52] dark:text-[#D4D4D8] leading-relaxed">
+                        {user?.is_guest
+                          ? 'Signing out ends this guest session and starts a new empty guest session. Resumes saved in this session will no longer be available here.'
+                          : 'Signing out ends your Google session and returns you to a new guest session. Your saved resumes stay with your account.'}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button variant="destructive" size="sm" onClick={doSignOut} disabled={signingOut}>
+                          {signingOut ? 'Signing out' : 'Yes, sign out'}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setConfirmingSignOut(false)} disabled={signingOut}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   {logoutError && (
                     <p role="alert" className="text-xs text-red-600 dark:text-red-400">
                       {logoutError}
                     </p>
                   )}
 
-                  <div className="border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
-                    <h3 className="text-base font-bold">Profile & Education Basics</h3>
-                    <p className="text-xs text-[#8A8A92] mt-0.5">
-                      Saved in this browser. The Resume Builder pre-fills new drafts with these details.
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <Label>Full Name</Label>
-                      <Input
-                        placeholder="Your full name"
-                        value={profile.fullName}
-                        onChange={setField('fullName')}
-                      />
+                  {/* Section header and completeness */}
+                  <div className="flex items-end justify-between gap-4 border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
+                    <div>
+                      <h3 className="text-base font-bold">Profile & Education Basics</h3>
+                      <p className="text-xs text-[#8A8A92] mt-0.5">
+                        Saved in this browser. The Resume Builder pre-fills new drafts with these details. Leave anything blank that you do not want filled.
+                      </p>
                     </div>
-
-                    <div className="space-y-1">
-                      <Label>Phone Number</Label>
-                      <Input
-                        placeholder="Your phone number"
-                        value={profile.phone}
-                        onChange={setField('phone')}
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>College / University</Label>
-                      <Input
-                        placeholder="Your college or university"
-                        value={profile.college}
-                        onChange={setField('college')}
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>Specialization</Label>
-                      <Input
-                        placeholder="Your specialization"
-                        value={profile.specialization}
-                        onChange={setField('specialization')}
-                      />
+                    <div className="text-right flex-shrink-0 w-28">
+                      <div className="text-[11px] font-bold text-[#5A5A63] dark:text-[#A1A1AA]">{filledCount} of 4 added</div>
+                      <div className="mt-1 h-1.5 rounded-full bg-black/[0.08] dark:bg-white/[0.1] overflow-hidden">
+                        <div className="h-full rounded-full bg-[#FACC15] transition-all" style={{ width: `${(filledCount / 4) * 100}%` }} />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-end gap-3">
-                    {savedTab === 'profile' && (
-                      <span className="text-xs font-bold text-[#16A34A] flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Saved in this browser
-                      </span>
+                  {/* Fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-[#8A8A92]" /> Full name</Label>
+                      <Input placeholder="As it should appear on your resume" value={profile.fullName} onChange={setField('fullName')} autoComplete="name" />
+                    </div>
+                    {!user?.is_guest && user?.email && (
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-[#8A8A92]" /> Account email</Label>
+                        <Input value={user.email} readOnly disabled />
+                        <p className="text-[11px] text-[#8A8A92]">Comes from your Google account. Edit the resume email in the builder.</p>
+                      </div>
                     )}
-                    {savedTab === 'error' && (
-                      <span className="text-xs font-bold text-[#DC2626]">
-                        Could not save - browser storage unavailable
-                      </span>
-                    )}
-                    <Button variant="default" size="default" onClick={saveProfile}>
-                      Save Profile
-                    </Button>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-[#8A8A92]" /> Phone number</Label>
+                      <Input placeholder="With country code if you like" value={profile.phone} onChange={setField('phone')} autoComplete="tel" inputMode="tel" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="flex items-center gap-1.5"><GraduationCap className="w-3.5 h-3.5 text-[#8A8A92]" /> College / University</Label>
+                      <Input placeholder="Name of your institution" value={profile.college} onChange={setField('college')} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5 text-[#8A8A92]" /> Specialization</Label>
+                      <Input placeholder="Branch or major" value={profile.specialization} onChange={setField('specialization')} />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-1 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={clearProfile} disabled={!keys.some((k) => profile[k] || savedProfile[k])}>
+                        Clear details
+                      </Button>
+                      <Button variant="ghost" size="sm" icon={<FileText className="w-3.5 h-3.5" />} onClick={() => router.push('/resume')}>
+                        Open Resume Builder
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-end gap-3">
+                      {savedTab === 'profile' && (
+                        <span className="text-xs font-bold text-[#16A34A] flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Saved in this browser
+                        </span>
+                      )}
+                      {savedTab !== 'profile' && isDirty && (
+                        <span className="text-xs font-semibold text-[#8A8A92]">Unsaved changes</span>
+                      )}
+                      {savedTab === 'error' && (
+                        <span className="text-xs font-bold text-[#DC2626]">
+                          Could not save - browser storage unavailable
+                        </span>
+                      )}
+                      <Button variant="default" size="default" onClick={saveProfile} disabled={!isDirty}>
+                        Save Profile
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

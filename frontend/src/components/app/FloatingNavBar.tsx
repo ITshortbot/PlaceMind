@@ -22,7 +22,10 @@ import {
   Settings,
   Sun,
   Moon,
+  LogOut,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { logout } from '@/lib/auth';
 import { CommandPaletteModal } from '@/components/app/CommandPaletteModal';
 
 const NAV_ITEMS = [
@@ -44,6 +47,16 @@ const HOVER_TRANSITION = { type: 'tween' as const, duration: 0.12, ease: 'easeOu
 
 export function FloatingNavBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const handleSignOut = async () => {
+    if (!window.confirm('Sign out? This ends the current session and starts a new guest session.')) return;
+    try {
+      await logout();
+      router.replace('/dashboard');
+    } catch {
+      window.alert('Could not complete sign out. Please retry when the backend is available.');
+    }
+  };
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
@@ -209,7 +222,15 @@ export function FloatingNavBar() {
           </nav>
 
           {/* Bottom Section: Theme Switcher */}
-          <div className="w-full pt-0.5 border-t border-white/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-full pt-0.5 border-t border-white/10 flex flex-col items-center justify-center gap-0.5 flex-shrink-0">
+            <button
+              onClick={handleSignOut}
+              className="p-1 rounded-lg text-white/60 hover:text-[#FACC15] hover:bg-white/10 transition-colors cursor-pointer"
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              <LogOut className="w-3 h-3" />
+            </button>
             <button
               onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
               className="p-1 rounded-lg text-white/60 hover:text-[#FACC15] hover:bg-white/10 transition-colors cursor-pointer"
