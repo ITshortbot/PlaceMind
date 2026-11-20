@@ -1,83 +1,110 @@
-# Placemind — AI ATS Optimization & Template Studio
-> **Decoupled Hybrid Architecture:** Next.js 15 Frontend + FastAPI Backend + Local OSS Model (Ollama `gpt-oss:20b`) & Cloud Track (Gemini 2.5 Flash).
+# PlaceMind
 
----
+A chat-first resume workspace for students. You tell PlaceMind about yourself, it builds a resume from only what you wrote, scores it against a job description with visible rules, and runs interview practice from your own resume.
 
-## Quickstart & Demo Guide
+PlaceMind never invents jobs, numbers or dates. Anything it cannot find stays blank, and the app tells you what is missing.
 
-### 1. Prerequisites & Model Setup
-Install [Ollama](https://ollama.com/) and pull the local 20B OSS model:
-```bash
-# Pull local OSS model
-ollama pull gpt-oss:20b
+This is a working prototype for a project review. It runs on synthetic or user-entered data. It is not a hosted production service.
 
-# Start local model runtime (default port 11434)
-ollama serve
-```
+## What works
 
-### 2. Environment Configuration
-Ensure `backend/.env` is configured:
-```env
-# Local OSS Model Configuration
-LLM_BASE_URL=http://localhost:11434/v1
-LLM_API_KEY=ollama
-LLM_MODEL=gpt-oss:20b
-LLM_TIMEOUT_S=60
-LLM_MAX_TOKENS=1500
+| Area | What it does |
+| --- | --- |
+| Dashboard chat (`/dashboard`) | Paste a plain paragraph about yourself, paste sectioned resume text, or attach a PDF or text file. A rule-based parser (no AI) extracts name, email, phone, skills, education, experience, projects and a goal, shows a review card with what it found and what is missing, and saves on "Save as my resume". Explicit edit commands such as "add skill Tableau" change the active resume, with "undo". Invalid or unclear input is refused with a plain reply. |
+| Resume Builder (`/resume`) and Templates (`/template`) | Edit sections with a live preview and switch between built-in templates. Switching a template does not change your content. Template generation builds only from your saved facts. |
+| ATS check (`/ats`) | Upload a PDF and paste a job description. Text is extracted in memory with PyMuPDF. The overall score is 50% semantic similarity (local embeddings), 30% keyword coverage and 20% structure. The report shows a per-requirement gap matrix, missing keywords, and which engine ran. With no AI provider it says so ("none (deterministic local analysis)"). |
+| Interview practice (`/interview`) | Questions based on your resume, per-answer scoring and a report. Rule-based, so it works offline. |
+| History (`/history`) | Saved resumes and ATS scores. |
+| Settings (`/settings`) | Profile and education basics (stored in this browser, used to pre-fill new drafts) and a sign-out button. |
+| Guest access | Each visitor gets an independent guest identity with a signed HttpOnly session cookie. No sign-up needed. Records are owned per user. |
+| Google sign-in | Built, optional, and needs your own Google OAuth client configured. It is not needed for guest mode or for local runs. |
 
-# Embedding & CORS
-EMBEDDING_MODEL_NAME=BAAI/bge-small-en-v1.5
-CORS_ORIGINS=["http://localhost:3000"]
-```
+## Where AI is used
 
-Ensure `frontend/.env.local` is configured:
-```env
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
-```
+The core flow does not need an AI model: paragraph and PDF import, chat edits, ATS scoring, interview scoring, saving and history are deterministic.
 
----
+Optional AI features:
 
-## 3. Running the Application
+- Open-ended chat answers and AI-written template generation use the OpenRouter **free** route when `OPENROUTER_API_KEY` is set. The backend keeps an allowlist of free models (`openrouter/free`) and refuses any other model before a request is made, so a configuration mistake cannot cause a paid call.
+- Without a key, chat gives simple local replies and template generation falls back to a clearly labelled preset layout.
+- The code can also route to Gemini or to an OpenAI-compatible local server (LM Studio, Ollama) through `backend/app/services/ai_router.py`. These are optional and off unless you configure them. The demo setup does not use them.
+- Embeddings run locally with `BAAI/bge-small-en-v1.5` through fastembed. The model is downloaded on first use.
 
-### Backend API (FastAPI)
+The free model can be slow or rate limited. Nothing in the core flow depends on it.
+
+## Privacy
+
+PDF text is read in memory. Embeddings run on the backend machine. Resumes, parsed text and scores are stored in the backend database so they appear in History, and you can delete saved records there. Only text sent to the optional free chat or template model leaves the backend, and only when a key is configured.
+
+## Tech stack
+
+- Frontend: Next.js 15, React 19, Tailwind CSS, Framer Motion (Node 22)
+- Backend: FastAPI, async SQLAlchemy, PyMuPDF, fastembed, LiteLLM
+- Database: PostgreSQL with pgvector, or SQLite for local runs
+- Auth: guest sessions (default), optional Google sign-in
+
+## Run locally (SQLite, no Postgres, no AI key needed)
+
+Requirements: Node 22 and Python 3.11 or 3.12.
+
+Backend (port 8100):
+
 ```bash
 cd backend
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-*Startup Lifespan Note:* Pre-warms the ONNX embedding engine and local OSS model endpoint on boot to ensure zero cold-start delay for end users.
 
-### Frontend (Next.js 15 + Tailwind CSS)
+Create `backend/.env` (it is git-ignored; never commit it):
+
+```env
+ENVIRONMENT=development
+DATABASE_URL=sqlite+aiosqlite:///./placemind_local.db
+FRONTEND_URL=http://localhost:3100
+CORS_ORIGINS=["http://localhost:3100","http://localhost:3000"]
+OPENROUTER_API_KEY=
+```
+
+Leave `OPENROUTER_API_KEY` empty to run without AI, or paste your own free-tier key into that file yourself. Then:
+
+```bash
+uvicorn app.main:app --host 127.0.0.1 --port 8100
+```
+
+Check it: `curl http://127.0.0.1:8100/health`
+
+Frontend (port 3100):
+
 ```bash
 cd frontend
-npm install
-npm run dev
+npm ci
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8100 npm run dev -- -p 3100
 ```
-Open **http://localhost:3000/template** to use the Prompt-to-Template Studio and ATS Readiness Auditor.
 
----
+Open http://localhost:3100 and continue as guest.
 
-## 4. Verification & Hardening Scripts
+To use PostgreSQL instead, set `DATABASE_URL` to a `postgresql+asyncpg://...` URL. The pgvector extension is created on start.
 
-- **Ping LLM Endpoint:**
-  ```bash
-  python scripts/ping_llm.py
-  ```
-- **Demo Hardening Check (5 Prompts x 3 Iterations):**
-  ```bash
-  python scripts/demo_check.py
-  ```
-  Evaluates schema first-try pass rate, preset fallback rate, and mean/max execution latency.
+## Without an AI key
 
----
+Works: landing, guest mode, paragraph and PDF import, chat edits and undo, Resume Builder, template switching, ATS scoring, interview practice, history.
 
-## 5. Privacy & Security Note
-> **Privacy Note: Zero Data Egress in Local Mode.**  
-> When operating with the local OSS model, all candidate information, resume content, and prompts remain strictly on the local machine. Zero external network calls, zero prompt telemetry, and zero unverified hallucinated records are permitted.
+Limited: open-ended chat answers (simple local replies) and AI template generation (labelled preset layout).
 
-## Guest access and database upgrade
+## Tests
 
-Visitors receive an independent guest identity and signed, HttpOnly session cookie automatically. Guest records use a null email and an explicit `is_guest` flag; user-owned API routes retain their ownership checks and guest requests are rate limited. Guest data is not transferred when signing in with Google.
+The repository contains a backend `pytest` suite (`backend/tests`) and a Playwright suite (`frontend/tests`). They are not required to run the app. See `REVIEWING.md` for how the Playwright suite is run.
 
-For an existing database, apply `backend/database/migrations/001_guest_identity.sql` before deploying this version. Do not apply it to a production database without the normal backup and change-approval process.
+## Limits
+
+- Prototype with guest mode as the demo path. Guest data belongs to that browser session.
+- The import parser is rule-based. It prefers leaving a field blank over guessing, so unusual wording can leave fields empty. Use the builder to fill them.
+- The ATS score measures alignment between a resume and a job text. It does not predict a hiring decision, and the gap-matrix thresholds are hand-tuned heuristics. There is no accuracy benchmark.
+- No production deployment, no usage numbers and no performance claims.
+
+## More documents
+
+- `JURY_DEMO.md`: demo checklist and script
+- `REVIEWING.md`: reviewing in a Codespace
+- `README_UI.md`, `README_DEVOPS.md`, `README_MLOPS.md`: area notes (may describe older setups; this README is the current overview)
