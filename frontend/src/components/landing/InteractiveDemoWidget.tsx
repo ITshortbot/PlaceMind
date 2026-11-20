@@ -32,7 +32,7 @@ import { AIMode, ATSGapReport } from '@/types/ats';
 
 const SAMPLE_ROLES = {
   ai_engineer: {
-    title: 'Staff AI Systems Architect @ Stripe',
+    title: 'Staff AI Systems Architect (sample fintech JD)',
     jd: `Staff AI Systems Architect
 We are seeking an engineer to build low-latency RAG architectures, FastAPI microservices, and modern Next.js 15 interfaces.
 Requirements:
@@ -48,7 +48,7 @@ Requirements:
 - Experience setting up Docker containers and deploying web applications to Vercel and AWS.`
   },
   frontend_lead: {
-    title: 'Lead Frontend Engineer @ Vercel',
+    title: 'Lead Frontend Engineer (sample dev-tools JD)',
     jd: `Lead Frontend Engineer
 Looking for an exceptional UI engineer specializing in Next.js 15, WebGL/Three.js shaders, and high-performance Tailwind systems.
 Requirements:
@@ -73,7 +73,7 @@ export function InteractiveDemoWidget() {
 
   // Typewriter effect state for bullet rewrites
   const [typedText, setTypedText] = useState('');
-  const fullRewriteText = 'Rewrote Bullet (Google XYZ): "Architected low-latency RAG search engine with PostgreSQL pgvector (HNSW cosine index), reducing vector query latency by 64% at 4,500 req/sec."';
+  const fullRewriteText = 'XYZ bullet format: "Accomplished [X], measured by [Y], by doing [Z]." Fill X, Y and Z only with results and numbers from your real experience. PlaceMind never invents metrics.';
 
   // Mock Interview Audio State
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -103,6 +103,7 @@ export function InteractiveDemoWidget() {
 
     setTimeout(() => {
       const generatedReport: ATSGapReport = {
+        // All scores below are fixed illustrative values; this widget makes no AI or scoring call.
         overall_score: selectedRoleKey === 'ai_engineer' ? 84.5 : 88.0,
         semantic_score: selectedRoleKey === 'ai_engineer' ? 87.0 : 91.0,
         keyword_score: selectedRoleKey === 'ai_engineer' ? 78.5 : 81.0,
@@ -137,7 +138,7 @@ export function InteractiveDemoWidget() {
             similarity_score: 0.89,
             matched_resume_section: 'work_experience',
             matched_snippet: 'Developed backend API routes in Python FastAPI...',
-            improvement_suggestion: 'Add throughput numbers (e.g. 5,000 req/sec at sub-20ms p99 latency).',
+            improvement_suggestion: 'Add measurable results you can verify from this work, if you have them.',
           },
           {
             requirement: selectedRoleKey === 'ai_engineer'
@@ -153,8 +154,8 @@ export function InteractiveDemoWidget() {
         missing_keywords: ['pgvector', 'HNSW', 'Cloudflare R2', 'LM Studio', 'Zero-Egress'],
         detected_strengths: ['Next.js 15', 'FastAPI', 'TypeScript', 'Vector Retrieval'],
         actionable_bullet_points: [
-          'Rewrote Project Bullet: "Architected low-latency RAG system with PostgreSQL pgvector (HNSW cosine index), reducing vector search latency by 64%."',
-          'Added Cloud Storage: "Implemented encrypted document ingestion pipeline to Cloudflare R2 with zero egress overhead."',
+          'Example XYZ format only: "Accomplished [X], measured by [Y], by doing [Z]."',
+          'Replace X, Y and Z with outcomes from your real work. Never add numbers you cannot verify.',
         ],
         parsed_sections: [
           { section_type: 'skills', content: 'TypeScript, Python, FastAPI, Next.js, React' },
@@ -162,9 +163,9 @@ export function InteractiveDemoWidget() {
         ],
         pdf_r2_url: null,
         processing_metadata: {
-          model_used: aiMode === 'cloud' ? 'gemini/gemini-2.5-flash' : 'lm-studio:llama3.2',
+          model_used: 'illustrative sample (no model call)',
           routing_mode: aiMode,
-          latency_ms: aiMode === 'cloud' ? 385.4 : 790.1,
+          latency_ms: 0,
           is_fallback: false,
           embedding_dimension: 384,
         },
@@ -193,7 +194,7 @@ export function InteractiveDemoWidget() {
         <div className="text-center max-w-3xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 dark:bg-[#1C1C21]/90 border border-black/[0.08] dark:border-[#2A2A30] text-[11px] font-mono uppercase tracking-[0.2em] text-[#6C5CE7] dark:text-[#7D6FF0] mb-4 shadow-sm backdrop-blur-md">
             <span className="w-2 h-0.5 rounded-full bg-[#6C5CE7]" />
-            <span>TEST THE ENGINE LIVE &bull; REAL-TIME WORKSPACE</span>
+            <span>GUIDED WALKTHROUGH &bull; SAMPLE DATA</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-tight text-[#1A1A1E] dark:text-[#F5F5F7]">
@@ -204,7 +205,7 @@ export function InteractiveDemoWidget() {
           </h2>
 
           <p className="text-base sm:text-lg text-[#5A5A63] dark:text-[#A1A1AA] mt-4 leading-relaxed">
-            Simulate a real ATS vector audit or test an adaptive mock interview question.
+            Walk through the audit and interview workflow on a sample resume and job description. Every score below is illustrative; sign in to run a real audit on your own resume.
           </p>
         </div>
 
@@ -225,7 +226,7 @@ export function InteractiveDemoWidget() {
             }`}
           >
             <Sparkles className="w-4 h-4 text-[#6C5CE7]" />
-            <span>ATS Vector Gap Scorer</span>
+            <span>Sample ATS Gap Report</span>
           </button>
           <button
             onClick={() => setActiveTab('interview')}
@@ -236,7 +237,7 @@ export function InteractiveDemoWidget() {
             }`}
           >
             <Mic className="w-4 h-4 text-[#0284C7] dark:text-[#38BDF8]" />
-            <span>Adaptive Mock Interview Demo</span>
+            <span>Sample Interview Questions</span>
           </button>
         </motion.div>
 
@@ -277,7 +278,7 @@ export function InteractiveDemoWidget() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] font-mono">Engine:</span>
+                  <span className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] font-mono">Engine (illustrative):</span>
                   <div className="inline-flex rounded-lg bg-black/[0.04] dark:bg-[#0A0A0C] p-1 border border-black/[0.08] dark:border-white/[0.08]">
                     <button
                       onClick={() => setAiMode('cloud')}
@@ -287,7 +288,7 @@ export function InteractiveDemoWidget() {
                           : 'text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-white'
                       }`}
                     >
-                      Cloud (Gemini)
+                      Cloud (Free LLM)
                     </button>
                     <button
                       onClick={() => setAiMode('local')}
@@ -297,7 +298,7 @@ export function InteractiveDemoWidget() {
                           : 'text-[#5A5A63] dark:text-[#A1A1AA] hover:text-[#1A1A1E] dark:hover:text-white'
                       }`}
                     >
-                      Local (LM Studio)
+                      Local (Self-Hosted)
                     </button>
                   </div>
                 </div>
@@ -362,7 +363,7 @@ export function InteractiveDemoWidget() {
                   }
                   className="px-9 shadow-lg shadow-[#6C5CE7]/30"
                 >
-                  {isAnalyzing ? 'Running 384-d Cosine Vector Matrix...' : 'Run Live Gap Analysis'}
+                  {isAnalyzing ? 'Preparing sample report...' : 'Show Sample Report'}
                 </Button>
               </div>
 
@@ -384,7 +385,7 @@ export function InteractiveDemoWidget() {
                         Composite Score: {report.overall_score}%
                       </h4>
                       <p className="text-xs text-[#8A8A92] dark:text-[#6B6B76] mt-1">
-                        Inference: {report.processing_metadata.model_used} · {report.processing_metadata.latency_ms}ms latency
+                        {report.processing_metadata.model_used} · sign in and upload your resume for a real scored audit
                       </p>
                     </div>
 
@@ -451,7 +452,7 @@ export function InteractiveDemoWidget() {
                   {/* Animated Typewriter Bullet Rewrite Box */}
                   <div className="p-6 rounded-xl bg-[#6C5CE7]/10 border border-[#6C5CE7]/35 shadow-lg shadow-[#6C5CE7]/5">
                     <h5 className="text-xs font-bold uppercase text-[#6C5CE7] dark:text-[#7D6FF0] mb-2 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" /> Generated Google XYZ Bullet Rewrite
+                      <Sparkles className="w-3.5 h-3.5" /> XYZ Bullet Format (Example Only)
                     </h5>
                     <div className="text-xs font-mono text-[#1A1A1E] dark:text-[#F5F5F7] min-h-[38px] leading-relaxed">
                       {typedText}
@@ -470,11 +471,11 @@ export function InteractiveDemoWidget() {
                     Adaptive Mock Technical Round
                   </h3>
                   <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA]">
-                    AI interviewer dynamically tailors questions based on your resume weak points.
+                    In the app, the interviewer asks role-specific questions and probes your answers. These are sample questions.
                   </p>
                 </div>
                 <Badge variant="accent" size="sm">
-                  Speech VAD Active
+                  Sample Questions
                 </Badge>
               </div>
 
@@ -495,7 +496,7 @@ export function InteractiveDemoWidget() {
 
                 <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/[0.04] dark:bg-[#1C1C21] border border-black/[0.08] dark:border-white/[0.08] text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] mb-3">
                   <span className="w-2 h-2 rounded-full bg-[#16A34A] dark:bg-[#22C55E] animate-pulse" />
-                  <span className="font-medium text-[#1A1A1E] dark:text-[#F5F5F7]">Aura // Digital Staff Mentor</span>
+                  <span className="font-medium text-[#1A1A1E] dark:text-[#F5F5F7]">Sample interviewer (illustration)</span>
                   <span className="text-[#8A8A92] dark:text-[#6B6B76]">&bull;</span>
                   <span className="text-[#6C5CE7] dark:text-[#7D6FF0]">{interviewQuestions[interviewQuestionIndex].tag}</span>
                 </div>

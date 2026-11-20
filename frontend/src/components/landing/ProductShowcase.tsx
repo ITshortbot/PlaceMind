@@ -107,7 +107,7 @@ export function ProductShowcase() {
                   Clean, Simple Structure
                 </h4>
                 <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[#16A34A]/10 text-[#16A34A] dark:text-[#22C55E]">
-                  0 Errors
+                  Structure Check
                 </span>
               </div>
               <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] mt-1 leading-relaxed">
@@ -135,12 +135,9 @@ export function ProductShowcase() {
                 <h4 className="text-xs font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">
                   Real-Time Score
                 </h4>
-                <span className="text-xs font-bold text-[#6C5CE7]">
-                  94.8%
-                </span>
               </div>
               <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA] mt-1 leading-relaxed">
-                Instant alignment check against target job requirements.
+                Computed from your own resume against the target job requirements. No fixed numbers.
               </p>
             </div>
           </div>

@@ -49,9 +49,9 @@ export function HowItWorks() {
     {
       id: 3,
       title: '3. XYZ Bullet Rewrite',
-      tag: 'Google Formula',
+      tag: 'XYZ Formula',
       icon: Sparkles,
-      desc: 'Deterministic rewrite rules shape quantifiable bullet points: Accomplished [X], measured by [Y], by doing [Z] - every suggestion is inspectable before you accept it.',
+      desc: 'Rewrite rules shape your real results into the XYZ format: Accomplished [X], measured by [Y], by doing [Z]. Numbers only ever come from your input - every suggestion is inspectable before you accept it.',
     },
     {
       id: 4,
@@ -327,14 +327,14 @@ export function HowItWorks() {
                     <span>&times;</span> Before (Candidate Draft)
                   </div>
                   <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] line-through leading-[1.6]">
-                    &quot;Helped build data pipelines and worked on event streaming for the core platform.&quot;
+                    &quot;Built a Kafka event pipeline that processed 4.5M events/sec at 99.99% uptime and cut data ingestion latency by 42%.&quot;
                   </p>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-black/[0.03] dark:bg-[#1C1C21]/80 border border-[#22C55E]/40 shadow-[0_0_25px_-5px_rgba(34,197,94,0.2)]">
                   <div className="text-xs uppercase font-mono text-[#16A34A] dark:text-[#22C55E] mb-2 flex items-center gap-1.5 font-semibold">
                     <CheckCircle2 className="w-4 h-4" />
-                    Placemind XYZ Optimization (Google Hiring Standard)
+                    Placemind XYZ Optimization (Google-Style Formula)
                   </div>
                   <p className="text-sm text-[#1A1A1E] dark:text-[#F5F5F7] leading-[1.7] font-medium">
                     &quot;Architected distributed event-driven Kafka pipeline processing <strong className="text-[#16A34A] dark:text-[#22C55E]">4.5M events/sec</strong> with <strong className="text-[#16A34A] dark:text-[#22C55E]">99.99% uptime</strong>, decreasing end-to-end data ingestion latency by <strong className="text-[#16A34A] dark:text-[#22C55E]">42%</strong>.&quot;
@@ -378,7 +378,7 @@ export function HowItWorks() {
                     )}
                   </div>
                   <span className="text-xs font-mono text-[#5A5A63] dark:text-[#A1A1AA]">
-                    Speech Latency: 220ms · VAD Active
+                    Text-Based Practice Session
                   </span>
                 </div>
               </div>

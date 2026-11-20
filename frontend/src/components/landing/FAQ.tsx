@@ -16,15 +16,15 @@ export function FAQ() {
   const faqs = [
     {
       q: 'Is my resume data kept private?',
-      a: 'Yes. In Local Privacy Mode (via LM Studio), your resume PDF and parsed chunks are processed 100% on your local device. In Cloud Mode, your files are processed in-memory without persistent training retention.',
+      a: 'Your uploaded PDF is parsed in memory on our server and is never used to train AI models. Your resume and scores are stored in your own account so your history works, and guest data expires automatically. If you self-host the backend, you can point it at a local LM Studio server so prompts never leave your own machine.',
     },
     {
       q: 'Which AI models power Placemind?',
-      a: 'We use BAAI/bge-small-en-v1.5 (via ONNX runtime) for 384-dimensional vector embeddings, Google Gemini 2.5 Flash for high-speed cloud gap synthesis, and quantized LLaMA 3.2 for offline local execution.',
+      a: 'Scoring uses BAAI/bge-small-en-v1.5 (via ONNX runtime) for 384-dimensional vector embeddings plus a deterministic 50/30/20 heuristic. Chat and resume text generation run on free-tier models via OpenRouter, and the UI always labels when output comes from the deterministic fallback. The backend also ships optional Gemini and local LM Studio connectors for self-hosting.',
     },
     {
-      q: 'How does Local Privacy Mode work with LM Studio?',
-      a: 'Start LM Studio on your machine, load any compatible GGUF model (e.g. LLaMA 3.2 or Mistral), and toggle the Local Server at http://localhost:1234. Placemind automatically detects the endpoint and routes all prompts locally.',
+      q: 'Can I run Placemind fully offline?',
+      a: 'Yes, when you self-host the backend. Start LM Studio on your machine, load any compatible GGUF model (e.g. LLaMA 3.2 or Mistral), enable its local server, and point the backend at it. Prompts then stay on your own machine. The hosted demo uses free-tier cloud models instead.',
     },
     {
       q: 'How is vector cosine scoring superior to old-school keyword search?',
@@ -32,11 +32,11 @@ export function FAQ() {
     },
     {
       q: 'What file formats are supported for upload?',
-      a: 'We support standard PDF documents. PyMuPDF extracts raw text, font hierarchies, and contact anchors in-memory at sub-50ms speeds.',
+      a: 'We support standard PDF documents. PyMuPDF extracts raw text, font hierarchies, and section structure in memory.',
     },
     {
       q: 'Is Placemind really free to start?',
-      a: 'Yes, Placemind was developed as a Project-Based Learning (PBL) platform and offers unrestricted resume parsing, scoring, bullet rewriting, and mock interviews at zero cost.',
+      a: 'Yes. Placemind was built as a Project-Based Learning (PBL) platform and offers resume parsing, scoring, bullet guidance, and mock interviews at zero cost on free-tier AI models.',
     },
   ];
 

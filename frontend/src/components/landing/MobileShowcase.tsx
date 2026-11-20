@@ -22,8 +22,8 @@ import {
 const MOBILE_CAROUSEL_ITEMS = [
   {
     id: 1,
-    title: 'Live Phone Screen Rehearsal',
-    sub: 'Voice-based real-time interview simulator',
+    title: 'Interview Practice on the Go',
+    sub: 'Text-based mock interview simulator',
     img: '/assets/mockups/iphone-final.jpg',
     tag: 'Active Simulation',
   },
@@ -96,10 +96,10 @@ export function MobileShowcase() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-[#1A1A1E] dark:text-[#F5F5F7]">
-                    Voice Mock Rehearsal
+                    Mock Interview Practice
                   </h4>
                   <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] mt-0.5 leading-relaxed">
-                    Practice out loud with real-time speech response.
+                    Answer role-specific questions and get instant feedback.
                   </p>
                 </div>
               </div>
