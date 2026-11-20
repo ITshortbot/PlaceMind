@@ -44,6 +44,9 @@ import {
 } from '@/lib/api/resumes';
 import { listInterviewSessions, SessionSummary } from '@/lib/api/interviews';
 import { sendChatMessage, ChatAction, ChatHistoryItem } from '@/lib/api/chat';
+import { updateResume, extractResumeText } from '@/lib/api/resumes';
+import { parseResumeText, toSections } from '@/lib/importResumeText';
+import { ChatImportCard, type ImportState } from '@/components/app/ChatImportCard';
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -59,7 +62,10 @@ interface ChatMessage {
   actions?: ChatAction[];
   modelUsed?: string;
   isFallback?: boolean;
+  importState?: ImportState;
 }
+
+const CHAT_STORE_KEY = 'placemind.chat.v1';
 
 const STARTER_PROMPTS = [
   'Draft a tailored profile for a Frontend Engineer',
@@ -107,9 +113,169 @@ export default function DashboardPage() {
     refreshData();
   }, [refreshData]);
 
+  // Restore the conversation from this browser (history is kept locally).
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CHAT_STORE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as ChatMessage[];
+        if (Array.isArray(saved) && saved.length > 0) {
+          setMessages(
+            saved.map((m) =>
+              m.importState
+                ? {
+                    ...m,
+                    importState: {
+                      ...m.importState,
+                      saving: false,
+                      steps: m.importState.steps.map((st) =>
+                        st.status === 'active' || st.status === 'pending' ? { ...st, status: 'error' as const } : st
+                      ),
+                      error: m.importState.parsed ? m.importState.error : m.importState.error || 'This was interrupted. Attach the file or paste the text again.',
+                    },
+                  }
+                : m
+            )
+          );
+        }
+      }
+    } catch {}
+    restoredRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!restoredRef.current) return;
+    try {
+      window.localStorage.setItem(CHAT_STORE_KEY, JSON.stringify(messages.slice(-60)));
+    } catch {}
+    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80);
+  }, [messages]);
+
+  const clearConversation = () => {
+    try {
+      window.localStorage.removeItem(CHAT_STORE_KEY);
+    } catch {}
+    setMessages((prev) => prev.slice(0, 1));
+  };
+
+  const patchImport = (id: string, fn: (s: ImportState) => ImportState) =>
+    setMessages((prev) => prev.map((m) => (m.id === id && m.importState ? { ...m, importState: fn(m.importState) } : m)));
+
+  const setStep = (id: string, index: number, status: 'active' | 'done' | 'error') =>
+    patchImport(id, (s) => ({ ...s, steps: s.steps.map((st, i) => (i === index ? { ...st, status } : st)) }));
+
+  const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const startImport = async (source: { file?: File; pastedText?: string }) => {
+    const id = `imp-${Date.now()}`;
+    const isFile = !!source.file;
+    const label = source.file ? source.file.name : undefined;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `user-${id}`,
+        role: 'user',
+        content: source.file ? `Attached file: ${source.file.name}` : `Pasted resume text (${(source.pastedText || '').length} characters)`,
+      },
+      {
+        id,
+        role: 'assistant',
+        content: 'I will read it and show what I find. I only use what is written in it. Anything I cannot find stays blank.',
+        importState: {
+          fileName: label,
+          steps: [
+            { label: isFile ? 'Reading the file' : 'Reading your text', status: 'active' },
+            { label: 'Finding sections', status: 'pending' },
+            { label: 'Preparing the review', status: 'pending' },
+          ],
+        },
+      },
+    ]);
+    let text = source.pastedText || '';
+    try {
+      if (source.file) {
+        const f = source.file;
+        const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+        const isText = f.type.startsWith('text/') || /\.(txt|md)$/i.test(f.name);
+        if (isPdf) {
+          text = (await extractResumeText(f)).text;
+        } else if (isText) {
+          text = await f.text();
+        } else {
+          throw new Error('This file type is not supported yet. Attach a PDF or a plain text file, or paste the text.');
+        }
+      }
+      setStep(id, 0, 'done');
+      setStep(id, 1, 'active');
+      await pause(450);
+      const parsed = parseResumeText(text);
+      const found = parsed.summary || parsed.skills.length || parsed.experience.length || parsed.education.length || parsed.projects.length;
+      if (!found) {
+        setStep(id, 1, 'error');
+        patchImport(id, (s) => ({
+          ...s,
+          error: 'I could not find resume sections in this text. Put headings such as Summary, Skills, Experience, Education or Projects on their own lines, or use the builder.',
+        }));
+        return;
+      }
+      setStep(id, 1, 'done');
+      setStep(id, 2, 'active');
+      await pause(350);
+      setStep(id, 2, 'done');
+      patchImport(id, (s) => ({ ...s, parsed }));
+      importTextRef.current[id] = text;
+    } catch (err) {
+      setStep(id, 0, 'error');
+      patchImport(id, (s) => ({ ...s, error: err instanceof Error ? err.message : 'Could not read that.' }));
+    }
+  };
+
+  const importTextRef = useRef<Record<string, string>>({});
+
+  const saveImport = async (id: string) => {
+    const msg = messages.find((m) => m.id === id);
+    const parsed = msg?.importState?.parsed;
+    if (!msg || !parsed) return;
+    patchImport(id, (s) => ({ ...s, saving: true, saveError: undefined }));
+    try {
+      const sections = toSections(parsed);
+      if (!sections.length) throw new Error('Nothing to save yet.');
+      const raw = importTextRef.current[id] || [parsed.name, parsed.email, parsed.phone, parsed.summary, parsed.skills.join(', ')].filter(Boolean).join('\n');
+      const label = (parsed.name || 'imported').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const payload = {
+        file_name: `${label}_chat_import.txt`,
+        raw_text: raw || label,
+        parsed_metadata: { builder: true, imported: 'chat', cleared_sections: [], contact: { email: parsed.email, phone: parsed.phone } },
+        sections,
+      };
+      const existing = msg.importState?.savedId;
+      const saved = existing ? await updateResume(existing, payload) : await createResume(payload);
+      try {
+        window.localStorage.setItem('placemind.activeResumeId', saved.id);
+        window.localStorage.removeItem('placemind.unsavedNotice');
+        window.localStorage.removeItem('placemind.builderDirty');
+      } catch {}
+      patchImport(id, (s) => ({ ...s, saving: false, savedId: saved.id }));
+      refreshData();
+    } catch (err) {
+      patchImport(id, (s) => ({ ...s, saving: false, saveError: err instanceof Error ? err.message : 'Save failed.' }));
+    }
+  };
+
+  const setImportField = (id: string, key: 'name' | 'email' | 'phone', value: string) =>
+    patchImport(id, (s) => (s.parsed ? { ...s, parsed: { ...s.parsed, [key]: value } } : s));
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend ?? chatInput).trim();
     if (!text || isSending) return;
+    const pasted = parseResumeText(text);
+    const sectionHits = [pasted.summary, pasted.skills.length, pasted.experience.length, pasted.education.length, pasted.projects.length].filter(Boolean).length;
+    if (text.length >= 200 && sectionHits >= 2) {
+      setChatInput('');
+      startImport({ pastedText: text });
+      return;
+    }
 
     const userMsgId = `user-${Date.now()}`;
     const newMessages: ChatMessage[] = [
@@ -222,6 +388,14 @@ export default function DashboardPage() {
         isSending: isSending,
         placeholder: 'Ask anything or request a focused action...',
         hideFloatingResponse: true,
+        onAttachFile: (f: File) => startImport({ file: f }),
+        onPasteText: (t: string) => {
+          const r = parseResumeText(t);
+          const hits = [r.summary, r.skills.length, r.experience.length, r.education.length, r.projects.length].filter(Boolean).length;
+          if (hits < 2 || isSending) return false;
+          startImport({ pastedText: t.trim() });
+          return true;
+        },
       }}
     >
       <TopBar
@@ -463,6 +637,13 @@ export default function DashboardPage() {
         {/* ── Conversation Stream (scrollable, flex-1) ── */}
         <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto w-full py-3 space-y-4">
+            {messages.length > 1 && (
+              <div className="flex justify-end">
+                <button type="button" onClick={clearConversation} className="text-[11px] underline text-[#6B7280] dark:text-[#9CA3AF]">
+                  Clear conversation
+                </button>
+              </div>
+            )}
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -482,6 +663,14 @@ export default function DashboardPage() {
                   }`}
                 >
                   <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+
+                  {msg.importState && (
+                    <ChatImportCard
+                      state={msg.importState}
+                      onField={(k, v) => setImportField(msg.id, k, v)}
+                      onSave={() => saveImport(msg.id)}
+                    />
+                  )}
 
                   {/* Action Buttons (these are the in-flow tools) */}
                   {msg.actions && msg.actions.length > 0 && (

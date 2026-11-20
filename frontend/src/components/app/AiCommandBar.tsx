@@ -11,7 +11,7 @@
 //              - Right quick actions: Pencil direct rewrite & yellow send trigger.
 // ============================================================================
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -56,6 +56,10 @@ export interface AiCommandBarProps {
   onSubmit?: (message: string) => void | Promise<void>;
   isSending?: boolean;
   hideFloatingResponse?: boolean;
+  // When provided, the paperclip opens a real file picker (PDF or plain text).
+  onAttachFile?: (file: File) => void;
+  /** Called with multi-line pasted text. Return true if handled (default paste is cancelled). */
+  onPasteText?: (text: string) => boolean;
 }
 
 function getPageLabel(pathname: string): string {
@@ -80,7 +84,10 @@ export function AiCommandBar({
   onSubmit,
   isSending: isSendingProp,
   hideFloatingResponse = false,
+  onAttachFile,
+  onPasteText,
 }: AiCommandBarProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -485,13 +492,32 @@ export function AiCommandBar({
             {/* 3. Attachment / Upload JD */}
             <button
               type="button"
-              onClick={() => handleToolClick('attach', 'Attach target Job Description for real-time ATS match')}
+              onClick={() =>
+                onAttachFile
+                  ? fileInputRef.current?.click()
+                  : handleToolClick('attach', 'Attach target Job Description for real-time ATS match')
+              }
               className="p-1.5 rounded-full hover:bg-white/10 hover:text-[#FACC15] transition-all active:scale-90 cursor-pointer"
-              title="Insert a starter prompt for ATS matching"
+              title={onAttachFile ? 'Attach your resume (PDF or text file)' : 'Insert a starter prompt for ATS matching'}
               aria-label="Attach File"
             >
               <Paperclip className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
+            {onAttachFile && (
+              <input
+                ref={fileInputRef}
+                id="chat-attach-input"
+                type="file"
+                accept=".pdf,application/pdf,.txt,.md,text/plain"
+                className="sr-only"
+                tabIndex={-1}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onAttachFile(f);
+                  e.target.value = '';
+                }}
+              />
+            )}
           </div>
 
           {/* Center Inset Pill Input Stage with Micro Drop Shadow */}
@@ -500,6 +526,12 @@ export function AiCommandBar({
             <input
               type="text"
               value={currentInput}
+              onPaste={(e) => {
+                const t = e.clipboardData?.getData('text') || '';
+                if (onPasteText && t.length >= 200 && t.includes('\n') && onPasteText(t)) {
+                  e.preventDefault();
+                }
+              }}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onChange={(e) => {

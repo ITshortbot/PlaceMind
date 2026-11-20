@@ -10,7 +10,7 @@ from uuid import UUID
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -41,6 +41,7 @@ from app.schemas.templates import (
     StyleSpec,
 )
 from app.services.ats_rules import compute_ats_readiness
+from app.services.pdf_parser import PDFResumeParser
 
 router = APIRouter(prefix="/resumes", tags=["resumes"])
 
@@ -202,3 +203,30 @@ async def analyze_resume(resume_id: UUID, payload: AnalyzeRequest, user: User = 
     )
     await db.flush()
     return report
+
+
+_MAX_EXTRACT_BYTES = 10 * 1024 * 1024
+
+
+@router.post("/extract-text")
+async def extract_resume_text(file: UploadFile = File(...), user: User = Depends(get_current_user)):
+    """Returns the plain text of an uploaded PDF so the client can read it as a
+    resume. Nothing is stored and nothing is generated or rewritten here."""
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The file is empty.")
+    if len(data) > _MAX_EXTRACT_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="The file is larger than 10 MB.")
+    if not data.startswith(b"%PDF"):
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Only PDF files can be read here.")
+    try:
+        result = PDFResumeParser.extract_from_bytes(data)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Could not read this PDF.")
+    text = (result.full_text or "").strip()
+    if not text:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No selectable text found. This looks like a scanned or image-only PDF. Paste the text instead.",
+        )
+    return {"text": text[:30000], "pages": result.page_count}

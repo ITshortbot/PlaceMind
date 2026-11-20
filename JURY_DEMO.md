@@ -44,3 +44,17 @@ This takes 15 to 25 minutes. Decide by 1 hour before the jury: if the server app
 - Empty facts give an empty preview with an explanation (by design).
 - Guest data is isolated per guest and expires.
 - ATS upload untested in the browser.
+
+## Chat attach and paste (feat/jury-attach)
+
+- The chat bar on /dashboard has a working paperclip. Attach a PDF or a plain text file, or paste resume text (200+ characters with two or more recognised sections) straight into the bar.
+- The thread shows progress steps, then a message with what was read, the fields found, and a note on what stayed blank. Blank fields are never filled in. The note tells the user to paste the missing details or open the resume in the builder.
+- Name, email and phone can be corrected in the message before "Save as my resume". Saving sets the active resume. The chat does not edit resumes.
+- The thread is kept in the browser (localStorage key placemind.chat.v1, last 60 messages) and survives reload. "Clear conversation" empties it.
+- Needs the new backend endpoint POST /api/v1/resumes/extract-text (PDF only, 10MB, image-only PDFs return a clear error). The running backend must be restarted from this branch for the endpoint to exist.
+
+## Swap and rollback (3100)
+
+- Swap: in ~/project/PlaceMind run `git fetch; git checkout --detach origin/<branch>`, then `bash /home/coder/project/placemind-fe.sh 3100 /home/coder/project/PlaceMind build`. For jury-attach also restart the backend on 8100 from this code (the script does not touch the backend).
+- Rollback to the prepared demo: `git checkout feat/jury-prep` (e9d68a4), then the same placemind-fe.sh line.
+- Always use placemind-fe.sh: it kills the stale next-server first. A stale server after a rebuild causes "Application error" and 404 chunks.

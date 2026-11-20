@@ -108,3 +108,22 @@ export function analyzeResume(
     body: JSON.stringify(payload),
   });
 }
+
+export async function extractResumeText(file: File): Promise<{ text: string; pages: number }> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${backendUrl()}/api/v1/resumes/extract-text`, {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+  });
+  if (!res.ok) {
+    let detail = `Could not read the file (${res.status})`;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch {}
+    throw new Error(detail);
+  }
+  return res.json();
+}
