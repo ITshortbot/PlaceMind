@@ -7,6 +7,8 @@ const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
 const PHONE = /(\+?\d[\d\s\-().]{8,}\d)/;
 const ci = (w: string) => w.replace(/[a-z]/gi, (c) => `[${c.toLowerCase()}${c.toUpperCase()}]`);
 const CAP = String.raw`[A-Z][A-Za-z0-9&-]*`;
+const CAP_NP = String.raw`(?!(?:I|We|He|She|They|It|My|Our)\b)[A-Z][A-Za-z0-9&-]*`;
+const COMP = (max: number) => `${CAP}(?:\\s+(?:(?:and|&)\\s+)?${CAP_NP}){0,${max}}`;
 const CAPS = (max: number) => `${CAP}(?:\\s+${CAP}){0,${max}}`;
 const clip = (s: string, n: number) => s.trim().slice(0, n);
 const cleanEnd = (s: string) => s.replace(/[\s,.;:]+$/g, '').trim();
@@ -61,7 +63,7 @@ export function parseFreeform(text: string): Freeform | null {
 
   // Education: "<branch> student at <Institution>", with CGPA/GPA and a year-of-study if written.
   const education: ImportedResume['education'] = [];
-  const stu = t.match(new RegExp(String.raw`(?:\b(?:${ci('a')}|${ci('an')}|${ci('the')})\s+)?((?:(?:${ci('final')}|${ci('first')}|${ci('second')}|${ci('third')}|${ci('fourth')})[- ]${ci('year')}\s+)?)([A-Za-z]+(?:\s[A-Za-z]+)?)\s+${ci('student')}\s+(?:${ci('at')}|${ci('in')}|${ci('from')})\s+(${CAPS(5)}(?:\s+(?:of|and|for)\s+${CAPS(3)})?)`));
+  const stu = t.match(new RegExp(String.raw`(?:\b(?:${ci('a')}|${ci('an')}|${ci('the')})\s+)?((?:(?:${ci('final')}|${ci('first')}|${ci('second')}|${ci('third')}|${ci('fourth')})[- ]${ci('year')}\s+)?)([A-Za-z][A-Za-z.]*(?:\s[A-Za-z][A-Za-z.]*)?)\s+${ci('student')}\s+(?:${ci('at')}|${ci('in')}|${ci('from')})\s+(${CAPS(5)}(?:\s+(?:of|and|for)\s+${CAPS(3)})?)`));
   const cg = t.match(/\b(c?gpa)\s*(?:of|is|:|-)?\s*(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?/i);
   const grad = t.match(/\bgraduat(?:ing|e|es)\s+(?:in\s+)?((?:19|20)\d{2})/i);
   if (stu || cg) {
@@ -93,10 +95,10 @@ export function parseFreeform(text: string): Freeform | null {
   const experience: ImportedResume['experience'] = [];
   const num = `(?:\\d+|${['one','two','three','four','five','six','a'].map(ci).join('|')})`;
   const season = `(?:${['summer','winter','spring','autumn','fall'].map(ci).join('|')})\\s+(?:19|20)\\d{2}`;
-  const intern = t.match(new RegExp(String.raw`\b(${num}[- ]?(?:${ci('month')}|${ci('week')})s?\s+)?(${ci('internship')}|${ci('intern')})\s+(?:${ci('at')}|${ci('with')})\s+(?:(?:an?|the)\s+[a-z ]{0,40}?\s+(?:called|named)\s+)?(${CAPS(3)})(?:[^.]*?\b(${season}|(?:19|20)\d{2}))?`));
+  const intern = t.match(new RegExp(String.raw`\b(${num}[- ]?(?:${ci('month')}|${ci('week')})s?\s+)?(${ci('internship')}|${ci('intern')})\s+(?:${ci('at')}|${ci('with')})\s+(?:(?:an?|the)\s+[a-z ]{0,40}?\s+(?:called|named)\s+)?(${COMP(3)})(?:[^.]*?\b(${season}|(?:19|20)\d{2}))?`));
   if (intern) {
     const bits = [intern[1] ? cleanEnd(intern[1]) + ' internship' : '', intern[4] || ''].filter(Boolean);
-    const where = t.slice(intern.index || 0).match(/\bwhere\s+(?:i|we)\s+([^.]{5,200})/i);
+    const where = t.slice(intern.index || 0).match(/\bwhere\s+(?:i|we)\s+((?:[A-Za-z0-9]\.[A-Za-z0-9]|[^.]){5,200})/i);
     const bullets = (bits.length ? [bits.join(', ')].map((b) => b[0].toUpperCase() + b.slice(1)) : []).concat(where ? [where[1][0].toUpperCase() + where[1].slice(1)] : []);
     experience.push({ role: 'Intern', company: clip(cleanEnd(intern[3]), 60), bullets });
   }
@@ -125,17 +127,40 @@ export function parseFreeform(text: string): Freeform | null {
   let summary = '';
   const goal = t.match(/\b(?:want(?:s)?|looking for|seeking|aiming for|applying for)\s+(?:to (?:get|find|apply for)\s+)?(?:an?\s+)?([a-z][a-z /&-]{3,50}?\s+(?:internship|role|job|position|opening))\b/i);
   // Summary: only facts the writer stated, in plain sentences. No adjectives, no claims.
-  const sumParts: string[] = [];
+  const up = (x: string) => x[0].toUpperCase() + x.slice(1);
+  const sentenceA: string[] = [];
   if (stu) {
     const yr = (stu[1] || '').trim();
     const br = stu[2].trim().replace(/^(?:a|an|the|i am|i'm)\s+/i, '');
     const lead = [yr, br].filter(Boolean).join(' ');
-    sumParts.push(`${lead[0].toUpperCase()}${lead.slice(1)} student at ${cleanEnd(stu[3])}${grad ? `, graduating ${grad[1]}` : ''}.`);
-  } else if (grad) sumParts.push(`Graduating ${grad[1]}.`);
-  if (skills.length) sumParts.push(`Skills: ${skills.join(', ')}.`);
-  if (intern) sumParts.push(`${intern[1] ? cleanEnd(intern[1]) + ' internship' : 'Internship'} at ${cleanEnd(intern[3])}${intern[4] ? ` (${intern[4]})` : ''}.`.replace(/^./, (c) => c.toUpperCase()));
-  if (goal) sumParts.push(`Seeking a ${cleanEnd(goal[1]).toLowerCase()}.`);
-  if (sumParts.length >= 2 || goal) summary = sumParts.join(' ');
+    sentenceA.push(`${up(lead)} student at ${cleanEnd(stu[3])}${grad ? `, graduating ${grad[1]}` : ''}${cg ? `, with a ${cg[1].toUpperCase()} of ${cg[2]}${cg[3] ? '/' + cg[3] : ''}` : ''}.`);
+  } else if (education.length && education[0].degree) {
+    sentenceA.push(`Education: ${cleanEnd(education[0].degree)}${education[0].institution ? `, ${cleanEnd(education[0].institution)}` : ''}.`);
+  } else if (grad) sentenceA.push(`Graduating ${grad[1]}.`);
+  // Experience, project and leadership, each only as the writer stated it.
+  const frags: string[] = [];
+  if (intern) {
+    const w = t.slice(intern.index || 0).match(/\bwhere\s+(?:i|we)\s+((?:[A-Za-z0-9]\.[A-Za-z0-9]|[^.]){5,200})/i);
+    frags.push(`completed ${intern[1] ? 'a ' + cleanEnd(intern[1]) + ' internship' : 'an internship'} at ${cleanEnd(intern[3])}${intern[4] ? ` (${intern[4]})` : ''}${w ? `, where I ${cleanEnd(w[1])}` : ''}`);
+  }
+  if (projects.length && projects[0].description) {
+    const d = projects[0].description.replace(/^(?:and\s+|also\s+)?(?:for\s+my\s+[^,]*,\s*)?(?:i|we)\s+/i, '');
+    if (d.length <= 260) frags.push(cleanEnd(d[0].toLowerCase() + d.slice(1)));
+    else frags.push(`worked on ${projects[0].name.toLowerCase()}`);
+  } else if (projects.length) frags.push(`worked on a project (${projects[0].name.toLowerCase()})`);
+  if (club) {
+    const when = experience.find((x) => x.role === club[2][0].toUpperCase() + club[2].slice(1).toLowerCase());
+    const yrs = when && when.bullets[0] ? ` in ${when.bullets[0].toLowerCase()}` : '';
+    frags.push(`served as ${club[2].toLowerCase()} of the ${club[1].replace(/^(?:the|our|my)\s+/i, '')}${yrs}`);
+  }
+  const sentenceB = frags.length ? [`${up(frags.join('; '))}.`] : [];
+  const goalTxt = goal ? cleanEnd(goal[1]).toLowerCase() : '';
+  const art = /^[aeiou]/.test(goalTxt) ? 'an' : 'a';
+  const sentenceC = skills.length || goal
+    ? [`${skills.length ? `Skills include ${skills.join(', ')}` : ''}${skills.length && goal ? '; ' : ''}${goal ? `${skills.length ? 'seeking' : 'Seeking'} ${art} ${goalTxt}` : ''}.`]
+    : [];
+  const sumParts = [...sentenceA, ...sentenceB, ...sentenceC];
+  summary = sumParts.length >= 2 || goal ? sumParts.join(" ") : "";
 
   const signals = [email, phone, name, skills.length, education.length, experience.length, projects.length, summary].filter(Boolean).length
     + 0;

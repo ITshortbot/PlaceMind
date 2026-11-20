@@ -40,6 +40,15 @@ const PHONE = /(\+?\d[\d\s\-().]{8,}\d)/;
 const YEAR = /\b(19|20)\d{2}\b(\s*[-–—to]+\s*((19|20)\d{2}|present|current))?/i;
 
 const clip = (s: string, n: number) => s.trim().slice(0, n);
+// Keeps whole sentences (or whole words) when text is longer than n.
+const clipSentence = (s: string, n: number) => {
+  const t = s.trim();
+  if (t.length <= n) return t;
+  const cut = t.slice(0, n);
+  const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  if (end > n * 0.5) return cut.slice(0, end + 1);
+  return cut.slice(0, cut.lastIndexOf(' ')).trim() + '...';
+};
 const stripBullet = (s: string) => s.replace(BULLET, '').trim();
 
 function splitBlocks(lines: string[]): string[][] {
@@ -76,6 +85,12 @@ function entries(lines: string[]): { head: string[]; bullets: string[] }[] {
 }
 
 function roleCompany(line: string): { role: string; company: string | null } {
+  const dm = line.match(/^(.*?)\s*\(([^()]*\d{4}[^()]*)\)\s*$/);
+  if (dm && dm[1].trim()) {
+    const base = roleCompany(dm[1]);
+    const dates = `(${dm[2].trim()})`;
+    return base.company ? { role: base.role, company: clip(`${base.company} ${dates}`, 80) } : { role: clip(`${base.role} ${dates}`, 80), company: null };
+  }
   const m = line.match(/^(.+?)\s+(?:at|@)\s+(.+)$/i) || line.match(/^(.+?)\s+[|–—-]\s+(.+)$/) || line.match(/^(.+?),\s+(.+)$/);
   if (m) return { role: clip(m[1], 60), company: clip(m[2], 60) };
   return { role: clip(line, 60), company: null };
@@ -118,7 +133,7 @@ export function parseResumeText(text: string): ImportedResume {
   const looksLikeName = words.length >= 1 && words.length <= 5 && words.every((w) => /^[A-Z][A-Za-z.'-]*$/.test(w));
   const name = firstLine && looksLikeName && !EMAIL.test(firstLine) ? firstLine : '';
 
-  const summary = clip(buckets.summary.map((l) => l.trim()).filter(Boolean).join(' '), 400);
+  const summary = clipSentence(buckets.summary.map((l) => l.trim()).filter(Boolean).join(' '), 900);
 
   const skills: string[] = [];
   for (const l of buckets.skills) {
