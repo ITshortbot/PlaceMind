@@ -104,6 +104,7 @@ class HybridLLMRouter:
         temperature: float = 0.2,
         response_format: Optional[Dict[str, Any]] = None,
         allow_fallback_to_cloud: bool = True,
+        max_tokens: Optional[int] = None,
     ) -> LLMResponse:
         """
         Routes the prompt to the appropriate AI engine based on `mode`.
@@ -131,6 +132,7 @@ class HybridLLMRouter:
                         temperature=temperature,
                         response_format=response_format,
                         start_time=start_time,
+                        max_tokens=max_tokens,
                     )
                     res.is_fallback = True
                     return res
@@ -145,6 +147,7 @@ class HybridLLMRouter:
                     temperature=temperature,
                     response_format=response_format,
                     start_time=start_time,
+                    max_tokens=max_tokens,
                 )
             except Exception as local_err:
                 logger.error(f"Local LM Studio execution error: {str(local_err)}")
@@ -155,6 +158,7 @@ class HybridLLMRouter:
                         temperature=temperature,
                         response_format=response_format,
                         start_time=start_time,
+                        max_tokens=max_tokens,
                     )
                     res.is_fallback = True
                     return res
@@ -167,6 +171,7 @@ class HybridLLMRouter:
                 temperature=temperature,
                 response_format=response_format,
                 start_time=start_time,
+                max_tokens=max_tokens,
             )
 
         # Handle CLOUD Routing (Gemini)
@@ -175,6 +180,7 @@ class HybridLLMRouter:
             temperature=temperature,
             response_format=response_format,
             start_time=start_time,
+            max_tokens=max_tokens,
         )
 
     async def _execute_oss(
@@ -183,6 +189,7 @@ class HybridLLMRouter:
         temperature: float,
         response_format: Optional[Dict[str, Any]],
         start_time: float,
+        max_tokens: Optional[int],
     ) -> LLMResponse:
         """
         Executes completion via OSS OpenAI-compatible endpoint using LiteLLM.
@@ -207,7 +214,8 @@ class HybridLLMRouter:
             "api_base": self.llm_base_url,
             "api_key": self.llm_api_key,
             "timeout": self.llm_timeout_s,
-            "max_tokens": self.llm_max_tokens,
+            "max_tokens": max_tokens if max_tokens is not None else self.llm_max_tokens,
+            "num_retries": 0,
         }
         if response_format:
             kwargs["response_format"] = response_format
@@ -256,6 +264,7 @@ class HybridLLMRouter:
         temperature: float,
         response_format: Optional[Dict[str, Any]],
         start_time: float,
+        max_tokens: Optional[int],
     ) -> LLMResponse:
         """Executes completion via Google Gemini Cloud using LiteLLM."""
         if not settings.GEMINI_API_KEY:
@@ -267,6 +276,9 @@ class HybridLLMRouter:
             "messages": messages,
             "temperature": temperature,
             "api_key": settings.GEMINI_API_KEY,
+            "timeout": self.llm_timeout_s,
+            "max_tokens": max_tokens if max_tokens is not None else self.llm_max_tokens,
+            "num_retries": 0,
         }
         if response_format:
             kwargs["response_format"] = response_format
@@ -297,6 +309,7 @@ class HybridLLMRouter:
         temperature: float,
         response_format: Optional[Dict[str, Any]],
         start_time: float,
+        max_tokens: Optional[int],
     ) -> LLMResponse:
         """Executes completion via Local LM Studio OpenAI-compatible endpoint."""
         kwargs: Dict[str, Any] = {
@@ -305,6 +318,9 @@ class HybridLLMRouter:
             "temperature": temperature,
             "api_base": self.lm_studio_base,
             "api_key": "lm-studio",  # LM Studio requires non-empty dummy string
+            "timeout": self.llm_timeout_s,
+            "max_tokens": max_tokens if max_tokens is not None else self.llm_max_tokens,
+            "num_retries": 0,
         }
         if response_format:
             kwargs["response_format"] = response_format

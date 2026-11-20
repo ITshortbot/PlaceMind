@@ -32,6 +32,7 @@ from app.services.resume_content import facts_are_empty
 logger = logging.getLogger("placemind.template_generator")
 
 PRESETS_PATH = Path(__file__).resolve().parent.parent / "data" / "template_presets.json"
+TEMPLATE_GENERATION_TIMEOUT_S = 180
 
 
 class TemplateGenerationError(Exception):
@@ -260,7 +261,9 @@ class TemplateGenerator:
     """
 
     def __init__(self, ai_router: Optional[HybridLLMRouter] = None):
-        self.router = ai_router or HybridLLMRouter()
+        self.router = ai_router or HybridLLMRouter(
+            llm_timeout_s=max(settings.LLM_TIMEOUT_S, TEMPLATE_GENERATION_TIMEOUT_S)
+        )
 
     async def generate(
         self,
@@ -431,6 +434,7 @@ class TemplateGenerator:
                     messages=messages,
                     mode=selected_mode,
                     response_format={"type": "json_object"},
+                    max_tokens=min(settings.LLM_MAX_TOKENS, 900),
                 )
                 return res.content, None
             except Exception:
@@ -439,6 +443,7 @@ class TemplateGenerator:
                         messages=messages,
                         mode=selected_mode,
                         response_format=None,
+                        max_tokens=min(settings.LLM_MAX_TOKENS, 900),
                     )
                     return res.content, None
                 except Exception as exc:
@@ -457,6 +462,7 @@ class TemplateGenerator:
                 mode=selected_mode,
                 response_format={"type": "json_object"},
                 allow_fallback_to_cloud=False,
+                max_tokens=min(settings.LLM_MAX_TOKENS, 900),
             )
         except Exception as exc:
             format_not_supported = isinstance(exc, litellm.BadRequestError) or (
@@ -471,6 +477,7 @@ class TemplateGenerator:
                     mode=selected_mode,
                     response_format=None,
                     allow_fallback_to_cloud=False,
+                    max_tokens=min(settings.LLM_MAX_TOKENS, 900),
                 )
             except Exception as exc:
                 raise self._provider_error(exc) from exc

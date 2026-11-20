@@ -94,6 +94,7 @@ async def test_oss_completion_success(monkeypatch):
     assert captured_kwargs["api_key"] == settings.LLM_API_KEY
     assert captured_kwargs["timeout"] == settings.LLM_TIMEOUT_S
     assert captured_kwargs["max_tokens"] == settings.LLM_MAX_TOKENS
+    assert captured_kwargs["num_retries"] == 0
     assert captured_kwargs["temperature"] == 0.3
 
     # Validate system message has 'Reasoning: low'
@@ -260,3 +261,32 @@ async def test_existing_modes_remain_functional(monkeypatch):
     assert response.routing_mode == RoutingMode.CLOUD
     assert response.content == "Cloud reply"
     assert captured[-1]["model"] == settings.CLOUD_MODEL_NAME
+
+
+@pytest.mark.asyncio
+async def test_cloud_and_local_calls_use_timeout_and_no_litellm_retries(monkeypatch):
+    captured = []
+
+    async def mock_acompletion(**kwargs):
+        captured.append(kwargs)
+        return _create_mock_response("Provider reply")
+
+    async def local_is_healthy():
+        return True
+
+    monkeypatch.setattr("litellm.acompletion", mock_acompletion)
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-key")
+    router = HybridLLMRouter()
+    monkeypatch.setattr(router, "check_local_health", local_is_healthy)
+
+    for mode in (RoutingMode.CLOUD, RoutingMode.LOCAL):
+        response = await router.complete(
+            messages=[{"role": "user", "content": "test"}],
+            mode=mode,
+            allow_fallback_to_cloud=False,
+            max_tokens=333,
+        )
+        assert response.routing_mode == mode
+        assert captured[-1]["timeout"] == settings.LLM_TIMEOUT_S
+        assert captured[-1]["max_tokens"] == 333
+        assert captured[-1]["num_retries"] == 0

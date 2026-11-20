@@ -37,6 +37,8 @@ const MOBILE_NAV_ITEMS = [
 ];
 
 export const AI_PROMPT_HANDOFF_KEY = 'placemind.pendingPrompt';
+export const AI_CANDIDATE_FACTS_HANDOFF_KEY = 'placemind.pendingCandidateFacts';
+export const AI_BUILDER_TEMPLATE_HANDOFF_KEY = 'placemind.pendingBuilderTemplate';
 
 export function AppShell(props: AppShellProps) {
   // Every internal page requires a signed-in account; the gate redirects to
@@ -62,13 +64,16 @@ function AppShellInner({ children, hideSidebar = false, showAiBar, aiBarProps }:
   }, []);
 
 
-  // The bar's one real job: carry the typed prompt into the Template Studio,
-  // which generates from it. No page-local fake responses.
+  // Carry template-style prompts into the Template Studio without fabricating a response.
   const handleAiCommand = (command: string) => {
     try {
       window.localStorage.setItem(AI_PROMPT_HANDOFF_KEY, command);
+      window.sessionStorage.removeItem(AI_CANDIDATE_FACTS_HANDOFF_KEY);
+      window.sessionStorage.removeItem(AI_BUILDER_TEMPLATE_HANDOFF_KEY);
     } catch {
-      // storage unavailable - navigate anyway, prompt is lost but nothing fake happens
+      throw new Error(
+        'Could not save this prompt for Template Studio. Check browser storage and try again.'
+      );
     }
     router.push('/template');
   };

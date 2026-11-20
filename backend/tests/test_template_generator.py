@@ -26,6 +26,14 @@ from app.services.ai_router import RoutingMode
 from app.services.template_generator import TemplateGenerationError, TemplateGenerator
 
 
+def test_generator_uses_a_template_timeout_floor_without_lowering_configured_timeout(monkeypatch):
+    monkeypatch.setattr(settings, "LLM_TIMEOUT_S", 60)
+    assert TemplateGenerator().router.llm_timeout_s == 180
+
+    monkeypatch.setattr(settings, "LLM_TIMEOUT_S", 240)
+    assert TemplateGenerator().router.llm_timeout_s == 240
+
+
 def _sample_valid_json() -> str:
     return json.dumps({
         "style": {
@@ -381,6 +389,7 @@ async def test_explicit_provider_uses_existing_router(monkeypatch, provider, exp
     assert response.source == "model"
     assert router.calls[0]["mode"] == expected_mode
     assert router.calls[0]["kwargs"]["allow_fallback_to_cloud"] is False
+    assert router.calls[0]["kwargs"]["max_tokens"] == min(settings.LLM_MAX_TOKENS, 900)
 
 
 @pytest.mark.asyncio

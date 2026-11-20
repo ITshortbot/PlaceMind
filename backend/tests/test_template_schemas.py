@@ -280,6 +280,12 @@ def test_generate_request_valid():
     assert req.jd_text == "Job description"
 
 
+@pytest.mark.parametrize("prompt", ["", "  \n"])
+def test_generate_request_rejects_empty_or_whitespace_prompt(prompt):
+    with pytest.raises(ValidationError, match="prompt must not be blank|at least 1 character"):
+        GenerateRequest(prompt=prompt)
+
+
 def test_generate_request_provider_defaults_to_ollama_and_accepts_supported_modes():
     assert GenerateRequest(prompt="Resume").routing_mode == "ollama"
     for mode in ("ollama", "cloud", "local"):

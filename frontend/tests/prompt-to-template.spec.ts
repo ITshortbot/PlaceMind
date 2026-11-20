@@ -13,6 +13,11 @@ test.describe('Prompt-to-Template Studio Screen', () => {
   test('Renders prompt studio with live preview, color picker, and example chips', async ({
     page,
   }) => {
+    let generationRequests = 0;
+    await page.route('**/api/v1/templates/generate', async (route) => {
+      generationRequests += 1;
+      await route.abort();
+    });
     await page.goto('/template');
     await page.waitForLoadState('domcontentloaded');
 
@@ -31,6 +36,12 @@ test.describe('Prompt-to-Template Studio Screen', () => {
     // Live Resume Preview
     await expect(page.locator('#resume-preview-sheet')).toBeVisible();
     await expect(page.locator('text=Color & Accessibility Engine')).toBeVisible();
+    await expect(page.locator('#use-in-builder-btn')).toBeDisabled();
+
+    await page.fill('#prompt-input', '   ');
+    await page.click('#generate-template-btn');
+    await expect(page.getByText('Enter a resume prompt before generating.')).toBeVisible();
+    expect(generationRequests).toBe(0);
   });
 
   test('Generates template via mocked API and updates live preview', async ({ page }) => {
@@ -84,6 +95,163 @@ test.describe('Prompt-to-Template Studio Screen', () => {
     );
     await expect(page.locator('#resume-preview-sheet')).toContainText('Mock Cloud Inc');
     await expect(page.locator('#model-badge')).toBeVisible();
+  });
+
+  test('Resume Builder prompt carries facts through selected-provider generation into preview and PDF', async ({
+    page,
+  }) => {
+    let generationPayload: {
+      prompt?: string;
+      routing_mode?: string;
+      resume_id?: string;
+      facts?: {
+        name?: string;
+        contact?: string;
+        summary?: string;
+        skills?: string[];
+        experience?: Array<{ role: string; company?: string; bullets: string[] }>;
+      };
+      api_key?: string;
+    } | null = null;
+    let chatRequests = 0;
+    let generationRequests = 0;
+
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+    });
+    await page.route('**/api/v1/auth/guest', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'playwright-guest',
+          email: null,
+          full_name: null,
+          avatar_url: null,
+          is_guest: true,
+        }),
+      });
+    });
+    await page.route('**/api/v1/chat', async (route) => {
+      chatRequests += 1;
+      await route.fulfill({ status: 503, body: 'Resume generation must not use chat' });
+    });
+    await page.route('**/api/v1/templates/generate', async (route) => {
+      generationRequests += 1;
+      generationPayload = route.request().postDataJSON() as typeof generationPayload;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          style: {
+            layout: 'single_column',
+            font: 'Arial',
+            size_pt: 11,
+            density: 'normal',
+            header_style: 'left',
+            section_order: ['summary', 'skills', 'experience', 'projects', 'education'],
+            mood: 'tech',
+            hue: 195,
+          },
+          content: {
+            name: 'Jordan Lee',
+            contact: 'jordan@example.test',
+            headline: 'Junior Data Analyst',
+            summary: 'Statistics graduate with Python and SQL experience.',
+            skills: ['Python', 'SQL'],
+            experience: [
+              {
+                role: 'Research Assistant',
+                company: 'Example Lab',
+                bullets: ['Cleaned survey data using Python.'],
+              },
+            ],
+            projects: [],
+            education: [],
+          },
+          warnings: [],
+          latency_ms: 18,
+          source: 'model',
+          facts_used: true,
+        }),
+      });
+    });
+    await page.route('**/api/v1/ats/score-doc', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          overall: 80,
+          categories: { structure: 80, formatting: 80, keywords: 80, semantic: 80 },
+          items: [],
+          top_fixes: [],
+          limits_note: 'Automated readiness check.',
+        }),
+      });
+    });
+
+    await page.goto('/resume');
+    await page.getByPlaceholder('Your name').fill('Jordan Lee');
+    await page.getByPlaceholder('e.g. Backend Engineer').nth(0).fill('Junior Data Analyst');
+    await page.getByPlaceholder('you@example.com').fill('jordan@example.test');
+    await page
+      .getByPlaceholder('2-3 sentences about your experience')
+      .fill('Statistics graduate with Python and SQL experience.');
+    await page.getByPlaceholder('Python, FastAPI, PostgreSQL').fill('Python, SQL');
+    await page.getByPlaceholder('e.g. Backend Engineer').nth(1).fill('Research Assistant');
+    await page.getByPlaceholder('Employer name').first().fill('Example Lab');
+    await page
+      .getByPlaceholder(/Built FastAPI services serving 2M requests/)
+      .fill('Cleaned survey data using Python.');
+    await page.getByRole('button').filter({ hasText: 'Modern' }).click();
+
+    const command = 'Create a junior data analyst resume using only my information';
+    await page.getByPlaceholder('Describe the resume you want').fill(command);
+    await page.getByRole('button', { name: 'Run Prompt' }).click();
+    await page.waitForURL('**/template**');
+    await expect(page.locator('#prompt-input')).toHaveValue(command);
+    await expect(page.locator('#template-provider')).toHaveValue('ollama');
+    await expect(
+      page.getByText(/Select a provider, then click Generate Resume to start the AI request/)
+    ).toBeVisible();
+    expect(chatRequests).toBe(0);
+    expect(generationRequests).toBe(0);
+
+    await page.selectOption('#template-provider', 'cloud');
+    await page.click('#generate-template-btn');
+    await expect(page.locator('#resume-preview-sheet')).toContainText('Junior Data Analyst');
+    await expect(page.locator('#model-badge')).toBeVisible();
+
+    expect(generationPayload?.prompt).toBe(command);
+    expect(generationPayload?.routing_mode).toBe('cloud');
+    expect(generationPayload?.resume_id).toBeUndefined();
+    expect(generationPayload?.facts?.name).toBe('Jordan Lee');
+    expect(generationPayload?.facts?.summary).toBe(
+      'Statistics graduate with Python and SQL experience.'
+    );
+    expect(generationPayload?.facts?.skills).toEqual(['Python', 'SQL']);
+    expect(generationPayload?.facts?.experience?.[0]).toMatchObject({
+      role: 'Research Assistant',
+      company: 'Example Lab',
+      bullets: ['Cleaned survey data using Python.'],
+    });
+    expect(generationPayload?.api_key).toBeUndefined();
+    expect(chatRequests).toBe(0);
+
+    page.on('dialog', (dialog) => dialog.accept());
+    await page.click('#use-in-builder-btn');
+    await page.waitForURL('**/resume');
+    await expect(page.getByPlaceholder('Your name')).toHaveValue('Jordan Lee');
+    await expect(page.getByPlaceholder('2-3 sentences about your experience')).toHaveValue(
+      'Statistics graduate with Python and SQL experience.'
+    );
+    await expect(page.locator('#resume-preview-sheet')).toContainText('Junior Data Analyst');
+    await expect(
+      page.getByRole('button').filter({ hasText: 'Modern' }).first()
+    ).toHaveClass(/border-\[#6C5CE7\]/);
+
+    const pdf = await page.pdf({ format: 'A4' });
+    expect(pdf.subarray(0, 4).toString()).toBe('%PDF');
   });
 
   test('Displays preset fallback badge when source="fallback"', async ({ page }) => {

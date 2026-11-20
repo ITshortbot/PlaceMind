@@ -160,7 +160,7 @@ class CandidateFacts(StrictBaseModel):
 
 
 class GenerateRequest(StrictBaseModel):
-    prompt: str = Field(..., max_length=500)
+    prompt: str = Field(..., min_length=1, max_length=500)
     jd_text: Optional[str] = Field(default=None, max_length=4000)
     routing_mode: Literal["ollama", "cloud", "local"] = "ollama"
     resume_id: Optional[UUID] = Field(
@@ -171,6 +171,13 @@ class GenerateRequest(StrictBaseModel):
         default=None,
         description="Explicit candidate facts. Wins over resume_id when both are sent.",
     )
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("prompt must not be blank")
+        return value
 
 
 class GenerateResponse(StrictBaseModel):

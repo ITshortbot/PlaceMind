@@ -316,11 +316,30 @@ test.describe('Placemind Internal App & SaaS Navigation Suite', () => {
       await barInput.fill('');
     }
 
-    // Typing + submitting hands the text to Template Studio.
-    await barInput.fill('synthetic playwright check: teal resume for a data analyst fresher');
+    let chatRequests = 0;
+    let generationRequests = 0;
+    await page.route('**/api/v1/chat', async (route) => {
+      chatRequests += 1;
+      await route.abort();
+    });
+    await page.route('**/api/v1/templates/generate', async (route) => {
+      generationRequests += 1;
+      await route.abort();
+    });
+
+    // A natural resume request that did not match the old phrase allowlist still
+    // goes to Template Studio, but does not call a provider before selection.
+    await barInput.fill('Create a junior data analyst resume using only my information');
     await page.getByRole('button', { name: 'Run Prompt' }).click();
     await page.waitForURL('**/template**');
-    await expect(page.locator('#prompt-input')).toHaveValue(/teal resume/);
+    await expect(page.locator('#prompt-input')).toHaveValue(
+      'Create a junior data analyst resume using only my information'
+    );
+    await expect(
+      page.getByText(/Select a provider, then click Generate Resume to start the AI request/)
+    ).toBeVisible();
+    expect(chatRequests).toBe(0);
+    expect(generationRequests).toBe(0);
   });
 });
 

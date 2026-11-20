@@ -13,7 +13,12 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppShell, AI_PROMPT_HANDOFF_KEY } from '@/components/app/AppShell';
+import {
+  AI_BUILDER_TEMPLATE_HANDOFF_KEY,
+  AI_CANDIDATE_FACTS_HANDOFF_KEY,
+  AI_PROMPT_HANDOFF_KEY,
+  AppShell,
+} from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { ColorPicker } from '@/components/color/ColorPicker';
 import { ResumePreview } from '@/components/templates/ResumePreview';
@@ -25,6 +30,7 @@ import { backendApiUrl } from '@/lib/api/base';
 import {
   GenerateRequest,
   GenerateResponse,
+  CandidateFacts,
   ResumeContent,
   StyleSpec,
   TemplateRoutingMode,
@@ -41,6 +47,67 @@ import {
 } from 'lucide-react';
 
 const STORAGE_KEY = 'placemind_template_history_v1';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isOptionalString(value: unknown): boolean {
+  return value === undefined || value === null || typeof value === 'string';
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function isCandidateFacts(value: unknown): value is CandidateFacts {
+  if (!isRecord(value)) return false;
+  const optionalStrings = ['name', 'contact', 'headline', 'summary'];
+  if (!optionalStrings.every((key) => isOptionalString(value[key]))) return false;
+  if (value.skills !== undefined && !isStringArray(value.skills)) return false;
+
+  const isExperience = (item: unknown) =>
+    isRecord(item) &&
+    typeof item.role === 'string' &&
+    isOptionalString(item.company) &&
+    isOptionalString(item.start) &&
+    isOptionalString(item.end) &&
+    isStringArray(item.bullets);
+  const isProject = (item: unknown) =>
+    isRecord(item) &&
+    typeof item.name === 'string' &&
+    isOptionalString(item.description) &&
+    isOptionalString(item.link) &&
+    isStringArray(item.bullets);
+  const isEducation = (item: unknown) =>
+    isRecord(item) &&
+    typeof item.degree === 'string' &&
+    isOptionalString(item.institution) &&
+    isOptionalString(item.year) &&
+    isOptionalString(item.details);
+
+  return (
+    (value.experience === undefined ||
+      (Array.isArray(value.experience) && value.experience.every(isExperience))) &&
+    (value.projects === undefined ||
+      (Array.isArray(value.projects) && value.projects.every(isProject))) &&
+    (value.education === undefined ||
+      (Array.isArray(value.education) && value.education.every(isEducation)))
+  );
+}
+
+function hasCandidateFacts(facts: CandidateFacts): boolean {
+  return Boolean(
+    facts.name?.trim() ||
+      facts.contact?.trim() ||
+      facts.headline?.trim() ||
+      facts.summary?.trim() ||
+      facts.skills?.some((skill) => skill.trim()) ||
+      facts.experience?.length ||
+      facts.projects?.length ||
+      facts.education?.length
+  );
+}
 
 class ResumePreviewErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -187,6 +254,9 @@ export default function TemplatePage() {
   const [showJdInput, setShowJdInput] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [routingMode, setRoutingMode] = useState<TemplateRoutingMode>('ollama');
+  const [builderFacts, setBuilderFacts] = useState<CandidateFacts | null>(null);
+  const [isBuilderHandoff, setIsBuilderHandoff] = useState(false);
+  const [handoffError, setHandoffError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warningsDismissed, setWarningsDismissed] = useState(false);
@@ -301,7 +371,7 @@ export default function TemplatePage() {
       (c.education && c.education.length > 0)
     );
     // EMPTY generated content (facts_used false or all sections empty) must never be applied
-    if (!hasFacts) return false;
+    if (!hasFacts || currentResponse.source === 'demo') return false;
     if (currentResponse.source === 'fallback' && !currentResponse.facts_used) return false;
     return true;
   }, [currentResponse]);
@@ -319,14 +389,18 @@ export default function TemplatePage() {
         if (!confirmed) return;
       }
       window.localStorage.setItem('placemind.builderHandoff', JSON.stringify(currentResponse.content));
-      router.push('/resume');
     } catch {
-      router.push('/resume');
+      setError('Could not transfer the generated resume. Check browser storage and try again.');
+      return;
     }
+    router.push('/resume');
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) {
+      setError('Enter a resume prompt before generating.');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -356,7 +430,9 @@ export default function TemplatePage() {
       const reqPayload: GenerateRequest = {
         prompt: prompt.slice(0, 500),
         jd_text: jdText.trim() ? jdText.slice(0, 4000) : null,
-        resume_id: activeResumeId || undefined,
+        ...(builderFacts && hasCandidateFacts(builderFacts)
+          ? { facts: builderFacts }
+          : { resume_id: activeResumeId || undefined }),
         routing_mode: routingMode,
       };
 
@@ -383,23 +459,38 @@ export default function TemplatePage() {
     setPrompt(item.prompt);
   };
 
-  // Consume a prompt handed off from the global AI command bar (one real action).
+  // Consume prompt and current form facts from the Resume Builder.
   const handoffRan = React.useRef(false);
   useEffect(() => {
     if (handoffRan.current) return;
     handoffRan.current = true;
     try {
       const pending = window.localStorage.getItem(AI_PROMPT_HANDOFF_KEY);
-      if (pending && pending.trim()) {
-        window.localStorage.removeItem(AI_PROMPT_HANDOFF_KEY);
-        setPrompt(pending);
-        setTimeout(() => {
-          const btn = document.getElementById('generate-template-btn') as HTMLButtonElement | null;
-          btn?.click();
-        }, 50);
+      window.localStorage.removeItem(AI_PROMPT_HANDOFF_KEY);
+      if (!pending?.trim()) {
+        window.sessionStorage.removeItem(AI_CANDIDATE_FACTS_HANDOFF_KEY);
+        window.sessionStorage.removeItem(AI_BUILDER_TEMPLATE_HANDOFF_KEY);
+        return;
       }
-    } catch {
-      // storage unavailable - nothing to consume
+      setPrompt(pending);
+      setIsBuilderHandoff(true);
+
+      const rawFacts = window.sessionStorage.getItem(AI_CANDIDATE_FACTS_HANDOFF_KEY);
+      window.sessionStorage.removeItem(AI_CANDIDATE_FACTS_HANDOFF_KEY);
+      if (rawFacts) {
+        const facts: unknown = JSON.parse(rawFacts);
+        if (!isCandidateFacts(facts)) {
+          throw new Error('The transferred resume facts were invalid.');
+        }
+        setBuilderFacts(facts);
+      }
+    } catch (error: unknown) {
+      setHandoffError(true);
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Could not load the prompt from Resume Builder. Please return and retry.'
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -542,6 +633,12 @@ export default function TemplatePage() {
             <p className="text-[11px] text-slate-400">
               Gemini uses the backend key; no provider credentials are sent from this page.
             </p>
+            {isBuilderHandoff && (
+              <p role="status" className="text-[11px] text-blue-300">
+                Your prompt and current resume facts are ready. Select a provider, then click
+                Generate Resume to start the AI request.
+              </p>
+            )}
             {isDemoMode && (
               <p className="text-[11px] text-slate-400">
                 Demo Mode uses a local sample and does not call an AI provider.
@@ -571,10 +668,10 @@ export default function TemplatePage() {
             <button
               type="button"
               id="generate-template-btn"
-              disabled={loading || !prompt.trim()}
+              disabled={loading || handoffError}
               onClick={handleGenerate}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg transition-all ${
-                loading || !prompt.trim()
+                loading
                   ? 'bg-slate-700 cursor-not-allowed opacity-60'
                   : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25 active:scale-95'
               }`}
@@ -788,7 +885,9 @@ export default function TemplatePage() {
                 onClick={handleUseInBuilder}
                 title={
                   !canApply
-                    ? 'Apply disabled: generated content is empty or has no candidate facts'
+                    ? currentResponse.source === 'demo'
+                      ? 'Sample content cannot be applied as an AI-generated resume'
+                      : 'Apply disabled: generated content is empty or has no candidate facts'
                     : 'Transfer this generated layout and content to the Resume Builder'
                 }
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${

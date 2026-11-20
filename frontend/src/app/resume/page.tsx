@@ -9,7 +9,13 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AppShell } from '@/components/app/AppShell';
+import { useRouter } from 'next/navigation';
+import {
+  AI_BUILDER_TEMPLATE_HANDOFF_KEY,
+  AI_CANDIDATE_FACTS_HANDOFF_KEY,
+  AI_PROMPT_HANDOFF_KEY,
+  AppShell,
+} from '@/components/app/AppShell';
 import { TopBar } from '@/components/app/TopBar';
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/Label';
@@ -35,7 +41,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import type { ResumeContent } from '@/types/templates';
+import type { CandidateFacts, ResumeContent } from '@/types/templates';
 import { BUILDER_TEMPLATES } from '@/lib/builderTemplates';
 
 export interface ExperienceEntry {
@@ -125,6 +131,88 @@ function getAllEducation(draft: DraftState): EducationEntry[] {
   return list;
 }
 
+function candidateFactsFromDraft(draft: DraftState): CandidateFacts {
+  const skills = draft.skills
+    .split(',')
+    .map((skill) => skill.trim())
+    .filter(Boolean);
+  const experiences = getAllExperiences(draft).filter(
+    (entry) => entry.role.trim() || entry.company.trim() || entry.bullets.trim()
+  );
+  const education = getAllEducation(draft).filter(
+    (entry) => entry.degree.trim() || entry.institution.trim() || entry.year.trim()
+  );
+  const projects = (draft.projects || []).filter(
+    (entry) =>
+      entry.name.trim() ||
+      entry.description.trim() ||
+      entry.bullets.trim() ||
+      entry.link.trim()
+  );
+  const experienceBullets = experiences.map((entry) =>
+    entry.bullets
+      .split('\n')
+      .map((bullet) => bullet.trim())
+      .filter(Boolean)
+  );
+  const projectBullets = projects.map((entry) =>
+    entry.bullets
+      .split('\n')
+      .map((bullet) => bullet.trim())
+      .filter(Boolean)
+  );
+
+  const contact = [draft.email.trim(), draft.phone.trim()].filter(Boolean).join(' | ');
+  if (
+    draft.name.length > 120 ||
+    contact.length > 200 ||
+    draft.title.length > 120 ||
+    draft.summary.length > 400 ||
+    skills.length > 20 ||
+    experiences.length > 4 ||
+    education.length > 3 ||
+    projects.length > 4 ||
+    experiences.some((entry) => !entry.role.trim()) ||
+    education.some((entry) => !entry.degree.trim()) ||
+    projects.some((entry) => !entry.name.trim()) ||
+    experienceBullets.some(
+      (bullets) => bullets.length > 5 || bullets.some((bullet) => bullet.length > 220)
+    ) ||
+    projectBullets.some(
+      (bullets) => bullets.length > 5 || bullets.some((bullet) => bullet.length > 220)
+    ) ||
+    projects.some((entry) => entry.description.length > 400)
+  ) {
+    throw new Error(
+      'Some resume fields exceed the AI generation limits. Complete each section and shorten or remove excess items before retrying.'
+    );
+  }
+
+  return {
+    name: draft.name.trim() || undefined,
+    contact: contact || undefined,
+    headline: draft.title.trim() || undefined,
+    summary: draft.summary.trim() || undefined,
+    skills,
+    experience: experiences.map((entry, index) => ({
+      role: entry.role.trim(),
+      company: entry.company.trim() || undefined,
+      bullets: experienceBullets[index],
+    })),
+    education: education.map((entry) => ({
+      degree: entry.degree.trim(),
+      institution: entry.institution.trim() || undefined,
+      year: entry.year.trim() || undefined,
+    })),
+    projects: projects.map((entry, index) => ({
+      name: entry.name.trim(),
+      description: entry.description.trim() || undefined,
+      bullets: projectBullets[index],
+      link: entry.link.trim() || undefined,
+    })),
+  };
+}
+
 function isSectionDirty(secKey: string, dirtyFields: Set<string>): boolean {
   switch (secKey) {
     case 'contact':
@@ -184,6 +272,7 @@ function formatMissingFactLabel(key: string): string {
 }
 
 export default function ResumePage() {
+  const router = useRouter();
   const [selectedTemplate, setSelectedTemplate] = useState(BUILDER_TEMPLATES[0]);
   const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -296,6 +385,16 @@ export default function ResumePage() {
           const hContent: ResumeContent = JSON.parse(rawHandoff);
           window.localStorage.removeItem('placemind.builderHandoff');
           window.localStorage.setItem('placemind.builderDirty', 'true');
+          const handedOffTemplateId = window.sessionStorage.getItem(
+            AI_BUILDER_TEMPLATE_HANDOFF_KEY
+          );
+          window.sessionStorage.removeItem(AI_BUILDER_TEMPLATE_HANDOFF_KEY);
+          const handedOffTemplate = BUILDER_TEMPLATES.find(
+            (template) => template.id === handedOffTemplateId
+          );
+          if (handedOffTemplate) {
+            setSelectedTemplate(handedOffTemplate);
+          }
 
           let hEmail = '';
           let hPhone = '';
@@ -786,6 +885,26 @@ export default function ResumePage() {
     [selectedTemplate]
   );
 
+  const handleResumeGenerationPrompt = (prompt: string) => {
+    const facts = candidateFactsFromDraft(draft);
+    try {
+      window.localStorage.setItem(AI_PROMPT_HANDOFF_KEY, prompt);
+      window.sessionStorage.setItem(
+        AI_CANDIDATE_FACTS_HANDOFF_KEY,
+        JSON.stringify(facts)
+      );
+      window.sessionStorage.setItem(
+        AI_BUILDER_TEMPLATE_HANDOFF_KEY,
+        selectedTemplate.id
+      );
+    } catch {
+      throw new Error(
+        'Could not transfer this resume to Template Studio. Check browser storage and try again.'
+      );
+    }
+    router.push('/template');
+  };
+
   const toPlainText = () => {
     const parts: string[] = [];
     if (draft.name) parts.push(draft.name);
@@ -1047,7 +1166,7 @@ export default function ResumePage() {
   };
 
   return (
-    <AppShell>
+    <AppShell aiBarProps={{ onExecute: handleResumeGenerationPrompt }}>
       <div className="h-[100dvh] flex flex-col overflow-hidden">
         <TopBar
           title="Resume Builder"

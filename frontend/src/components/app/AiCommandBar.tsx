@@ -39,7 +39,7 @@ import { analyzeResume, type AtsAnalysisReport } from '@/lib/api/resumes';
 
 export interface AiCommandBarProps {
   placeholder?: string;
-  onExecute?: (command: string) => void;
+  onExecute?: (command: string) => void | Promise<void>;
   response?: {
     reply: string;
     actions?: Array<{ id: string; label: string; kind: string; target: string; payload?: Record<string, unknown> }>;
@@ -116,24 +116,33 @@ export function AiCommandBar({
     const trimmed = currentInput.trim();
     if (!trimmed || isProcessing || currentSending) return;
 
-    // Backward-compatibility: hand off template styling requests to Template Studio
+    // The Resume Builder prompt is a generation command, not a chat question.
     const isTemplateHandoff =
+      pathname === '/resume' ||
       /teal resume|template studio|design.*resume|color.*resume|palette/i.test(trimmed) ||
       trimmed.startsWith('synthetic playwright check:');
 
     if (onExecute && isTemplateHandoff) {
       setIsProcessing(true);
-      setLastAction(trimmed);
-      onExecute(trimmed);
-      setTimeout(() => {
-        setIsProcessing(false);
+      setChatError(null);
+      try {
+        await onExecute(trimmed);
+        setLastAction(trimmed);
         if (isControlled) {
           onChange?.('');
         } else {
           setInput('');
         }
         setTimeout(() => setLastAction(null), 1500);
-      }, 400);
+      } catch (error: unknown) {
+        setChatError(
+          error instanceof Error
+            ? error.message
+            : 'Could not send this prompt to Template Studio. Please try again.'
+        );
+      } finally {
+        setIsProcessing(false);
+      }
       return;
     }
 
@@ -388,7 +397,7 @@ export function AiCommandBar({
                 <span>PlaceMind Assistant</span>
                 {activeResponse.is_fallback ? (
                   <span className="text-[9px] font-mono text-white/50 font-normal">
-                    &bull; Local Heuristics
+                    &bull; Offline guidance (no model used)
                   </span>
                 ) : ('model_used' in activeResponse ? activeResponse.model_used : (activeResponse as { modelUsed?: string }).modelUsed) ? (
                   <span className="text-[9px] font-mono text-white/50 font-normal">
@@ -409,6 +418,11 @@ export function AiCommandBar({
               </button>
             </div>
             <p className="leading-relaxed text-white/90 break-words">{activeResponse.reply}</p>
+            {activeResponse.is_fallback && (
+              <p className="text-[10px] text-white/60">
+                No AI model answered this message; this reply came from local rules.
+              </p>
+            )}
             {activeResponse.actions && activeResponse.actions.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {activeResponse.actions.map((act) => (
