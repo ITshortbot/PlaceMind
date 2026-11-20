@@ -85,7 +85,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 marginBottom: density.itemGap,
               }}
             >
-              Core Competencies & Skills
+              Skills
             </h2>
             <div className="skills-chips flex flex-wrap gap-1.5 select-text">
               {content.skills.map((skill, idx) => (
@@ -167,7 +167,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 marginBottom: density.itemGap,
               }}
             >
-              Key Projects
+              Projects
             </h2>
             <div className="space-y-3">
               {content.projects.map((proj, idx) => (
@@ -225,7 +225,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 marginBottom: density.itemGap,
               }}
             >
-              Education & Credentials
+              Education
             </h2>
             <div className="space-y-2">
               {content.education.map((edu, idx) => (
@@ -443,6 +443,15 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 display: block !important;
                 break-inside: avoid;
                 page-break-inside: avoid;
+              }
+              /* Plain comma-separated skills read cleanly in ATS text extraction. */
+              .skills-chips > span:not(:last-child)::after {
+                content: ",";
+              }
+              .skills-chips > span {
+                background: none !important;
+                border: none !important;
+                padding: 0 !important;
               }
               .skills-chips > span {
                 display: inline-block !important;
