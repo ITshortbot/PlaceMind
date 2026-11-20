@@ -47,7 +47,7 @@ import { sendChatMessage, ChatAction, ChatHistoryItem } from '@/lib/api/chat';
 import { updateResume, extractResumeText, type ResumeSection } from '@/lib/api/resumes';
 import { parseEdit, applyEdit } from '@/lib/chatEdit';
 import { parseFreeform } from '@/lib/freeformResume';
-import { parseResumeText, toSections } from '@/lib/importResumeText';
+import { parseResumeText, toSections, type ImportedResume } from '@/lib/importResumeText';
 import { ChatImportCard, type ImportState } from '@/components/app/ChatImportCard';
 
 function formatDate(iso: string): string {
@@ -409,13 +409,49 @@ export default function DashboardPage() {
 
   const handleActionClick = (action: ChatAction) => {
     if (action.kind === 'navigate' && action.target) {
-      // "Start a new resume" must open an empty builder, not the last saved one.
+      // "Start a new resume" opens a builder built only from facts the user
+      // described in this chat (rule-based parser, nothing invented). Never the
+      // previously saved resume.
       if (action.id === 'act-resume' || action.id === 'dash.new-resume') {
         try {
           for (const k of ['activeResumeId', 'builderDirty', 'missingFacts', 'unsavedNotice', 'builderHandoff']) {
             window.localStorage.removeItem(`placemind.${k}`);
           }
         } catch {}
+        const texts = [
+          ...Object.values(importTextRef.current),
+          ...messages.filter((m) => m.role === 'user').map((m) => m.content),
+        ].filter((t) => typeof t === 'string' && t.trim().length > 0);
+        let facts: ImportedResume | null = null;
+        for (let i = texts.length - 1; i >= 0 && !facts; i--) {
+          let r = parseResumeText(texts[i]);
+          let ok = !!(r.summary || r.skills.length || r.experience.length || r.education.length || r.projects.length);
+          if (!ok) {
+            const ff = parseFreeform(texts[i]);
+            if (ff) { r = ff.resume; ok = true; }
+          }
+          if (ok) facts = r;
+        }
+        if (facts) {
+          const content = {
+            name: facts.name || '',
+            contact: [facts.email, facts.phone].filter(Boolean).join(' | '),
+            headline: '',
+            summary: facts.summary || '',
+            skills: facts.skills,
+            experience: facts.experience.map((x) => ({ role: x.role, company: x.company, bullets: x.bullets })),
+            education: facts.education.map((x) => ({ degree: x.degree, institution: x.institution, year: x.year, details: x.details })),
+            projects: facts.projects.map((x) => ({ name: x.name, description: x.description, bullets: x.bullets })),
+          };
+          try { window.localStorage.setItem('placemind.builderHandoff', JSON.stringify(content)); } catch {}
+        } else if (texts.length > 0 && action.id === 'dash.new-resume') {
+          pushPair(
+            'Start a new resume',
+            'I could not find personal facts in what you pasted (it looks like a job description or general text). To build a resume I need your name, skills, education, any projects or work, and what role you want. Tell me those in one message, or open an empty builder and fill it in.',
+            [{ id: 'open-empty-builder', label: 'Open empty builder', kind: 'navigate', target: '/resume', payload: {} }],
+          );
+          return;
+        }
       }
       router.push(action.target);
     } else if (action.kind === 'prefill' && typeof action.payload?.text === 'string') {
