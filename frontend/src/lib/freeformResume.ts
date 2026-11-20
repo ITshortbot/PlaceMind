@@ -30,7 +30,7 @@ function findSkills(t: string): string[] {
   const out: string[] = [];
   const parts = m[1].split(/\s*(?:,|;|\/|\band\b|&)\s*/i);
   for (const p of parts) {
-    const s = cleanEnd(p);
+    const s = cleanEnd(p).replace(/^(?:a bit of|a little|some|basic|basics of|bit of)\s+/i, '');
     if (!s) continue;
     if (/^(a|an|the|my|i|we|with|also|currently|and)\b/i.test(s) || s.split(/\s+/).length > 3 || s.length > 30) break;
     out.push(s);
@@ -51,14 +51,15 @@ export function parseFreeform(text: string): Freeform | null {
   const education: ImportedResume['education'] = [];
   const stu = t.match(new RegExp(String.raw`(?:\b(?:${ci('a')}|${ci('an')}|${ci('the')})\s+)?((?:(?:${ci('final')}|${ci('first')}|${ci('second')}|${ci('third')}|${ci('fourth')})[- ]${ci('year')}\s+)?)([A-Za-z]+(?:\s[A-Za-z]+)?)\s+${ci('student')}\s+(?:${ci('at')}|${ci('in')}|${ci('from')})\s+(${CAPS(5)}(?:\s+(?:of|and|for)\s+${CAPS(3)})?)`));
   const cg = t.match(/\b(c?gpa)\s*(?:of|is|:|-)?\s*(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?/i);
+  const grad = t.match(/\bgraduat(?:ing|e|es)\s+(?:in\s+)?((?:19|20)\d{2})/i);
   if (stu || cg) {
     const year = stu && stu[1] ? stu[1].trim() : '';
     const branch = stu ? stu[2].trim().replace(/^(?:a|an|the|i am|i'm)\s+/i, '') : '';
     const details = [year ? year[0].toUpperCase() + year.slice(1) : '', cg ? `${cg[1].toUpperCase()} ${cg[2]}${cg[3] ? '/' + cg[3] : ''}` : ''].filter(Boolean).join(', ');
     education.push({
-      degree: clip(branch ? `${branch} student` : 'Education', 120),
+      degree: clip(branch ? `${branch[0].toUpperCase()}${branch.slice(1)} student` : 'Education', 120),
       institution: stu ? clip(cleanEnd(stu[3]), 120) : null,
-      year: null,
+      year: grad ? `Graduating ${grad[1]}` : null,
       details: details || null,
     });
   }
@@ -67,21 +68,28 @@ export function parseFreeform(text: string): Freeform | null {
   const experience: ImportedResume['experience'] = [];
   const num = `(?:\\d+|${['one','two','three','four','five','six','a'].map(ci).join('|')})`;
   const season = `(?:${['summer','winter','spring','autumn','fall'].map(ci).join('|')})\\s+(?:19|20)\\d{2}`;
-  const intern = t.match(new RegExp(String.raw`\b(${num}[- ]?(?:${ci('month')}|${ci('week')})s?\s+)?(${ci('internship')}|${ci('intern')})\s+(?:${ci('at')}|${ci('with')})\s+(${CAPS(3)})(?:[^.]*?\b(${season}|(?:19|20)\d{2}))?`));
+  const intern = t.match(new RegExp(String.raw`\b(${num}[- ]?(?:${ci('month')}|${ci('week')})s?\s+)?(${ci('internship')}|${ci('intern')})\s+(?:${ci('at')}|${ci('with')})\s+(?:(?:an?|the)\s+[a-z ]{0,40}?\s+(?:called|named)\s+)?(${CAPS(3)})(?:[^.]*?\b(${season}|(?:19|20)\d{2}))?`));
   if (intern) {
     const bits = [intern[1] ? cleanEnd(intern[1]) + ' internship' : '', intern[4] || ''].filter(Boolean);
-    experience.push({ role: 'Intern', company: clip(cleanEnd(intern[3]), 60), bullets: bits.length ? [bits.join(', ')].map((b) => b[0].toUpperCase() + b.slice(1)) : [] });
+    const where = t.slice(intern.index || 0).match(/\bwhere\s+(?:i|we)\s+([^.]{5,200})/i);
+    const bullets = (bits.length ? [bits.join(', ')].map((b) => b[0].toUpperCase() + b.slice(1)) : []).concat(where ? [where[1][0].toUpperCase() + where[1].slice(1)] : []);
+    experience.push({ role: 'Intern', company: clip(cleanEnd(intern[3]), 60), bullets });
   }
   const club = t.match(/\b([A-Za-z]+(?:\s[A-Za-z]+)?\s+club)\s+(coordinator|lead|president|secretary|member|head)\b/i);
   if (club) experience.push({ role: club[2][0].toUpperCase() + club[2].slice(1).toLowerCase(), company: clip(club[1].replace(/^(?:the|our|my)\s+/i, '').replace(/^./, (c) => c.toUpperCase()), 60), bullets: [] });
 
   // Projects: only if the user mentions one. Name only when they gave one.
   const projects: ImportedResume['projects'] = [];
-  const proj = t.match(new RegExp(String.raw`\b((?:final[- ]year|capstone|major|minor|mini)\s+project|project)\s*(?:called|named|on|about|is|:)\s+(?:an?\s+|the\s+)?([^,.;]{3,100})`, 'i'));
-  if (proj) projects.push({ name: clip(proj[2], 60), description: null, bullets: [] });
-  else if (/\b(final[- ]year|capstone|major|mini)\s+project\b/i.test(t)) {
-    const label = (t.match(/\b(final[- ]year|capstone|major|mini)\s+project\b/i) as RegExpMatchArray)[0];
-    projects.push({ name: label[0].toUpperCase() + label.slice(1).toLowerCase(), description: null, bullets: [] });
+  const sentences = text.replace(/\s+/g, ' ').split(/(?<=[.!?])\s+/);
+  const psent = sentences.find((x) => /\b(?:final[- ]year|capstone|major|mini)\s+project\b|\bproject\s+(?:called|named|on|about)\b/i.test(x));
+  if (psent) {
+    const lab = psent.match(/\b(final[- ]year|capstone|major|mini)\s+project\b/i);
+    const built = psent.match(/\b(?:built|made|created|developed|designed)\s+(?:an?\s+|the\s+)?([^,.;]{3,80}?)(?:\s+(?:with|using|where|that|which|for)\b|[,.;]|$)/i);
+    const on = psent.match(/\bproject\s+(?:called|named|on|about)\s+(?:an?\s+|the\s+)?([^,.;]{3,80})/i);
+    const nm = (built && built[1]) || (on && on[1]) || (lab ? lab[0] : 'Project');
+    const body = psent.replace(/^(?:and\s+|also\s+|for\s+my\s+[a-z -]*project,?\s*)/i, '').trim();
+    const more = body.split(/\s+/).length > 8;
+    projects.push({ name: clip(nm[0].toUpperCase() + nm.slice(1), 60), description: more ? clip(body, 400) : null, bullets: [] });
   }
 
   // Goal: "want(s) a/an <role> internship/role/job".
