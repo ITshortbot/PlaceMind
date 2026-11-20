@@ -93,17 +93,38 @@ class AnswerFeedback:
     signals: dict = field(default_factory=dict)
 
 
+_KNOWN_SKILLS = [
+    "python", "java", "c++", "javascript", "typescript", "react", "next.js",
+    "fastapi", "django", "flask", "node", "sql", "postgresql", "mysql",
+    "mongodb", "redis", "docker", "kubernetes", "aws", "gcp", "azure",
+    "git", "linux", "ml", "machine learning", "pandas", "numpy",
+    "tensorflow", "pytorch", "firebase", "supabase", "graphql", "rest",
+    "c#", ".net",
+]
+
+# Optional suffixes that still mean the same skill ("Node.js", "NodeJS", "ReactJS").
+_SKILL_SUFFIX = {"node": r"(?:\.?js)?", "react": r"(?:\.?js)?"}
+
+
+def _skill_pattern(skill: str) -> "re.Pattern[str]":
+    """Whole-token match so 'java' does not match 'javascript', 'ml' does not
+    match 'html' and 'rest' does not match 'interest'. Handles C++, C#, .NET."""
+    body = re.escape(skill) + _SKILL_SUFFIX.get(skill, "")
+    left = "" if skill.startswith(".") else r"(?<![a-z0-9])"
+    # After a name ending in a letter or digit, no further letter or digit may follow.
+    # After c++ or c#, no further letter, digit, + or # may follow.
+    right = r"(?![a-z0-9+#])" if skill[-1] in "+#" else r"(?![a-z0-9])"
+    return re.compile(left + body + right)
+
+
+_SKILL_PATTERNS = [(k, _skill_pattern(k)) for k in _KNOWN_SKILLS]
+
+
 def _extract_skills(resume_text: str) -> list[str]:
-    """Very small skill spotter: known tech tokens present in the resume text."""
-    known = [
-        "python", "java", "c++", "javascript", "typescript", "react", "next.js",
-        "fastapi", "django", "flask", "node", "sql", "postgresql", "mysql",
-        "mongodb", "redis", "docker", "kubernetes", "aws", "gcp", "azure",
-        "git", "linux", "ml", "machine learning", "pandas", "numpy",
-        "tensorflow", "pytorch", "firebase", "supabase", "graphql", "rest",
-    ]
-    text = resume_text.lower()
-    found = [k for k in known if k in text]
+    """Very small skill spotter: known tech tokens present in the resume text,
+    matched as whole tokens, in the order of the known list."""
+    text = (resume_text or "").lower()
+    found = [k for k, pat in _SKILL_PATTERNS if pat.search(text)]
     return found[:6]
 
 
