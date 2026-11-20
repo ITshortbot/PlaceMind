@@ -11,17 +11,28 @@
 
 /** @type {import('next').NextConfig} */
 const isTauriBuild = process.env.TAURI_ENV_PLATFORM !== undefined;
+const NEXT_IMAGES_UNOPTIMIZED = process.env.NEXT_IMAGES_UNOPTIMIZED === '1';
 
 const nextConfig = {
   // Static export only when building Tauri desktop binary
   output: isTauriBuild ? 'export' : undefined,
 
   // Images must be unoptimized for static desktop export
-  images: {
-    unoptimized: isTauriBuild,
-    // Path-based dev proxies (code-server /proxy/PORT) must also prefix the image optimizer
-    path: process.env.NEXT_ASSET_PREFIX ? process.env.NEXT_ASSET_PREFIX + "/_next/image" : undefined,
-  },
+  images: NEXT_IMAGES_UNOPTIMIZED
+    ? {
+        // Path-prefix dev tunnels (code-server /absproxy/PORT): the built-in image
+        // optimizer fetches /assets/... from itself through the proxy and gets a 400
+        // for any width it has not cached. Serve public files directly instead.
+        loader: 'custom',
+        loaderFile: './src/lib/imageLoader.ts',
+      }
+    : {
+        unoptimized: isTauriBuild,
+        // Path-based dev proxies (code-server /proxy/PORT) must also prefix the image optimizer
+        path: process.env.NEXT_ASSET_PREFIX ? process.env.NEXT_ASSET_PREFIX + "/_next/image" : undefined,
+      },
+
+  env: { NEXT_PUBLIC_BASE_PATH: process.env.NEXT_BASE_PATH || '' },
 
   // Ensure trailing slashes match static file index routing in Tauri webview
   trailingSlash: isTauriBuild,
