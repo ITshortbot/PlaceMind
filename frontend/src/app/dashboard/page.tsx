@@ -46,6 +46,7 @@ import { listInterviewSessions, SessionSummary } from '@/lib/api/interviews';
 import { sendChatMessage, ChatAction, ChatHistoryItem } from '@/lib/api/chat';
 import { updateResume, extractResumeText, type ResumeSection } from '@/lib/api/resumes';
 import { parseEdit, applyEdit } from '@/lib/chatEdit';
+import { parseFreeform } from '@/lib/freeformResume';
 import { parseResumeText, toSections } from '@/lib/importResumeText';
 import { ChatImportCard, type ImportState } from '@/components/app/ChatImportCard';
 
@@ -210,8 +211,13 @@ export default function DashboardPage() {
       setStep(id, 0, 'done');
       setStep(id, 1, 'active');
       await pause(450);
-      const parsed = parseResumeText(text);
-      const found = parsed.summary || parsed.skills.length || parsed.experience.length || parsed.education.length || parsed.projects.length;
+      let parsed = parseResumeText(text);
+      const found0 = parsed.summary || parsed.skills.length || parsed.experience.length || parsed.education.length || parsed.projects.length;
+      let found = !!found0;
+      if (!found) {
+        const ff = parseFreeform(text);
+        if (ff) { parsed = ff.resume; found = true; }
+      }
       if (!found) {
         setStep(id, 1, 'error');
         patchImport(id, (s) => ({
@@ -336,6 +342,11 @@ export default function DashboardPage() {
     const pasted = parseResumeText(text);
     const sectionHits = [pasted.summary, pasted.skills.length, pasted.experience.length, pasted.education.length, pasted.projects.length].filter(Boolean).length;
     if (text.length >= 200 && sectionHits >= 2) {
+      setChatInput('');
+      startImport({ pastedText: text });
+      return;
+    }
+    if (parseFreeform(text)) {
       setChatInput('');
       startImport({ pastedText: text });
       return;
