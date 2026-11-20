@@ -33,6 +33,7 @@ import {
   answerInterviewQuestion,
   getInterviewSession,
   getInterviewReport,
+  type InterviewTurn,
   type InterviewSessionState,
   type PlannedQuestion,
   type InterviewReport,
@@ -123,6 +124,7 @@ export default function LiveInterviewSessionPage() {
   const [progressLabel, setProgressLabel] = useState<string>('0/0');
   const [report, setReport] = useState<InterviewReport | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [finalTurns, setFinalTurns] = useState<InterviewTurn[]>([]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -307,6 +309,18 @@ export default function LiveInterviewSessionPage() {
       setSending(false);
     }
   };
+
+  // Real question order for the debrief: the report endpoint numbers answers
+  // by arrival and does not tie follow-ups to their question, so read the
+  // session's own turns (order + category) once the report is in.
+  useEffect(() => {
+    if (!completed || !report) return;
+    let cancelled = false;
+    getInterviewSession(sessionId)
+      .then((st) => { if (!cancelled) setFinalTurns(st.turns || []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [completed, report, sessionId]);
 
   // Per-question timer: resets whenever the current question changes. Display only.
   const qKey = session?.current_question ? `${session.current_question.order}-${session.current_question.category}` : '';
@@ -578,7 +592,12 @@ export default function LiveInterviewSessionPage() {
                     <div className="md:col-span-4 p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] space-y-2">
                       <div className="text-xs font-black uppercase text-[#4A4A52] dark:text-[#A1A1AA]">Practice next</div>
                       <ul className="space-y-1.5 text-xs text-[#4A4A52] dark:text-[#A1A1AA]">
-                        {report.recommendations.filter((rec) => !/^re-record/i.test(rec)).map((rec, rIdx) => (
+                        {report.recommendations.filter((rec) => !/^re-record/i.test(rec)).map((rec) => {
+                          const m = rec.match(/^Work on ([a-z_ ]+): weakest practice dimension \(([\d.]+)\/100\)\.?$/i);
+                          if (!m) return rec;
+                          const sc = Math.round(parseFloat(m[2]));
+                          return sc >= 90 ? `${m[1]} is strong (${sc}/100). Keep it up.` : `Practice ${m[1]}: one of your lowest dimensions at ${sc}/100.`;
+                        }).map((rec, rIdx) => (
                           <li key={rIdx} className="flex items-start gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#FACC15] mt-1.5 flex-shrink-0" />
                             <span>{rec}</span>
@@ -589,41 +608,58 @@ export default function LiveInterviewSessionPage() {
                   )}
                 </div>
 
-                {report.per_question && report.per_question.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="text-xs font-black uppercase text-[#4A4A52] dark:text-[#A1A1AA]">Answer by answer (tap to expand)</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-                      {report.per_question.map((pq, idx) => {
-                        const isFollowUp = pq.category === 'follow-up';
-                        return (
-                          <details key={idx} className={`group rounded-2xl border ${isFollowUp ? 'bg-[#FACC15]/5 border-[#FACC15]/40' : 'bg-white dark:bg-[#121217] border-black/[0.08] dark:border-white/[0.08]'}`}>
-                            <summary className="cursor-pointer select-none list-none p-4 flex items-center justify-between gap-3">
-                              <span className="text-xs font-bold text-[#854D0E] dark:text-[#FACC15]">
-                                {isFollowUp ? 'Follow-up answer' : `Question  .  ${pq.category.replace('_', ' ')}`}
-                              </span>
-                              <span className="font-mono text-sm font-black">{pq.score}</span>
-                            </summary>
-                            <div className="px-4 pb-4 space-y-2 text-xs">
-                              <p className="text-[#4A4A52] dark:text-[#A1A1AA]">{pq.prompt}</p>
-                              {pq.strengths?.map((st, k) => (
-                                <div key={`s${k}`} className="flex items-start gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px]">
-                                  <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                  <span>{st}</span>
-                                </div>
-                              ))}
-                              {pq.improvements?.map((im, k) => (
-                                <div key={`i${k}`} className="flex items-start gap-1.5 text-amber-600 dark:text-amber-400 text-[11px]">
-                                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                  <span>{im}</span>
-                                </div>
+                {(() => {
+                  const answeredTurns = finalTurns.filter((t) => t.answer_text);
+                  if (answeredTurns.length === 0) return null;
+                  const orders = Array.from(new Set(answeredTurns.map((t) => t.order))).sort((x, y) => x - y);
+                  const card = (t: InterviewTurn, label: string, nested: boolean) => (
+                    <details key={`${t.order}-${t.category}`} className={`group rounded-2xl border ${nested ? 'bg-[#FACC15]/5 border-[#FACC15]/40' : 'bg-white dark:bg-[#121217] border-black/[0.08] dark:border-white/[0.08]'}`}>
+                      <summary className="cursor-pointer select-none list-none p-4 flex items-center justify-between gap-3">
+                        <span className="text-xs font-bold text-[#854D0E] dark:text-[#FACC15]">{label}</span>
+                        {t.score !== null && t.score !== undefined && (
+                          <span className="font-mono text-sm font-black" title="Heuristic score for this answer only">{Math.round(t.score)}/100</span>
+                        )}
+                      </summary>
+                      <div className="px-4 pb-4 space-y-2 text-xs">
+                        <p className="font-semibold text-[#1A1A1E] dark:text-[#F8F9FA]">{t.question_text}</p>
+                        <p className="text-[#4A4A52] dark:text-[#A1A1AA] pl-3 border-l-2 border-[#FACC15] whitespace-pre-wrap">{t.answer_text}</p>
+                        {t.feedback?.strengths?.map((st, k) => (
+                          <div key={`s${k}`} className="flex items-start gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px]">
+                            <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                            <span>{st}</span>
+                          </div>
+                        ))}
+                        {t.feedback?.improvements?.map((im, k) => (
+                          <div key={`i${k}`} className="flex items-start gap-1.5 text-amber-600 dark:text-amber-400 text-[11px]">
+                            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                            <span>{im}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                  return (
+                    <div className="space-y-2">
+                      <div className="text-xs font-black uppercase text-[#4A4A52] dark:text-[#A1A1AA]">Answer by answer (tap to expand)</div>
+                      <p className="text-[11px] text-[#8A8A92]">Each score is computed from that answer alone (STAR structure, numbers, action verbs, length, filler words). Similar answers get similar scores.</p>
+                      <div className="space-y-3">
+                        {orders.map((o) => {
+                          const group = answeredTurns.filter((t) => t.order === o);
+                          const main = group.find((t) => t.category !== 'follow-up');
+                          const fups = group.filter((t) => t.category === 'follow-up');
+                          return (
+                            <div key={o} className="space-y-2">
+                              {main && card(main, `Q${o}  .  ${main.category.replace('_', ' ')}`, false)}
+                              {fups.map((f) => (
+                                <div key={`f-${o}`} className="ml-4">{card(f, `Q${o} follow-up`, true)}</div>
                               ))}
                             </div>
-                          </details>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 <div className="p-3.5 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.08] text-[11px] text-[#6B7280] dark:text-[#9CA3AF] space-y-1">
                   <div className="font-bold flex items-center gap-1.5 text-[#0A0A0C] dark:text-white">
