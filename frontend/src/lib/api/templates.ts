@@ -17,6 +17,10 @@ import { backendApiUrl } from './base';
 
 export type { CandidateFacts, GenerateRequest, GenerateResponse };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export async function generateTemplate(request: GenerateRequest): Promise<GenerateResponse> {
   const res = await fetch(backendApiUrl('/api/v1/templates/generate'), {
     method: 'POST',
@@ -26,12 +30,27 @@ export async function generateTemplate(request: GenerateRequest): Promise<Genera
   });
 
   if (!res.ok) {
-    if (res.status === 429) {
-      throw new Error('Template generation is currently busy. Please wait 5 seconds and retry.');
+    const payload: unknown = await res.json().catch(() => null);
+    if (isRecord(payload)) {
+      const detail = payload.detail;
+      if (typeof detail === 'string') {
+        throw new Error(detail);
+      }
+      if (isRecord(detail) && typeof detail.message === 'string') {
+        throw new Error(
+          typeof detail.code === 'string'
+            ? `${detail.message} (${detail.code})`
+            : detail.message
+        );
+      }
+      if (detail !== undefined) {
+        throw new Error(JSON.stringify(detail));
+      }
     }
-    const errJson = await res.json().catch(() => null);
-    const detail = errJson?.detail || `Server returned error (${res.status})`;
-    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+    if (res.status === 429) {
+      throw new Error('Template generation is currently busy. Please wait and retry.');
+    }
+    throw new Error(`Server returned error (${res.status})`);
   }
 
   return (await res.json()) as GenerateResponse;

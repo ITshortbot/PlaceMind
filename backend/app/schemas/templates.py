@@ -162,6 +162,7 @@ class CandidateFacts(StrictBaseModel):
 class GenerateRequest(StrictBaseModel):
     prompt: str = Field(..., max_length=500)
     jd_text: Optional[str] = Field(default=None, max_length=4000)
+    routing_mode: Literal["ollama", "cloud", "local"] = "ollama"
     resume_id: Optional[UUID] = Field(
         default=None,
         description="Saved resume to derive candidate facts from, server-side.",

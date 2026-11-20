@@ -14,7 +14,11 @@ from app.database.models import User
 from app.database.session import get_db
 from app.schemas.templates import CandidateFacts, GenerateRequest, GenerateResponse, ResumeContent
 from app.services.resume_content import content_from_resume
-from app.services.template_generator import TemplateGenerator, _load_presets
+from app.services.template_generator import (
+    TemplateGenerationError,
+    TemplateGenerator,
+    _load_presets,
+)
 
 
 def _facts_to_content(facts: CandidateFacts) -> ResumeContent:
@@ -42,8 +46,10 @@ _generation_semaphore = asyncio.Semaphore(1)
     summary="Generate customized resume template and content",
     responses={
         429: {
-            "description": "Server is busy with another generation request. Retry-After header included.",
-        }
+            "description": "Generation is busy or the selected provider is rate-limited; see detail.code.",
+        },
+        502: {"description": "Provider, model response, JSON, or template schema error."},
+        503: {"description": "Selected provider is unavailable or Gemini credentials are missing."},
     },
 )
 async def generate_template(
@@ -87,7 +93,13 @@ async def generate_template(
 
     try:
         generator = TemplateGenerator()
-        response = await generator.generate(request, facts=facts_content)
+        try:
+            response = await generator.generate(request, facts=facts_content)
+        except TemplateGenerationError as exc:
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail={"code": exc.code, "message": exc.message},
+            ) from exc
         return response
     finally:
         if acquired:

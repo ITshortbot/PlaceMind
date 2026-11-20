@@ -3,17 +3,18 @@
 # Description: Unit tests for TemplateGenerator with fake LLM router covering:
 #              - good response
 #              - malformed response (1-turn retry success)
-#              - oversize response (fallback to preset)
+#              - explicit provider routing and error reporting
 #              - prompt-injection output (HTML/markdown strip, URL/email guard)
-#              - timeout (graceful fallback)
-#              - preset selection based on keywords
+#              - legacy free OpenRouter default preservation
 # ============================================================================
 
 import asyncio
 import json
 from types import SimpleNamespace
 import pytest
+import litellm
 
+from app.core.config import settings
 from app.schemas.templates import (
     EducationItem,
     ExperienceItem,
@@ -22,7 +23,7 @@ from app.schemas.templates import (
     ResumeContent,
 )
 from app.services.ai_router import RoutingMode
-from app.services.template_generator import TemplateGenerator
+from app.services.template_generator import TemplateGenerationError, TemplateGenerator
 
 
 def _sample_valid_json() -> str:
@@ -122,8 +123,8 @@ async def test_generate_malformed_retry_success():
 
 
 @pytest.mark.asyncio
-async def test_generate_oversize_fallback():
-    """Oversize content fails validation on both attempts and triggers fallback preset."""
+async def test_generate_oversize_explicit_provider_returns_schema_error():
+    """Invalid explicit-provider output is not presented as a successful fallback."""
     # Headline > 120 chars violates schema limit
     oversize_json = json.dumps({
         "style": {
@@ -149,14 +150,12 @@ async def test_generate_oversize_fallback():
     router = FakeLLMRouter(responses=[oversize_json, oversize_json])
     generator = TemplateGenerator(ai_router=router)
 
-    req = GenerateRequest(prompt="Software engineer modern resume")
-    response = await generator.generate(req)
+    req = GenerateRequest(prompt="Software engineer modern resume", routing_mode="ollama")
+    with pytest.raises(TemplateGenerationError) as exc_info:
+        await generator.generate(req)
 
-    assert response.source == "fallback"
-    assert any("fallback preset" in w for w in response.warnings)
-    assert response.style is not None
-    assert response.content is not None
-    assert len(response.content.headline) <= 120
+    assert exc_info.value.code == "schema_validation_failure"
+    assert len(router.calls) == 2
 
 
 @pytest.mark.asyncio
@@ -229,19 +228,17 @@ async def test_generate_prompt_injection_output():
 
 
 @pytest.mark.asyncio
-async def test_generate_timeout():
-    """LLM timeout triggers graceful fallback preset without crashing."""
+async def test_generate_explicit_provider_timeout_is_surfaced():
+    """Provider timeouts are not hidden by deterministic preset content."""
     router = FakeLLMRouter(exception_to_raise=asyncio.TimeoutError("Request timed out after 60s"))
     generator = TemplateGenerator(ai_router=router)
 
-    req = GenerateRequest(prompt="Academic researcher resume")
-    response = await generator.generate(req)
+    req = GenerateRequest(prompt="Academic researcher resume", routing_mode="ollama")
+    with pytest.raises(TemplateGenerationError) as exc_info:
+        await generator.generate(req)
 
-    assert response.source == "fallback"
-    assert any("Academic" in w for w in response.warnings)
-    assert response.style is not None
-    assert response.content is not None
-    assert response.latency_ms >= 0.0
+    assert exc_info.value.code == "provider_unavailable"
+    assert len(router.calls) == 1
 
 
 @pytest.mark.asyncio
@@ -359,3 +356,107 @@ async def test_empty_facts_object_treated_as_no_facts():
 
     assert res.facts_used is False
     assert res.content.headline == ""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("provider", "expected_mode"),
+    [
+        ("ollama", RoutingMode.OSS),
+        ("cloud", RoutingMode.CLOUD),
+        ("local", RoutingMode.LOCAL),
+    ],
+)
+async def test_explicit_provider_uses_existing_router(monkeypatch, provider, expected_mode):
+    monkeypatch.setattr(settings, "OPENROUTER_API_KEY", "synthetic-openrouter-key")
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "synthetic-gemini-key")
+    router = FakeLLMRouter(responses=[_sample_valid_json()])
+    generator = TemplateGenerator(ai_router=router)
+
+    response = await generator.generate(
+        GenerateRequest(prompt="Resume", routing_mode=provider),
+        facts=FACTS,
+    )
+
+    assert response.source == "model"
+    assert router.calls[0]["mode"] == expected_mode
+    assert router.calls[0]["kwargs"]["allow_fallback_to_cloud"] is False
+
+
+@pytest.mark.asyncio
+async def test_explicit_gemini_without_key_fails_before_router_call(monkeypatch):
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
+    router = FakeLLMRouter()
+    generator = TemplateGenerator(ai_router=router)
+
+    with pytest.raises(TemplateGenerationError) as exc_info:
+        await generator.generate(GenerateRequest(prompt="Resume", routing_mode="cloud"))
+
+    assert exc_info.value.code == "missing_api_key"
+    assert router.calls == []
+
+
+@pytest.mark.asyncio
+async def test_explicit_provider_reports_incomplete_json(monkeypatch):
+    monkeypatch.setattr(settings, "OPENROUTER_API_KEY", "")
+    router = FakeLLMRouter(responses=["{incomplete", "{still incomplete"])
+    generator = TemplateGenerator(ai_router=router)
+
+    with pytest.raises(TemplateGenerationError) as exc_info:
+        await generator.generate(GenerateRequest(prompt="Resume", routing_mode="ollama"))
+
+    assert exc_info.value.code == "json_parsing_failure"
+    assert len(router.calls) == 2
+
+
+@pytest.mark.parametrize(
+    ("provider_error", "expected_code"),
+    [
+        (
+            litellm.RateLimitError("quota exhausted", llm_provider="gemini", model="gemini/model"),
+            "quota_or_rate_limit",
+        ),
+        (
+            litellm.AuthenticationError("invalid credential", llm_provider="gemini", model="gemini/model"),
+            "provider_authentication_failed",
+        ),
+    ],
+)
+def test_provider_failures_are_classified(provider_error, expected_code):
+    assert TemplateGenerator._provider_error(provider_error).code == expected_code
+
+
+@pytest.mark.asyncio
+async def test_omitted_provider_keeps_configured_free_openrouter_default(monkeypatch):
+    monkeypatch.setattr(settings, "OPENROUTER_API_KEY", "synthetic-openrouter-key")
+    openrouter = pytest.importorskip("app.services.openrouter")
+    calls = []
+
+    async def fake_chat_completion(messages, **kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(content=_sample_valid_json())
+
+    monkeypatch.setattr(openrouter, "chat_completion", fake_chat_completion)
+    router = FakeLLMRouter()
+    generator = TemplateGenerator(ai_router=router)
+
+    response = await generator.generate(GenerateRequest(prompt="Resume"))
+
+    assert response.source == "model"
+    assert calls == [{"temperature": 0.3, "max_tokens": 3500}]
+    assert router.calls == []
+
+
+@pytest.mark.asyncio
+async def test_explicit_ollama_does_not_route_through_openrouter(monkeypatch):
+    monkeypatch.setattr(settings, "OPENROUTER_API_KEY", "synthetic-openrouter-key")
+    router = FakeLLMRouter(responses=[_sample_valid_json()])
+    generator = TemplateGenerator(ai_router=router)
+
+    response = await generator.generate(
+        GenerateRequest(prompt="Resume", routing_mode="ollama")
+    )
+
+    assert response.source == "model"
+    assert len(router.calls) == 1
+    assert router.calls[0]["mode"] == RoutingMode.OSS

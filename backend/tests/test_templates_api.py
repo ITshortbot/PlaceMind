@@ -15,6 +15,7 @@ from httpx import ASGITransport, AsyncClient
 from app.api.v1.endpoints.templates import _generation_semaphore
 from app.main import app
 from app.schemas.templates import GenerateResponse, ResumeContent, StyleSpec
+from app.services.template_generator import TemplateGenerationError
 
 
 @pytest.fixture
@@ -104,6 +105,28 @@ async def test_post_generate_validation_errors():
             json={"prompt": "Valid prompt", "extra_token": "malicious"},
         )
         assert res_extra.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_post_generate_provider_error_is_structured():
+    with patch("app.api.v1.endpoints.templates.TemplateGenerator") as mock_cls:
+        mock_cls.return_value.generate.side_effect = TemplateGenerationError(
+            "missing_api_key",
+            "Gemini is selected, but GEMINI_API_KEY is not configured on the backend.",
+            503,
+        )
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/templates/generate",
+                json={"prompt": "Resume", "routing_mode": "cloud"},
+            )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == {
+        "code": "missing_api_key",
+        "message": "Gemini is selected, but GEMINI_API_KEY is not configured on the backend.",
+    }
 
 
 @pytest.mark.asyncio

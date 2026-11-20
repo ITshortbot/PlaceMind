@@ -4,7 +4,7 @@
 // File: frontend/src/app/template/page.tsx
 // Description: Prompt-to-Template Screen featuring:
 //              - Interactive prompt input & example chips
-//              - Local OSS backend generation (POST /api/v1/templates/generate)
+//              - Provider-routed backend generation (POST /api/v1/templates/generate)
 //              - Fallback preset indicator badge
 //              - Demo mode toggle (instant mock without backend)
 //              - Real-time ColorPicker paired with print-ready ResumePreview
@@ -27,6 +27,7 @@ import {
   GenerateResponse,
   ResumeContent,
   StyleSpec,
+  TemplateRoutingMode,
 } from '@/types/templates';
 import {
   AlertCircle,
@@ -40,6 +41,31 @@ import {
 } from 'lucide-react';
 
 const STORAGE_KEY = 'placemind_template_history_v1';
+
+class ResumePreviewErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          role="alert"
+          className="w-full rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300"
+        >
+          The resume preview could not be rendered (rendering_failure). Generated data was not changed.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const EXAMPLE_PROMPTS = [
   'clean dark-teal resume for a fresher data analyst, projects first',
@@ -160,6 +186,7 @@ export default function TemplatePage() {
   const [jdText, setJdText] = useState('');
   const [showJdInput, setShowJdInput] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [routingMode, setRoutingMode] = useState<TemplateRoutingMode>('ollama');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warningsDismissed, setWarningsDismissed] = useState(false);
@@ -330,6 +357,7 @@ export default function TemplatePage() {
         prompt: prompt.slice(0, 500),
         jd_text: jdText.trim() ? jdText.slice(0, 4000) : null,
         resume_id: activeResumeId || undefined,
+        routing_mode: routingMode,
       };
 
       const data = await generateTemplate(reqPayload);
@@ -441,6 +469,9 @@ export default function TemplatePage() {
               placeholder="e.g. clean dark-teal resume for a fresher data analyst, projects first"
               className="w-full bg-slate-800/80 border border-white/10 rounded-xl p-3.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none transition-all"
             />
+            <p className="text-[11px] text-slate-400">
+              Content uses your saved resume facts when available. Job descriptions are role context only; missing candidate details stay blank.
+            </p>
           </div>
 
           {/* Example Prompt Chips */}
@@ -488,13 +519,51 @@ export default function TemplatePage() {
             )}
           </div>
 
+          <div className="space-y-1.5">
+            <label htmlFor="template-provider" className="text-xs font-semibold text-slate-300">
+              AI Provider
+            </label>
+            <select
+              id="template-provider"
+              value={routingMode}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === 'ollama' || value === 'cloud' || value === 'local') {
+                  setRoutingMode(value);
+                }
+              }}
+              disabled={isDemoMode}
+              className="w-full sm:w-72 bg-slate-800/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+            >
+              <option value="ollama">Ollama (default)</option>
+              <option value="cloud">Gemini Cloud</option>
+              <option value="local">LM Studio</option>
+            </select>
+            <p className="text-[11px] text-slate-400">
+              Gemini uses the backend key; no provider credentials are sent from this page.
+            </p>
+            {isDemoMode && (
+              <p className="text-[11px] text-slate-400">
+                Demo Mode uses a local sample and does not call an AI provider.
+              </p>
+            )}
+          </div>
+
           {/* Generate Button & Progress State */}
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-2">
               {loading && (
                 <div className="flex items-center gap-2 text-xs text-blue-400 animate-pulse font-medium">
                   <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                  <span>Synthesizing custom layout & accessible palette via local model...</span>
+                  <span>
+                    Generating with{' '}
+                    {routingMode === 'cloud'
+                      ? 'Gemini Cloud'
+                      : routingMode === 'local'
+                        ? 'LM Studio'
+                        : 'Ollama'}
+                    ...
+                  </span>
                 </div>
               )}
             </div>
@@ -733,12 +802,14 @@ export default function TemplatePage() {
               </button>
             </div>
 
-            <ResumePreview
-              style={currentResponse.style}
-              content={currentResponse.content}
-              palette={palette}
-              className="w-full"
-            />
+            <ResumePreviewErrorBoundary>
+              <ResumePreview
+                style={currentResponse.style}
+                content={currentResponse.content}
+                palette={palette}
+                className="w-full"
+              />
+            </ResumePreviewErrorBoundary>
 
             <div className="w-full max-w-[210mm] no-print space-y-3">
               {atsError && (

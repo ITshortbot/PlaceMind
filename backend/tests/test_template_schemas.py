@@ -280,6 +280,17 @@ def test_generate_request_valid():
     assert req.jd_text == "Job description"
 
 
+def test_generate_request_provider_defaults_to_ollama_and_accepts_supported_modes():
+    assert GenerateRequest(prompt="Resume").routing_mode == "ollama"
+    for mode in ("ollama", "cloud", "local"):
+        assert GenerateRequest(prompt="Resume", routing_mode=mode).routing_mode == mode
+
+
+def test_generate_request_rejects_unknown_provider():
+    with pytest.raises(ValidationError):
+        GenerateRequest(prompt="Resume", routing_mode="openrouter")
+
+
 def test_generate_request_prompt_limit():
     # 500 chars allowed
     valid_p = "P" * 500

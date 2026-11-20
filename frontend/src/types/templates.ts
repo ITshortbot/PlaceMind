@@ -9,6 +9,7 @@ export type DensityType = 'compact' | 'normal' | 'airy';
 export type HeaderStyleType = 'centered' | 'left' | 'banner';
 export type SectionNameType = 'summary' | 'skills' | 'experience' | 'projects' | 'education';
 export type MoodType = 'corporate' | 'tech' | 'creative' | 'minimal' | 'finance';
+export type TemplateRoutingMode = 'ollama' | 'cloud' | 'local';
 
 export interface StyleSpec {
   layout: LayoutType;
@@ -68,6 +69,7 @@ export interface CandidateFacts {
 export interface GenerateRequest {
   prompt: string;
   jd_text?: string | null;
+  routing_mode?: TemplateRoutingMode;
   /** Saved resume to derive candidate facts from, server-side. */
   resume_id?: string | null;
   /** Explicit candidate facts. Wins over resume_id when both are sent. */

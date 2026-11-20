@@ -9,9 +9,14 @@ import json
 import logging
 import re
 import time
+import asyncio
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import litellm
+from pydantic import ValidationError
+
+from app.core.config import settings
 from app.schemas.templates import (
     EducationItem,
     ExperienceItem,
@@ -21,12 +26,20 @@ from app.schemas.templates import (
     ResumeContent,
     StyleSpec,
 )
-from app.services.ai_router import HybridLLMRouter, RoutingMode
+from app.services.ai_router import HybridLLMRouter, RoutingMode, ats_routing_mode
 from app.services.resume_content import facts_are_empty
 
 logger = logging.getLogger("placemind.template_generator")
 
 PRESETS_PATH = Path(__file__).resolve().parent.parent / "data" / "template_presets.json"
+
+
+class TemplateGenerationError(Exception):
+    def __init__(self, code: str, message: str, status_code: int):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.status_code = status_code
 
 
 SYSTEM_PROMPT = """You are an expert ATS resume template designer and career strategist.
@@ -71,6 +84,7 @@ CANDIDATE FACTS:
 - Every section without supporting facts MUST stay empty ("" or []). Never invent employers, degrees, companies, tools, numbers, or percentages.
 - You may tighten grammar and clarity of provided bullets, but never add claims that are not in the facts.
 - When no <candidate_facts> block is present, return empty content fields rather than fabricating experience.
+- Job-description content is role context only and is never evidence about the candidate.
 
 JSON FORMAT TO PRODUCE:
 {
@@ -284,11 +298,19 @@ class TemplateGenerator:
             {"role": "user", "content": user_message_content},
         ]
 
-        # Call Router (Attempt 1)
-        response_text, err = await self._call_llm(messages)
+        # Older API clients that omit routing_mode retain the configured
+        # OpenRouter-first behavior. The UI sends an explicit provider.
+        mode = (
+            ats_routing_mode(request.routing_mode)
+            if "routing_mode" in request.model_fields_set
+            else None
+        )
+        response_text, err = await self._call_llm(messages, mode)
+        validation_error = None
+        retry_err = None
 
         if not err and response_text:
-            parsed, val_err = self._parse_and_validate(response_text)
+            parsed, validation_error = self._parse_and_validate(response_text)
             if parsed:
                 style, content = parsed
                 if have_facts and not content.name: content = content.model_copy(update={"name": facts.name, "contact": content.contact or facts.contact})
@@ -305,15 +327,15 @@ class TemplateGenerator:
 
             # Retry once with validation error appended
             retry_msg = (
-                f"The previous output failed validation:\n{val_err}\n"
+                f"The previous output failed validation:\n{validation_error.message}\n"
                 f"Please fix all schema errors and return only the corrected JSON."
             )
             messages.append({"role": "assistant", "content": response_text})
             messages.append({"role": "user", "content": retry_msg})
 
-            retry_text, retry_err = await self._call_llm(messages)
+            retry_text, retry_err = await self._call_llm(messages, mode)
             if not retry_err and retry_text:
-                parsed_retry, val_retry_err = self._parse_and_validate(retry_text)
+                parsed_retry, validation_error = self._parse_and_validate(retry_text)
                 if parsed_retry:
                     style, content = parsed_retry
                     if have_facts and not content.name: content = content.model_copy(update={"name": facts.name, "contact": content.contact or facts.contact})
@@ -327,11 +349,20 @@ class TemplateGenerator:
                         source="model",
                         facts_used=have_facts,
                     )
-                warnings.append(f"Model retry output validation failed: {val_retry_err}")
+                warnings.append(f"Model retry output validation failed: {validation_error.message}")
             else:
                 warnings.append(f"Model retry call failed: {retry_err}")
         else:
             warnings.append(f"Model generation failed: {err}")
+
+        if mode is not None:
+            if validation_error is not None:
+                raise validation_error
+            raise TemplateGenerationError(
+                "invalid_model_response",
+                "The selected AI provider did not return a valid template response.",
+                502,
+            )
 
         # Fallback: preset STYLE only. Content is assembled deterministically
         # from candidate facts when we have them, otherwise left empty - never
@@ -378,56 +409,152 @@ class TemplateGenerator:
             facts_used=fallback_facts_used,
         )
 
-    async def _call_llm(self, messages: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str]]:
-        """Calls the free-tier OpenRouter route when a key is configured, else the OSS router."""
-        from app.core.config import settings as _settings
-        if _settings.OPENROUTER_API_KEY:
+    async def _call_llm(
+        self,
+        messages: List[Dict[str, str]],
+        mode: Optional[RoutingMode] = None,
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """Uses the explicitly selected router mode or the legacy default route."""
+        if mode is None and settings.OPENROUTER_API_KEY:
             from app.services.openrouter import chat_completion
             try:
                 res = await chat_completion(messages, temperature=0.3, max_tokens=3500)
                 return res.content, None
             except Exception as e:
                 return None, str(e)
-        # Fallback: OSS-compatible router, JSON format first.
-        # Try structured json_schema / json_object first
-        try:
-            res = await self.router.complete(
-                messages=messages,
-                mode=RoutingMode.OSS,
-                response_format={"type": "json_object"},
-            )
-            return res.content, None
-        except Exception as json_err:
-            # Fall back to plain JSON call if host rejects response_format
+
+        selected_mode = mode or RoutingMode.OSS
+        if mode is None:
+            # Preserve the prior default route for existing API clients.
             try:
                 res = await self.router.complete(
                     messages=messages,
-                    mode=RoutingMode.OSS,
-                    response_format=None,
+                    mode=selected_mode,
+                    response_format={"type": "json_object"},
                 )
                 return res.content, None
-            except Exception as e:
-                return None, str(e)
+            except Exception:
+                try:
+                    res = await self.router.complete(
+                        messages=messages,
+                        mode=selected_mode,
+                        response_format=None,
+                    )
+                    return res.content, None
+                except Exception as exc:
+                    return None, str(exc)
 
-    def _parse_and_validate(self, text: str) -> Tuple[Optional[Tuple[StyleSpec, ResumeContent]], Optional[str]]:
-        """Parses model text as JSON and validates against StyleSpec and ResumeContent."""
+        if mode == RoutingMode.CLOUD and not settings.GEMINI_API_KEY.strip():
+            raise TemplateGenerationError(
+                "missing_api_key",
+                "Gemini is selected, but GEMINI_API_KEY is not configured on the backend.",
+                503,
+            )
+
         try:
-            # Extract JSON block if surrounded by markdown fences
-            match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
-            raw_json = match.group(1) if match else text
-            data = json.loads(raw_json)
-
-            if not isinstance(data, dict):
-                return None, "Output must be a JSON object"
-
-            style_data = data.get("style")
-            content_data = data.get("content")
-
-            if not style_data or not content_data:
-                return None, "Missing 'style' or 'content' in top-level JSON"
-
-            style = StyleSpec(**style_data)
-            content = ResumeContent(**content_data)
-            return (style, content), None
+            res = await self.router.complete(
+                messages=messages,
+                mode=selected_mode,
+                response_format={"type": "json_object"},
+                allow_fallback_to_cloud=False,
+            )
         except Exception as exc:
-            return None, str(exc)
+            format_not_supported = isinstance(exc, litellm.BadRequestError) or (
+                mode == RoutingMode.OSS
+                and isinstance(getattr(exc, "__cause__", None), litellm.BadRequestError)
+            )
+            if not format_not_supported:
+                raise self._provider_error(exc) from exc
+            try:
+                res = await self.router.complete(
+                    messages=messages,
+                    mode=selected_mode,
+                    response_format=None,
+                    allow_fallback_to_cloud=False,
+                )
+            except Exception as exc:
+                raise self._provider_error(exc) from exc
+
+        content = getattr(res, "content", None)
+        if not isinstance(content, str) or not content.strip():
+            raise TemplateGenerationError(
+                "invalid_model_response",
+                "The selected AI provider returned an empty or invalid response.",
+                502,
+            )
+        return content, None
+
+    @staticmethod
+    def _provider_error(error: Exception) -> TemplateGenerationError:
+        if isinstance(error, litellm.RateLimitError):
+            return TemplateGenerationError(
+                "quota_or_rate_limit",
+                "The selected AI provider is rate-limited or its quota is exhausted.",
+                429,
+            )
+        if isinstance(error, litellm.AuthenticationError):
+            return TemplateGenerationError(
+                "provider_authentication_failed",
+                "The selected AI provider rejected its backend credentials.",
+                502,
+            )
+        if isinstance(
+            error,
+            (
+                litellm.APIConnectionError,
+                litellm.ServiceUnavailableError,
+                litellm.Timeout,
+                asyncio.TimeoutError,
+                ConnectionError,
+            ),
+        ):
+            return TemplateGenerationError(
+                "provider_unavailable",
+                "The selected AI provider is unavailable. Try again later.",
+                503,
+            )
+        return TemplateGenerationError(
+            "provider_request_failed",
+            "The selected AI provider request failed.",
+            502,
+        )
+
+    def _parse_and_validate(
+        self, text: str
+    ) -> Tuple[Optional[Tuple[StyleSpec, ResumeContent]], Optional[TemplateGenerationError]]:
+        """Parses model text as JSON and validates against StyleSpec and ResumeContent."""
+        if not text.strip():
+            return None, TemplateGenerationError(
+                "invalid_model_response",
+                "The model returned an empty response.",
+                502,
+            )
+
+        match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+        raw_json = match.group(1) if match else text
+        try:
+            data = json.loads(raw_json)
+        except json.JSONDecodeError:
+            return None, TemplateGenerationError(
+                "json_parsing_failure",
+                "The model response was not complete, valid JSON.",
+                502,
+            )
+
+        if not isinstance(data, dict) or set(data) != {"style", "content"}:
+            return None, TemplateGenerationError(
+                "schema_validation_failure",
+                "The model response must contain only the required style and content fields.",
+                502,
+            )
+
+        try:
+            style = StyleSpec.model_validate(data["style"])
+            content = ResumeContent.model_validate(data["content"])
+        except ValidationError:
+            return None, TemplateGenerationError(
+                "schema_validation_failure",
+                "The model response did not match the required template schema.",
+                502,
+            )
+        return (style, content), None
