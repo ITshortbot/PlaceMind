@@ -56,11 +56,14 @@ export function parseFreeform(text: string): Freeform | null {
     const year = stu && stu[1] ? stu[1].trim() : '';
     const branch = stu ? stu[2].trim().replace(/^(?:a|an|the|i am|i'm)\s+/i, '') : '';
     const details = [year ? year[0].toUpperCase() + year.slice(1) : '', cg ? `${cg[1].toUpperCase()} ${cg[2]}${cg[3] ? '/' + cg[3] : ''}` : ''].filter(Boolean).join(', ');
+    // The builder keeps only degree, institution and year, so year of study and
+    // CGPA ride in the degree line (nothing is dropped, nothing is invented).
+    const degreeLine = [branch ? `${branch[0].toUpperCase()}${branch.slice(1)} student` : 'Education', details].filter(Boolean).join(', ');
     education.push({
-      degree: clip(branch ? `${branch[0].toUpperCase()}${branch.slice(1)} student` : 'Education', 120),
+      degree: clip(degreeLine, 120),
       institution: stu ? clip(cleanEnd(stu[3]), 120) : null,
       year: grad ? `Graduating ${grad[1]}` : null,
-      details: details || null,
+      details: null,
     });
   }
 
@@ -76,7 +79,11 @@ export function parseFreeform(text: string): Freeform | null {
     experience.push({ role: 'Intern', company: clip(cleanEnd(intern[3]), 60), bullets });
   }
   const club = t.match(/\b([A-Za-z]+(?:\s[A-Za-z]+)?\s+club)\s+(coordinator|lead|president|secretary|member|head)\b/i);
-  if (club) experience.push({ role: club[2][0].toUpperCase() + club[2].slice(1).toLowerCase(), company: clip(club[1].replace(/^(?:the|our|my)\s+/i, '').replace(/^./, (c) => c.toUpperCase()), 60), bullets: [] });
+  if (club) {
+    const when = t.slice(club.index || 0).match(/^[^.]{0,80}?\b(?:in|during)\s+(?:my\s+)?((?:first|second|third|final|fourth)[- ]year)\b/i);
+    const cb = when ? [`${when[1][0].toUpperCase()}${when[1].slice(1).toLowerCase()}`] : [];
+    experience.push({ role: club[2][0].toUpperCase() + club[2].slice(1).toLowerCase(), company: clip(club[1].replace(/^(?:the|our|my)\s+/i, '').replace(/^./, (c) => c.toUpperCase()), 60), bullets: cb });
+  }
 
   // Projects: only if the user mentions one. Name only when they gave one.
   const projects: ImportedResume['projects'] = [];
@@ -95,7 +102,18 @@ export function parseFreeform(text: string): Freeform | null {
   // Goal: "want(s) a/an <role> internship/role/job".
   let summary = '';
   const goal = t.match(/\b(?:want(?:s)?|looking for|seeking|aiming for|applying for)\s+(?:to (?:get|find|apply for)\s+)?(?:an?\s+)?([a-z][a-z /&-]{3,50}?\s+(?:internship|role|job|position|opening))\b/i);
-  if (goal) summary = `Seeking a ${cleanEnd(goal[1]).toLowerCase()}.`;
+  // Summary: only facts the writer stated, in plain sentences. No adjectives, no claims.
+  const sumParts: string[] = [];
+  if (stu) {
+    const yr = (stu[1] || '').trim();
+    const br = stu[2].trim().replace(/^(?:a|an|the|i am|i'm)\s+/i, '');
+    const lead = [yr, br].filter(Boolean).join(' ');
+    sumParts.push(`${lead[0].toUpperCase()}${lead.slice(1)} student at ${cleanEnd(stu[3])}${grad ? `, graduating ${grad[1]}` : ''}.`);
+  } else if (grad) sumParts.push(`Graduating ${grad[1]}.`);
+  if (skills.length) sumParts.push(`Skills: ${skills.join(', ')}.`);
+  if (intern) sumParts.push(`${intern[1] ? cleanEnd(intern[1]) + ' internship' : 'Internship'} at ${cleanEnd(intern[3])}${intern[4] ? ` (${intern[4]})` : ''}.`.replace(/^./, (c) => c.toUpperCase()));
+  if (goal) sumParts.push(`Seeking a ${cleanEnd(goal[1]).toLowerCase()}.`);
+  if (sumParts.length >= 2 || goal) summary = sumParts.join(' ');
 
   const signals = [email, phone, name, skills.length, education.length, experience.length, projects.length, summary].filter(Boolean).length
     + 0;

@@ -265,7 +265,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
   const isCenteredHeader = style.header_style === 'centered';
 
   return (
-    <div className={`relative flex flex-col items-center ${className}`}>
+    <div className={`resume-preview-root relative flex flex-col items-center ${className}`}>
       {/* ─── Top Control Bar ─── */}
       {showExportButton && (
         <div className="w-full max-w-[210mm] flex items-center justify-between mb-4 no-print">
@@ -364,11 +364,11 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
             @media print {
               @page {
                 size: A4 portrait;
-                /* Vertical page margin: continuation pages get real top/bottom
-                   breathing room (box padding does not repeat at page breaks),
-                   and physical printers cannot print to the paper edge.
-                   Left/right stay 0: the sheet supplies its own side padding. */
-                margin: 12mm 0;
+                /* Page margin is 0 on purpose: browsers print the page title, URL
+                   and page number in the margin area, so a zero margin removes
+                   that header and footer. The sheet adds its own top/bottom
+                   padding, repeated on every page with box-decoration-break. */
+                margin: 0;
               }
               html,
               body {
@@ -403,6 +403,11 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 min-height: 0 !important;
                 overflow: visible !important;
               }
+              .resume-preview-root {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+              }
               #resume-preview-sheet {
                 background: white !important;
                 background-color: white !important;
@@ -414,11 +419,18 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 box-shadow: none !important;
                 border: none !important;
                 border-radius: 0 !important;
-                max-width: 100% !important;
-                width: 100% !important;
+                max-width: none !important;
+                width: auto !important;
                 min-height: auto !important;
                 margin: 0 !important;
                 page-break-after: avoid;
+                /* The preview is laid out for about 500px; scale it to the A4
+                   width so type and spacing print at a readable size. */
+                zoom: 1.35;
+                padding-top: 8mm !important;
+                padding-bottom: 8mm !important;
+                box-decoration-break: clone;
+                -webkit-box-decoration-break: clone;
               }
               .resume-section {
                 break-inside: avoid;
