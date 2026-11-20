@@ -224,6 +224,14 @@ export function AiCommandBar({
     }
 
     if (act.kind === 'navigate') {
+      // "Start a new resume" must open an empty builder, not the last saved one.
+      if (act.id === 'dash.new-resume' || act.id === 'act-resume') {
+        try {
+          for (const k of ['activeResumeId', 'builderDirty', 'missingFacts', 'unsavedNotice', 'builderHandoff']) {
+            window.localStorage.removeItem(`placemind.${k}`);
+          }
+        } catch {}
+      }
       router.push(act.target);
       return;
     }

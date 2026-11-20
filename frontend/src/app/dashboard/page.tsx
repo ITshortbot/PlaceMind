@@ -409,6 +409,14 @@ export default function DashboardPage() {
 
   const handleActionClick = (action: ChatAction) => {
     if (action.kind === 'navigate' && action.target) {
+      // "Start a new resume" must open an empty builder, not the last saved one.
+      if (action.id === 'act-resume' || action.id === 'dash.new-resume') {
+        try {
+          for (const k of ['activeResumeId', 'builderDirty', 'missingFacts', 'unsavedNotice', 'builderHandoff']) {
+            window.localStorage.removeItem(`placemind.${k}`);
+          }
+        } catch {}
+      }
       router.push(action.target);
     } else if (action.kind === 'prefill' && typeof action.payload?.text === 'string') {
       setChatInput(action.payload.text);
