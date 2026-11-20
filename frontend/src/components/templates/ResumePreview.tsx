@@ -303,8 +303,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
         {/* ─── Header: Banner Style (Modern) ─── */}
         {isBannerHeader ? (
           <div
-            className="p-8 text-white select-text"
-            style={{ backgroundColor: palette.accent }}
+            className="resume-banner p-8 text-white select-text"
+            style={{ backgroundColor: palette.accent, ['--banner-accent' as string]: palette.accent }}
           >
             <h1 className="text-2xl font-bold tracking-tight select-text text-white">
               {content.name || 'Candidate Resume'}
@@ -402,6 +402,18 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 max-height: none !important;
                 min-height: 0 !important;
                 overflow: visible !important;
+              }
+              /* Colored header band: print as dark text on white with an accent
+                 rule, so contrast holds in black and white and ATS sees plain text. */
+              .resume-banner {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border-bottom: 3px solid var(--banner-accent, #111) !important;
+              }
+              .resume-banner,
+              .resume-banner * {
+                color: #111111 !important;
+                opacity: 1 !important;
               }
               .resume-preview-root {
                 display: block !important;

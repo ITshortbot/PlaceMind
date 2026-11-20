@@ -82,7 +82,7 @@ export const TEMPLATE_FAMILIES: Record<FamilyId, TemplateFamilyTokens> = {
     name: 'Classic Professional',
     tagline: 'Timeless single-column architecture with refined typographic hierarchy.',
     layout: 'single_column',
-    defaultFont: 'Times',
+    defaultFont: 'Georgia',
     defaultDensity: 'normal',
     headerStyle: 'left',
     defaultSectionOrder: ['summary', 'experience', 'education', 'skills', 'projects'],

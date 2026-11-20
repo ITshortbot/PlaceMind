@@ -13,7 +13,7 @@ export const BUILDER_TEMPLATES: BuilderTemplate[] = [
     name: 'Classic',
     style: {
       layout: 'single_column',
-      font: 'Times',
+      font: 'Georgia',
       size_pt: 11,
       density: 'normal',
       header_style: 'left',
