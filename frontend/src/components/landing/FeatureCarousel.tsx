@@ -103,7 +103,7 @@ export function FeatureCarousel() {
       meta: {
         stage: 'STAGE 03',
         input: 'Weak Experience Chunks',
-        engine: 'Gemini 2.5 / LLaMA 3.2',
+        engine: 'Free-Tier LLM (OpenRouter)',
         latency: 'Quantified Bullets',
       },
     },
@@ -121,14 +121,14 @@ export function FeatureCarousel() {
     },
     {
       icon: ShieldCheck,
-      title: 'Local Privacy Mode',
-      tag: 'Local Mode: Zero Egress',
-      desc: 'Connect to your own local LM Studio instance at localhost:1234. Your PDF resume, PII, and company notes never leave your personal machine.',
+      title: 'Self-Hosted Local Mode',
+      tag: 'Self-Host Option',
+      desc: 'Point a self-hosted backend at your own LM Studio server so prompts and resume text stay on your machine.',
       meta: {
         stage: 'SECURITY',
-        input: 'Local Memory Socket',
+        input: 'Local Endpoint',
         engine: 'LM Studio / Ollama GGUF',
-        latency: '0 Bytes Egress',
+        latency: 'Prompts Stay Local',
       },
     },
     {

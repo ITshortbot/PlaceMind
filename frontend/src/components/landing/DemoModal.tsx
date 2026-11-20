@@ -40,7 +40,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                 Placemind Architecture Walkthrough
               </h3>
               <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA]">
-                PyMuPDF Parsing · 384-d Cosine Distance · LM Studio Zero-Egress
+                PyMuPDF Parsing · 384-d Cosine Distance · Free-Tier LLM
               </p>
             </div>
           </div>
@@ -59,7 +59,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
           <div className="p-8 text-center space-y-4 max-w-md">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1C1C21] border border-[#2A2A30] text-xs text-[#7D6FF0]">
               <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-ping" />
-              <span>Streaming FastEmbed Inference</span>
+              <span>FastEmbed Inference Walkthrough</span>
             </div>
 
             <h4 className="text-xl font-bold text-white tracking-tight">

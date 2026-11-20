@@ -71,7 +71,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#6C5CE7] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#6C5CE7]"></span>
               </span>
-              <span>Next-Gen Career Copilot &bull; Local-First Privacy Option</span>
+              <span>Next-Gen Career Copilot &bull; Never Invents Your Experience</span>
             </div>
 
             {/* Headline with Expressive Mixed-Weight */}
@@ -112,7 +112,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
                 onClick={onOpenDemo}
                 className="w-full sm:w-auto text-sm px-7 py-4"
               >
-                Watch 60s Demo
+                See How It Works
               </Button>
             </div>
 
@@ -194,7 +194,7 @@ export function HeroSection({ onOpenDemo, onTryFree }: HeroSectionProps) {
                       Senior Staff Engineer Audit
                     </h3>
                     <p className="text-[11px] text-[#5A5A63] dark:text-[#A1A1AA]">
-                      Targeting Stripe &middot; Top Tier Compatibility
+                      Sample Fintech Staff Role &middot; Top Tier Compatibility
                     </p>
                   </div>
                 </div>

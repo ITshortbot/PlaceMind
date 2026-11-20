@@ -143,7 +143,7 @@ export function Navbar({ onOpenDemo, onGetStarted }: NavbarProps) {
             <div className="w-5 h-5 rounded-full bg-[#6C5CE7]/15 flex items-center justify-center group-hover:scale-110 transition-transform"> 
               <Play className="w-2.5 h-2.5 text-[#6C5CE7] fill-[#6C5CE7]" /> 
             </div> 
-            <span>Watch Demo</span> 
+            <span>How It Works</span> 
           </button>
 
 

@@ -43,14 +43,14 @@ export function FeatureGrid() {
     {
       icon: Video,
       title: 'Adaptive Mock Interviews',
-      tag: 'Voice & Video AI',
-      desc: 'Simulates technical phone screens and behavioral rounds. The AI listens to your responses and asks intelligent follow-up inquiries.',
+      tag: 'Text Conversation',
+      desc: 'Simulates technical screens and behavioral rounds. The AI asks multi-turn follow-up questions based on your answers.',
     },
     {
       icon: ShieldCheck,
-      title: 'Local Privacy Mode',
-      tag: 'Local Mode: Zero Egress',
-      desc: 'Connect to your own local LM Studio instance at localhost:1234. Your PDF resume, PII, and company notes never leave your personal machine.',
+      title: 'Self-Hosted Local Mode',
+      tag: 'Self-Host Option',
+      desc: 'Point a self-hosted backend at your own LM Studio server so prompts and resume text stay on your machine.',
     },
     {
       icon: Download,

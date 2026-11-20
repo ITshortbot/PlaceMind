@@ -83,7 +83,7 @@ export function Pricing() {
                 <span className="text-sm text-[#5A5A63] dark:text-[#A1A1AA]">/ forever free</span>
               </div>
               <p className="text-sm text-[#5A5A63] dark:text-[#A1A1AA] mt-3 leading-[1.7]">
-                Full access to our vector scoring algorithms, unlimited local privacy mode audits, and mock interview questions.
+                Full access to our vector scoring algorithms, resume builder and templates, and mock interview practice.
               </p>
 
               <div className="my-8 border-t border-black/[0.08] dark:border-[#2A2A30]" />
@@ -92,8 +92,8 @@ export function Pricing() {
                 {[
                   'Unlimited PDF Ingestion & In-Memory Parsing',
                   'Dense 384-d Vector Gap Analysis Matrix',
-                  'Google XYZ Formula Resume Bullet Rewrites',
-                  '100% Private Offline Mode (LM Studio)',
+                  'XYZ-Formula Bullet Guidance (never invents metrics)',
+                  'Truthful generation: thin input gives a thin resume',
                   'Adaptive Technical & Behavioral Mock Interviews',
                   'ATS-Optimized PDF Export',
                 ].map((item, idx) => (

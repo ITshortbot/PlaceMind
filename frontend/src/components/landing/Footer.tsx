@@ -27,7 +27,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-xs text-[#5A5A63] dark:text-[#A1A1AA] max-w-sm leading-relaxed">
-              Modern dual-deployment ATS career copilot engineered with Next.js 15, PostgreSQL pgvector, Google Gemini 2.5 Flash, and local LM Studio privacy support.
+              ATS career copilot built as a university PBL project with Next.js 15, FastAPI, PostgreSQL pgvector, BGE-small embeddings, and free-tier OpenRouter models.
             </p>
             <div className="flex items-center gap-3 pt-2 text-[#8A8A92] dark:text-[#6B6B76]">
               <a href="https://github.com/ITshortbot/PlaceMind" target="_blank" rel="noreferrer" className="hover:text-[#6C5CE7] transition-colors">
@@ -59,7 +59,7 @@ export function Footer() {
               <li><a href="#demo" className="hover:text-[#6C5CE7] transition-colors">ATS Match Scoring</a></li>
               <li><a href="#demo" className="hover:text-[#6C5CE7] transition-colors">XYZ Bullet Rewriter</a></li>
               <li><a href="#demo" className="hover:text-[#6C5CE7] transition-colors">Mock Interview Practice</a></li>
-              <li><a href="#features" className="hover:text-[#6C5CE7] transition-colors">Local LM Studio Privacy</a></li>
+              <li><a href="#features" className="hover:text-[#6C5CE7] transition-colors">Optional Self-Hosted Local Mode</a></li>
               <li><a href="#how-it-works" className="hover:text-[#6C5CE7] transition-colors">Print-Ready PDF Export</a></li>
             </ul>
           </div>

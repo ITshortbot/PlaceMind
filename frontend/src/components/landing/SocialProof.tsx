@@ -10,10 +10,10 @@ import { motion } from 'framer-motion';
 
 export function SocialProof() {
   const models = [
-    { name: 'Google Gemini 2.5', role: 'Cloud Synthesis' },
+    { name: 'OpenRouter Free Models', role: 'Cloud Text Generation' },
     { name: 'BAAI / bge-small', role: '384-d Vector Retrieval' },
     { name: 'PostgreSQL pgvector', role: 'HNSW Index Store' },
-    { name: 'LM Studio / LLaMA 3.2', role: 'Offline Local Privacy' },
+    { name: 'FastAPI + Next.js 15', role: 'Full-Stack Core' },
     { name: 'PyMuPDF Engine', role: 'In-Memory Extraction' },
   ];
 
