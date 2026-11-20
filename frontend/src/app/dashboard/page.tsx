@@ -44,7 +44,8 @@ import {
 } from '@/lib/api/resumes';
 import { listInterviewSessions, SessionSummary } from '@/lib/api/interviews';
 import { sendChatMessage, ChatAction, ChatHistoryItem } from '@/lib/api/chat';
-import { updateResume, extractResumeText } from '@/lib/api/resumes';
+import { updateResume, extractResumeText, type ResumeSection } from '@/lib/api/resumes';
+import { parseEdit, applyEdit } from '@/lib/chatEdit';
 import { parseResumeText, toSections } from '@/lib/importResumeText';
 import { ChatImportCard, type ImportState } from '@/components/app/ChatImportCard';
 
@@ -266,6 +267,69 @@ export default function DashboardPage() {
   const setImportField = (id: string, key: 'name' | 'email' | 'phone', value: string) =>
     patchImport(id, (s) => (s.parsed ? { ...s, parsed: { ...s.parsed, [key]: value } } : s));
 
+  const UNDO_KEY = 'placemind.chat.undo.v1';
+
+  const pushPair = (user: string, bot: string, actions?: ChatAction[]) =>
+    setMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: 'user', content: user },
+      { id: `bot-${Date.now() + 1}`, role: 'assistant', content: bot, actions },
+    ]);
+
+  // Explicit, deterministic edits to the active resume. Returns true when the
+  // message was handled here (including honest "cannot do that" replies).
+  const tryChatEdit = async (text: string): Promise<boolean> => {
+    const p = parseEdit(text);
+    if (!p) return false;
+    setChatInput('');
+    if ('error' in p) { pushPair(text, p.error); return true; }
+    const e = p.edit;
+    const builderAction: ChatAction[] = [{ id: 'ed-b', label: 'Open in builder', kind: 'navigate', target: '/resume', payload: {} }];
+    if (e.kind === 'refine') {
+      pushPair(
+        text,
+        'Refine here means generating the template from your saved facts. It uses only what is in your active resume and adds nothing. To change a fact first, tell me the change, for example "add skill Python".',
+        [{ id: 'ed-t', label: 'Open template generator', kind: 'navigate', target: '/template', payload: {} }],
+      );
+      return true;
+    }
+    let activeId: string | null = null;
+    try { activeId = window.localStorage.getItem('placemind.activeResumeId'); } catch {}
+    if (!activeId) {
+      pushPair(text, 'There is no active resume yet. Attach or paste your resume here and save it first, then I can change it. Nothing was changed.');
+      return true;
+    }
+    setIsSending(true);
+    try {
+      if (e.kind === 'undo') {
+        let snap: { resumeId: string; sections: ResumeSection[]; raw_text: string; label: string } | null = null;
+        try { snap = JSON.parse(window.localStorage.getItem(UNDO_KEY) || 'null'); } catch {}
+        if (!snap || snap.resumeId !== activeId) { pushPair(text, 'There is no change to undo for your active resume.'); return true; }
+        await updateResume(activeId, { sections: snap.sections, raw_text: snap.raw_text });
+        try { window.localStorage.removeItem(UNDO_KEY); } catch {}
+        refreshData();
+        pushPair(text, `Undone. Reverted: ${snap.label}`, builderAction);
+        return true;
+      }
+      const full = await getResume(activeId);
+      const r = applyEdit(full.sections as ResumeSection[], e);
+      if (!r.changed || !r.sections) { pushPair(text, r.message); return true; }
+      let raw = full.raw_text || '';
+      if (r.replace) raw = raw.split(r.replace.from).join(r.replace.to);
+      const prevSections = (full.sections as ResumeSection[]).map((x) => ({ section_type: x.section_type, content: x.content, meta_info: x.meta_info }));
+      await updateResume(activeId, { sections: r.sections, raw_text: raw });
+      try { window.localStorage.setItem(UNDO_KEY, JSON.stringify({ resumeId: activeId, sections: prevSections, raw_text: full.raw_text || '', label: r.message })); } catch {}
+      refreshData();
+      pushPair(text, `${r.message} Saved to your active resume. Say "undo" to revert this change.`, builderAction);
+    } catch (err) {
+      pushPair(text, `I could not save that change, so nothing was changed. ${err instanceof Error ? err.message : ''}`.trim());
+    } finally {
+      setIsSending(false);
+      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' }), 100);
+    }
+    return true;
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend ?? chatInput).trim();
     if (!text || isSending) return;
@@ -276,6 +340,7 @@ export default function DashboardPage() {
       startImport({ pastedText: text });
       return;
     }
+    if (await tryChatEdit(text)) return;
 
     const userMsgId = `user-${Date.now()}`;
     const newMessages: ChatMessage[] = [
