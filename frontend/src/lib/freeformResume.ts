@@ -13,9 +13,20 @@ const cleanEnd = (s: string) => s.replace(/[\s,.;:]+$/g, '').trim();
 
 export interface Freeform { resume: ImportedResume; signals: number }
 
+// Lowercase fallback: "i am priya sharma btech ..." -> up to 3 letters-only words,
+// stopping at common non-name words. Title-cased for display.
+function findLowerName(t: string): string {
+  const m = t.match(/\b(?:my name is|name is|name:|i am|i'm|im|this is)\s+([a-z]+(?:\s+[a-z]+){0,2})/i);
+  if (!m) return '';
+  const stop = new Set(['a','an','the','i','im','student','studying','btech','be','me','mtech','bca','mca','bsc','msc','from','in','at','and','with','of','fresher','final','first','second','third','fourth','year','looking','applying','based','graduating','pursuing','currently','also','interested','from','skills','intern','computer','engineering','engineer','developer','ece','cse','it','cs','is','am','want','wanna','new','not']);
+  const out: string[] = [];
+  for (const w of m[1].split(/\s+/)) { if (stop.has(w.toLowerCase())) break; out.push(w[0].toUpperCase() + w.slice(1).toLowerCase()); }
+  return out.length ? out.join(' ') : '';
+}
+
 function findName(t: string): string {
   const m = t.match(new RegExp(String.raw`\b(?:${ci('my name is')}|${ci('name is')}|${ci('name:')}|${ci('i am')}|${ci("i'm")}|${ci('this is')})\s+(${CAPS(3)})`));
-  if (!m) return '';
+  if (!m) return findLowerName(t);
   const words = m[1].split(/\s+/).filter((w) => /^[A-Z]/.test(w));
   // stop at common non-name capitalised words
   const stop = new Set(['I', 'A', 'An', 'The', 'CS', 'IT', 'Student', 'Final']);
@@ -25,8 +36,9 @@ function findName(t: string): string {
 }
 
 function findSkills(t: string): string[] {
-  const m = t.match(/(?:\bskills?\b\s*(?:are|include|includes|:|-|=)?|\bi (?:know|use)\b|\bproficient in\b|\bfamiliar with\b|\bexperienced (?:in|with)\b)\s*([^.\n]+)/i);
+  const m = t.match(/(?:\bskills?\b\s*(?:are|include|includes|:|-|=)?|\bi (?:know|use)\b|\bproficient in\b|\bfamiliar with\b|\bexperienced (?:in|with)\b)\s*((?:[A-Za-z0-9+#]\.[A-Za-z0-9]|[^.\n])+)/i);
   if (!m) return [];
+  m[1] = m[1].split(/\b(?:education|experience|projects?|email|phone|contact|summary|objective)\s*:/i)[0];
   const out: string[] = [];
   const parts = m[1].split(/\s*(?:,|;|\/|\band\b|&)\s*/i);
   for (const p of parts) {
@@ -65,6 +77,16 @@ export function parseFreeform(text: string): Freeform | null {
       year: grad ? `Graduating ${grad[1]}` : null,
       details: null,
     });
+  }
+
+  // Inline label: "Education: BE IT 2026." (only when no sentence form matched).
+  if (!education.length) {
+    const el = t.match(/\beducation\s*:\s*([^.]{3,100}?)(?=\s+(?:skills?|experience|projects?|email|phone)\s*:|\.\s|\.$|$)/i);
+    if (el) {
+      const body = cleanEnd(el[1]);
+      const yr = body.match(/\b((?:19|20)\d{2})\b/);
+      education.push({ degree: clip(body, 120), institution: null, year: yr ? yr[1] : null, details: null });
+    }
   }
 
   // Experience: "<n> month internship at <Company> (summer 2025)", and "<x> club coordinator".
